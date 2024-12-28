@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-//import StockDetail from './StockDetail.js'; // Create this component for stock details
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import StockDetail from './StockDetail.js'; // Create this component for stock details
 
 
 function App() {
@@ -84,6 +84,15 @@ function App() {
           ))}
         </tbody>
       </table>
+
+        <BrowserRouter>
+            <Routes>
+                <Route path='/stock/:ticker' element={<StockDetail />} />
+            </Routes>
+        </BrowserRouter>
+
+
+
     </div>
   );
 }
