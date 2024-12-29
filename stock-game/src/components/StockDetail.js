@@ -1,19 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import StockGraph from './StockGraph';
 
-function StockDetail() {
+export default function StockDetail() {
 	const { ticker } = useParams(); // Get stock ticker from URL
 	const [stock, setStock] = useState(null);
+    const [priceHistory, setPriceHistory] = useState([]);
 	const [balance, setBalance] = useState(0);
+    console.log({ ticker, priceHistory});
+    useEffect(() => {
+        fetch(`http://localhost:5000/api/stocks`)
+            .then((response) => response.json())
+            .then((stocks) => {
+                const selectedStock = stocks.find((s) => s.ticker === ticker);
+                setStock(selectedStock);
 
-	useEffect(() => {
-		fetch(`http://localhost:5000/api/stocks`)
-			.then((response) => response.json())
-			.then((stocks) => {
-				const selectedStock = stocks.find((s) => s.ticker === ticker);
-				setStock(selectedStock);
-			});
-	}, [ticker]);
+                const simulatedHistory = Array.from({ length: 30 }, () =>
+                    (selectedStock.price + Math.random() * 10 - 5).toFixed(2)
+                );
+                setPriceHistory(simulatedHistory);
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ticker]);
+
 
 	useEffect(() => {
 		fetch('http://localhost:5000/api/balance')
@@ -63,9 +72,13 @@ function StockDetail() {
 				Sell
 			</button>
 			<br />
+            {/* Include Stock Graph */}
+            <div>
+                <StockGraph ticker={ticker} data={priceHistory} />
+            </div>
+
 			<Link to="/">Back to Stock List</Link>
 		</div>
 	);
 }
 
-export default StockDetail;
