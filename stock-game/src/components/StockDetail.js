@@ -21,6 +21,7 @@ export default function StockDetail() {
                 setPriceHistory(simulatedHistory);
             });
         // eslint-disable-next-line react-hooks/exhaustive-deps
+        //KEEP ABOVE COMMENT 
     }, [ticker]);
 
 
