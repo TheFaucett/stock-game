@@ -73,7 +73,7 @@ let newsData = require('./news.json');
 
 
 
-const sensitivity = 0.5;
+const sensitivity = 0.3;
 
 let currentNews = null; 
 const tradeWindow = 30000; // 30 seconds 
@@ -105,7 +105,8 @@ function getRandomNews() {
     return sectorEntries[Math.floor(Math.random() * sectorEntries.length)];
 }
 
-function applyNewsImpact() {
+function updateAppState() {
+    // Apply news impacts
     if (currentNews) {
         const stock = stocks.find((s) => s.ticker === currentNews.ticker);
         if (stock) {
@@ -113,23 +114,26 @@ function applyNewsImpact() {
             const newPrice = parseFloat((stock.price + priceChange).toFixed(2));
 
             // Update stock price and history
-            stock.history.push(newPrice);
-            if (stock.history.length > 30) {
-                stock.history.shift(); // Keep only the last 30 days
-            }
-            const previousPrice = stock.history[stock.history.length - 2] || stock.price;
             stock.price = newPrice;
-            stock.change = parseFloat(((newPrice - previousPrice) / previousPrice * 100).toFixed(2));
+            if (stock.history[stock.history.length - 1] !== newPrice) {
+                stock.history.push(newPrice);
+            }
+            if (stock.history.length > 30) {
+                stock.history.shift();
+            }
 
-            console.log(`Stock ${stock.ticker} updated: Price = ${stock.price}, Change = ${stock.change}%`);
-        } else {
-            console.warn(`No stock found for ticker: ${currentNews.ticker}`);
+            // Update stock change percentage
+            const previousPrice = stock.history[stock.history.length - 2] || stock.price;
+            stock.change = parseFloat(((newPrice - previousPrice) / previousPrice * 100).toFixed(2));
         }
-        currentNews = null; // Clear current news after applying impact
-    } else {
-        console.warn('No current news to apply impact.');
+        currentNews = null; // Clear current news
     }
+
+    // Broadcast updates (optional, if using WebSocket or similar)
+    console.log('App state updated');
 }
+
+
 
 // Periodically fetch new news and apply impact
 setInterval(() => {
@@ -137,7 +141,7 @@ setInterval(() => {
     console.log('New current news:', currentNews);
     if (currentNews) {
         // Apply news impact after trade window
-        setTimeout(applyNewsImpact, tradeWindow);
+        setTimeout(updateAppState, tradeWindow);
     }
 }, tradeWindow); // Refresh every 30 seconds
 
