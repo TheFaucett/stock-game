@@ -1,15 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = 5000;
 
-
 let clientBalance = 10000;
-let ownedShares = {};
-
+const ownedShares = {};
 // Enable CORS so frontend can access backend
 app.use(cors());
 app.use(express.json()); // Enable JSON body parsing
@@ -71,51 +68,90 @@ const stocks = [ //an array of objects
     { ticker: 'MOVI', price: 64.34, change: -0.89, sector: 'Communication Services' },
     { ticker: 'FEVR', price: 341.12, change: 3.67, sector: 'Consumer Discretionary' },
 ];
-const newsFilePath = path.join(__dirname, 'news.json');
-let newsData = JSON.parse(fs.readFileSync(newsFilePath, 'utf-8'));
+
+let newsData = require('./news.json');
 
 
 
 const sensitivity = 0.5;
 
-// Function to get random news
+let currentNews = null; 
+const tradeWindow = 30000; // 30 seconds 
+
+function ogHistory(stock) {
+    const history = [];
+    let currentPrice = stock.price;
+
+    for (let i = 0; i < 30; i++) {
+        const fluctuation = (Math.random()- 0.5) * 2; //(+ or - 1)
+        currentPrice += (currentPrice * fluctuation) / 100;
+        history.push(parseFloat(currentPrice.toFixed(2)));
+    }
+    return history;
+
+}
+
+stocks.forEach((stock) => {
+    stock.history = ogHistory(stock);
+
+})
+
 function getRandomNews() {
     const sectorEntries = Object.values(newsData.sectors).flat();
+    if (sectorEntries.length === 0) {
+        console.error('No news data available');
+        return null;
+    }
     return sectorEntries[Math.floor(Math.random() * sectorEntries.length)];
 }
 
-// Function to apply news impact to stocks
-function applyNewsImpact(news) {
-    const stock = stocks.find(s => s.ticker === news.ticker);
-    if (stock) {
-        const priceChange = (news.sentimentScore * sensitivity) / 100 * stock.price;
-        stock.price = parseFloat((stock.price + priceChange).toFixed(2));
-        stock.change = parseFloat((priceChange / stock.price * 100).toFixed(2));
+function applyNewsImpact() {
+    if (currentNews) {
+        const stock = stocks.find((s) => s.ticker === currentNews.ticker);
+        if (stock) {
+            const priceChange = (currentNews.sentimentScore * sensitivity) / 100 * stock.price;
+            const newPrice = parseFloat((stock.price + priceChange).toFixed(2));
+
+            // Update stock price and history
+            stock.history.push(newPrice);
+            if (stock.history.length > 30) {
+                stock.history.shift(); // Keep only the last 30 days
+            }
+            const previousPrice = stock.history[stock.history.length - 2] || stock.price;
+            stock.price = newPrice;
+            stock.change = parseFloat(((newPrice - previousPrice) / previousPrice * 100).toFixed(2));
+
+            console.log(`Stock ${stock.ticker} updated: Price = ${stock.price}, Change = ${stock.change}%`);
+        } else {
+            console.warn(`No stock found for ticker: ${currentNews.ticker}`);
+        }
+        currentNews = null; // Clear current news after applying impact
+    } else {
+        console.warn('No current news to apply impact.');
     }
 }
 
+// Periodically fetch new news and apply impact
+setInterval(() => {
+    currentNews = getRandomNews();
+    console.log('New current news:', currentNews);
+    if (currentNews) {
+        // Apply news impact after trade window
+        setTimeout(applyNewsImpact, tradeWindow);
+    }
+}, tradeWindow); // Refresh every 30 seconds
 
-
-
-
-
-
-
-
-
-// API route to fetch all stocks
+// API Endpoints
 app.get('/api/stocks', (req, res) => {
     console.log("GET /api/stocks CALLED");
     res.json(stocks);
 });
 
-// API route to fetch all news
 app.get('/api/news', (req, res) => {
     console.log("GET /api/news CALLED");
     res.json(newsData);
 });
 
-// API route to fetch news by sector
 app.get('/api/news/sector/:sector', (req, res) => {
     const sector = req.params.sector.toLowerCase();
     const sectorData = newsData.sectors[sector];
@@ -125,36 +161,41 @@ app.get('/api/news/sector/:sector', (req, res) => {
     res.json(sectorData);
 });
 
-
 app.get('/api/news/ticker/:ticker', (req, res) => {
     const ticker = req.params.ticker.toUpperCase();
-    const sectorEntries = Object.values(newsData.sectors);
-
-    // Flatten all news items and filter by ticker
-    const tickerNews = sectorEntries.flat().filter((item) => item.ticker === ticker);
+    const sectorEntries = Object.values(newsData.sectors).flat();
+    const tickerNews = sectorEntries.filter((item) => item.ticker === ticker);
     if (tickerNews.length === 0) {
-        return res.status(404).json({ error: `No news found for ticker '${ticker}'.`});
+        return res.status(404).json({ error: `No news found for ticker '${ticker}'.` });
     }
     res.json(tickerNews);
 });
 
+app.get('/api/current-news', (req, res) => {
+    console.log("GET /api/current-news CALLED");
+    if (currentNews) {
+        res.json(currentNews);
+    } else {
+        res.status(404).json({ message: 'No news currently available.' });
+    }
+});
 
 app.get('/api/balance', (req, res) => {
     console.log("GET /api/balance CALLED");
     res.json({ balance: clientBalance });
 });
 
-
 app.post('/api/balance', (req, res) => {
-    const { type, amount, ticker } = req.body; 
+    const { type, amount, ticker } = req.body;
 
     if (typeof amount !== 'number' || amount <= 0) {
         return res.status(400).json({ error: 'Invalid transaction amount' });
     }
 
-    const stock = stocks.find(s => s.ticker === ticker);
-
-
+    const stock = stocks.find((s) => s.ticker === ticker);
+    if (!stock) {
+        return res.status(400).json({ error: `Stock with ticker '${ticker}' not found.` });
+    }
 
     const transactionAmount = amount * stock.price;
 
@@ -174,10 +215,10 @@ app.post('/api/balance', (req, res) => {
         return res.status(400).json({ error: 'Invalid transaction or insufficient funds.' });
     }
 
-    res.json({ balance: clientBalance }); // Respond with updated balance
+    res.json({ balance: clientBalance });
 });
 
 // Start the server
 app.listen(PORT, () => {
-    console.log('Server running on http://localhost:${PORT}');
+    console.log(`Server running on http://localhost:${PORT}`);
 });

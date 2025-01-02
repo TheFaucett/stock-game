@@ -51,6 +51,7 @@ export default function StockDetail() {
 		<div>
 			<h1>{stock.ticker} Details</h1>
 			<p>Price: ${stock.price.toFixed(2)}</p>
+            <p>Change: {stock.change}%</p>
 			<p>Balance: ${balance.toFixed(2)}</p>
 			<button
 				onClick={() =>
