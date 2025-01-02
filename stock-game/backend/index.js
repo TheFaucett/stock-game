@@ -139,7 +139,9 @@ function updateAppState() {
 setInterval(() => {
     currentNews = getRandomNews();
     console.log('New current news:', currentNews);
+
     if (currentNews) {
+    
         // Apply news impact after trade window
         setTimeout(updateAppState, tradeWindow);
     }
@@ -147,12 +149,12 @@ setInterval(() => {
 
 // API Endpoints
 app.get('/api/stocks', (req, res) => {
-    console.log("GET /api/stocks CALLED");
+  //  console.log("GET /api/stocks CALLED");
     res.json(stocks);
 });
 
 app.get('/api/news', (req, res) => {
-    console.log("GET /api/news CALLED");
+   // console.log("GET /api/news CALLED");
     res.json(newsData);
 });
 
@@ -176,7 +178,7 @@ app.get('/api/news/ticker/:ticker', (req, res) => {
 });
 
 app.get('/api/current-news', (req, res) => {
-    console.log("GET /api/current-news CALLED");
+    //console.log("GET /api/current-news CALLED");
     if (currentNews) {
         res.json(currentNews);
     } else {
@@ -185,7 +187,7 @@ app.get('/api/current-news', (req, res) => {
 });
 
 app.get('/api/balance', (req, res) => {
-    console.log("GET /api/balance CALLED");
+   // console.log("GET /api/balance CALLED");
     res.json({ balance: clientBalance });
 });
 
@@ -221,6 +223,30 @@ app.post('/api/balance', (req, res) => {
 
     res.json({ balance: clientBalance });
 });
+app.post('/api/sync-shares', (req, res) => {
+    console.log('Incoming sync request:', req.body);
+
+    const { ownedShares } = req.body;
+
+    if (!ownedShares || typeof ownedShares !== 'object') {
+        console.error('Invalid owned shares data:', req.body);
+        return res.status(400).json({ error: 'Invalid owned shares data' });
+    }
+
+    try {
+        Object.keys(ownedShares).forEach((ticker) => {
+            ownedShares[ticker] = ownedShares[ticker];
+        });
+
+        console.log('Owned shares after sync:', ownedShares);
+        res.status(200).json({ message: 'Owned shares synced successfully' });
+    } catch (error) {
+        console.error('Error syncing owned shares:', error.message);
+        res.status(500).json({ error: 'Failed to sync owned shares' });
+    }
+});
+
+
 
 // Start the server
 app.listen(PORT, () => {

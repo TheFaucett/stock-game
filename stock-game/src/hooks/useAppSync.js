@@ -21,7 +21,6 @@ function useAppSync(setStocks, setBalance, setCurrentNews) {
 
         fetchAppState(); // Initial fetch
         const interval = setInterval(fetchAppState, 1000); // Periodic fetch every second
-
         return () => clearInterval(interval); // Cleanup on unmount
     }, [setStocks, setBalance, setCurrentNews]);
 }
