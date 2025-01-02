@@ -26,7 +26,7 @@ function App() {
 		};
 
 		fetchStocks(); // Initial fetch
-		const interval = setInterval(fetchStocks, 10000); // Fetch every 5 seconds
+		const interval = setInterval(fetchStocks, 10000); // Fetch every 10 seconds
 
 		return () => clearInterval(interval); // Cleanup interval on unmount
 	}, []);
@@ -42,7 +42,7 @@ function App() {
                     setCurrentNews(data);
                 })
                 .catch((error) => console.error('Error fetching news:', error));
-        }, 10000); // Fetch every 10 seconds
+        }, 5000); // Fetch every 5 seconds
 
         return () => clearInterval(interval); // Cleanup interval on component unmount
     }, []);
