@@ -1,0 +1,103 @@
+{
+  "sectors": {
+    "energy": [
+      { "description": "Oil prices surge due to OPEC's decision to cut production.", "sentimentScore": 7 },
+      { "description": "Renewable energy sector sees significant investments after government incentives.", "sentimentScore": 8 },
+      { "description": "Natural gas exports increase as demand rises in Europe.", "sentimentScore": 6 },
+      { "description": "Large oil spill damages company reputation and incurs cleanup costs.", "sentimentScore": -8 },
+      { "description": "Breakthrough in hydrogen fuel technology boosts investor confidence.", "sentimentScore": 9 },
+      { "description": "Energy prices drop as global supply chains stabilize.", "sentimentScore": 5 },
+      { "description": "Nuclear energy projects face delays due to regulatory hurdles.", "sentimentScore": -4 }
+    ],
+    "materials": [
+      { "description": "New mining regulations increase costs for raw material extraction.", "sentimentScore": -5 },
+      { "description": "Discovery of a new mineral deposit boosts future prospects for mining companies.", "sentimentScore": 6 },
+      { "description": "Innovative recycling technologies reduce production costs.", "sentimentScore": 7 },
+      { "description": "Trade sanctions limit the export of critical materials.", "sentimentScore": -6 },
+      { "description": "Increased demand for construction materials due to urban development projects.", "sentimentScore": 6 },
+      { "description": "Price hike in rare earth metals benefits mining companies.", "sentimentScore": 8 },
+      { "description": "Worker strike disrupts operations in a major mining region.", "sentimentScore": -7 }
+    ],
+    "industrials": [
+      { "description": "Major airline companies report record holiday bookings.", "sentimentScore": 8 },
+      { "description": "Expansion in automation technology improves manufacturing efficiency.", "sentimentScore": 7 },
+      { "description": "Defense contracts awarded for cutting-edge equipment production.", "sentimentScore": 9 },
+      { "description": "Industrial machinery exports face tariffs in key markets.", "sentimentScore": -5 },
+      { "description": "Logistics companies report record volumes during the holiday season.", "sentimentScore": 6 },
+      { "description": "Launch of eco-friendly construction equipment captures market share.", "sentimentScore": 8 },
+      { "description": "Aviation sector sees rising fuel costs impacting profit margins.", "sentimentScore": -4 }
+    ],
+    "consumer_discretionary": [
+      { "description": "Luxury goods sales in Asia see a sharp decline due to economic slowdown concerns.", "sentimentScore": -6 },
+      { "description": "Increase in travel bookings boosts revenue for hospitality industries.", "sentimentScore": 6 },
+      { "description": "E-commerce platforms report record sales during shopping festivals.", "sentimentScore": 8 },
+      { "description": "Rising wages increase discretionary spending in the middle class.", "sentimentScore": 7 },
+      { "description": "Video game industry sees growth with the launch of new consoles.", "sentimentScore": 8 },
+      { "description": "Auto manufacturers face recalls due to safety issues.", "sentimentScore": -7 },
+      { "description": "Cultural festivals boost demand for themed merchandise.", "sentimentScore": 6 }
+    ],
+    "consumer_staples": [
+      { "description": "Demand for essential goods rises amid fears of economic downturn.", "sentimentScore": 6 },
+      { "description": "New line of eco-friendly products receives positive market reception.", "sentimentScore": 7 },
+      { "description": "Rising costs of agricultural inputs impact margins.", "sentimentScore": -5 },
+      { "description": "Retailers see strong demand for packaged foods during the holiday season.", "sentimentScore": 8 },
+      { "description": "Beverage companies innovate with new functional drink offerings.", "sentimentScore": 7 },
+      { "description": "Shortage of raw materials disrupts supply chains for staples.", "sentimentScore": -6 },
+      { "description": "Introduction of subscription-based grocery delivery services gains traction.", "sentimentScore": 8 }
+    ],
+    "health_care": [
+      { "description": "Breakthrough cancer treatment receives FDA approval.", "sentimentScore": 9 },
+      { "description": "Major pharmaceutical company announces positive results from vaccine trials.", "sentimentScore": 8 },
+      { "description": "Rising demand for telemedicine platforms during flu season.", "sentimentScore": 7 },
+      { "description": "Healthcare provider faces lawsuits over patient data breaches.", "sentimentScore": -6 },
+      { "description": "Research collaboration accelerates development of Alzheimer’s drug.", "sentimentScore": 8 },
+      { "description": "New regulations on drug pricing put pressure on pharmaceutical companies.", "sentimentScore": -5 },
+      { "description": "Increased funding for hospital infrastructure projects drives growth.", "sentimentScore": 6 }
+    ],
+    "financials": [
+      { "description": "Federal Reserve signals a pause in interest rate hikes.", "sentimentScore": 5 },
+      { "description": "Strong quarterly earnings reported by leading investment firms.", "sentimentScore": 7 },
+      { "description": "Credit card companies see record transaction volumes during holiday sales.", "sentimentScore": 8 },
+      { "description": "Regulatory changes enhance transparency in financial markets.", "sentimentScore": 6 },
+      { "description": "Mortgage rates hit new lows, spurring home purchases.", "sentimentScore": 7 },
+      { "description": "Global banking institutions face penalties for non-compliance.", "sentimentScore": -6 },
+      { "description": "Wealth management services expand offerings to younger demographics.", "sentimentScore": 6 }
+    ],
+    "information_technology": [
+      { "description": "Tech giant announces cutting-edge AI chip, set to dominate the market.", "sentimentScore": 10 },
+      { "description": "Innovative blockchain platform gains traction among enterprise clients.", "sentimentScore": 9 },
+      { "description": "Software company launches an all-in-one productivity suite.", "sentimentScore": 8 },
+      { "description": "Cybersecurity breach affects key players in the IT sector.", "sentimentScore": -7 },
+      { "description": "Expansion of data center capabilities drives revenue growth.", "sentimentScore": 7 },
+      { "description": "Introduction of advanced AR/VR technologies revolutionizes user experience.", "sentimentScore": 9 },
+      { "description": "Shortage of semiconductor chips disrupts production timelines.", "sentimentScore": -6 }
+    ],
+    "communication_services": [
+      { "description": "Streaming platform faces backlash over price hikes, leading to subscriber loss.", "sentimentScore": -4 },
+      { "description": "Telecom company launches 5G services nationwide, increasing customer base.", "sentimentScore": 8 },
+      { "description": "Social media platform introduces new features, boosting engagement.", "sentimentScore": 7 },
+      { "description": "Regulatory scrutiny on misinformation impacts major platforms.", "sentimentScore": -5 },
+      { "description": "Partnerships with content creators drive growth for digital streaming services.", "sentimentScore": 8 },
+      { "description": "Rise in advertising revenue benefits leading media companies.", "sentimentScore": 7 },
+      { "description": "Television network struggles with declining viewer ratings.", "sentimentScore": -6 }
+    ],
+    "utilities": [
+      { "description": "Government subsidies boost renewable energy projects.", "sentimentScore": 7 },
+      { "description": "Severe weather increases demand for utility services, improving revenues.", "sentimentScore": 6 },
+      { "description": "Expansion of solar power installations drives growth in clean energy.", "sentimentScore": 8 },
+      { "description": "Aging infrastructure leads to higher maintenance costs for utility companies.", "sentimentScore": -5 },
+      { "description": "Introduction of smart grids enhances energy efficiency.", "sentimentScore": 7 },
+      { "description": "Utility companies face lawsuits over wildfire liabilities.", "sentimentScore": -7 },
+      { "description": "Increased focus on wind energy boosts sector innovation.", "sentimentScore": 8 }
+    ],
+    "real_estate": [
+      { "description": "Housing market cools as mortgage rates hit multi-decade highs.", "sentimentScore": -3 },
+      { "description": "Urban redevelopment projects attract new investors to the sector.", "sentimentScore": 6 },
+      { "description": "Demand for commercial real estate rises with post-pandemic recovery.", "sentimentScore": 7 },
+      { "description": "Rising construction costs delay key housing projects.", "sentimentScore": -6 },
+      { "description": "Introduction of co-living spaces gains popularity among young professionals.", "sentimentScore": 8 },
+      { "description": "Real estate investment trusts report higher dividends this quarter.", "sentimentScore": 7 },
+      { "description": "Government policies supporting affordable housing improve market outlook.", "sentimentScore": 6 }
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+[
+  {
+    "description": "The International Monetary Fund downgrades its global growth forecast, citing geopolitical tensions and slower consumer demand.",
+    "sentimentScore": -6
+  },
+  {
+    "description": "A leading pharmaceutical company announces the successful development of a universal flu vaccine, creating optimism in health and biotech sectors.",
+    "sentimentScore": 7
+  },
+  {
+    "description": "Global semiconductor supply chain issues are resolved, boosting technology production and reducing delays.",
+    "sentimentScore": 9
+  },
+  {
+    "description": "Massive natural disaster disrupts transportation and trade across several continents, causing delays and economic strain.",
+    "sentimentScore": -8
+  },
+  {
+    "description": "Major breakthrough in battery technology promises to revolutionize renewable energy storage capabilities.",
+    "sentimentScore": 10
+  },
+  {
+    "description": "Tensions rise as multiple countries impose export restrictions on rare earth metals, critical for advanced manufacturing.",
+    "sentimentScore": -5
+  },
+  {
+    "description": "A global treaty on tax reform is ratified, reducing tax avoidance by multinational corporations.",
+    "sentimentScore": 4
+  },
+  {
+    "description": "A global pandemic resurfaces with a more virulent strain, leading to lockdowns and widespread economic disruptions.",
+    "sentimentScore": -10
+  },
+  {
+    "description": "The United Nations reports a record decline in poverty levels globally, signaling improved living standards.",
+    "sentimentScore": 6
+  },
+  {
+    "description": "Breakdown of key international peace negotiations sparks concerns about regional stability.",
+    "sentimentScore": -7
+  },
+  {
+    "description": "A record-breaking technology IPO ignites interest in the stock market, drawing in new investors worldwide.",
+    "sentimentScore": 5
+  },
+  {
+    "description": "An unexpected ban on cryptocurrency mining in a major country disrupts global crypto markets.",
+    "sentimentScore": -4
+  },
+  {
+    "description": "Widespread adoption of quantum computing accelerates innovation across various sectors.",
+    "sentimentScore": 8
+  },
+  {
+    "description": "A coordinated effort to regulate artificial intelligence leads to tighter restrictions on AI development.",
+    "sentimentScore": -3
+  },
+  {
+    "description": "Global military spending reaches an all-time high, sparking concerns about future conflicts.",
+    "sentimentScore": -6
+  },
+  {
+    "description": "A major breakthrough in cancer treatment significantly boosts health sector confidence.",
+    "sentimentScore": 9
+  },
+  {
+    "description": "An unexpected rise in global commodity prices increases costs for businesses and consumers alike.",
+    "sentimentScore": -5
+  },
+  {
+    "description": "Key global markets agree on a new digital trade pact, reducing barriers and improving cross-border transactions.",
+    "sentimentScore": 7
+  },
+  {
+    "description": "Reports of widespread corporate accounting fraud in a major economy shakes investor confidence worldwide.",
+    "sentimentScore": -8
+  },
+  {
+    "description": "An international peace agreement is signed, leading to reduced military tensions in previously volatile regions.",
+    "sentimentScore": 6
+  },
+  {
+    "description": "Extreme weather patterns result in record agricultural losses, raising food prices globally.",
+    "sentimentScore": -7
+  },
+  {
+    "description": "The global adoption of 5G technology accelerates, leading to increased productivity and innovation in telecommunications.",
+    "sentimentScore": 8
+  },
+  {
+    "description": "A major country defaults on its sovereign debt, sending shockwaves through global financial markets.",
+    "sentimentScore": -9
+  },
+  {
+    "description": "Renewed diplomatic relations between major economies boost international trade prospects.",
+    "sentimentScore": 5
+  },
+  {
+    "description": "A leading tech company is hit with a significant antitrust lawsuit, raising concerns about regulatory impacts.",
+    "sentimentScore": -4
+  },
+  {
+    "description": "Global carbon emissions reach a historic low due to advancements in clean energy adoption.",
+    "sentimentScore": 7
+  },
+  {
+    "description": "Mass protests erupt worldwide against rising inequality, leading to disruptions in several major cities.",
+    "sentimentScore": -6
+  },
+  {
+    "description": "A new international space exploration mission generates optimism in advanced technology sectors.",
+    "sentimentScore": 6
+  },
+  {
+    "description": "Reports of a looming global recession send markets into a sharp decline as investors seek safer assets.",
+    "sentimentScore": -10
+  },
+  {
+    "description": "A surge in global venture capital funding drives innovation in startups across various industries.",
+    "sentimentScore": 5
+  }
+]

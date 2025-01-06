@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-function useAppSync(setStocks, setBalance, setCurrentNews) {
+function useAppSync(setStocks, setBalance, setCurrentNews, setMarketSentiment) {
     useEffect(() => {
         const fetchAppState = () => {
             fetch('http://localhost:5000/api/stocks')
@@ -17,6 +17,13 @@ function useAppSync(setStocks, setBalance, setCurrentNews) {
                 .then((response) => response.json())
                 .then((data) => setCurrentNews(data))
                 .catch((error) => console.error('Error fetching current news:', error));
+            
+            fetch('http://localhost:5000/api/market-sentiment')
+                .then((response) => response.json())
+                .then((data) => setMarketSentiment(data))
+                .catch((error) => console.error('Error fetching market sentiment:', error));
+
+
         };
 
         fetchAppState(); // Initial fetch

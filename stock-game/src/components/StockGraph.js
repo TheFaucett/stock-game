@@ -1,19 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 function StockGraph({ ticker, data, currentPrice }) {
-    // Ensure the latest price is included in the chart data
-    const chartData = [...data.map((price, index) => ({
-        day: `Day ${index + 1}`,
-        price: price,
-    }))];
+    const [chartData, setChartData] = useState([]);
 
-    if (chartData[chartData.length - 1]?.price !== currentPrice) {
-        chartData.push({
-            day: `Day ${chartData.length + 1}`,
-            price: currentPrice,
-        });
-    }
+    useEffect(() => {
+        // Create chart data from historical prices
+        const updatedData = data.map((price, index) => ({
+            day: `Day ${index + 1}`,
+            price,
+        }));
+
+        // Add the latest price if it's not already in the data
+        if (updatedData[updatedData.length - 1]?.price !== currentPrice) {
+            updatedData.push({
+                day: `Day ${updatedData.length + 1}`,
+                price: currentPrice,
+            });
+        }
+
+        setChartData(updatedData);
+    }, [data, currentPrice]); // Re-run whenever `data` or `currentPrice` changes
 
     return (
         <LineChart

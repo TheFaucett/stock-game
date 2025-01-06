@@ -12,15 +12,20 @@ function App() {
 
     const [ownedShares, setOwnedShares] = useState(() => {
         const savedShares = localStorage.getItem('ownedShares');
+        console.log('savedShares:', savedShares);
+
         return savedShares ? JSON.parse(savedShares) : {};
     });
-    console.log({ ownedShares, balance});
-    const [currentNews, setCurrentNews] = useState(null);
+    
+    const [currentNews, setCurrentNews] = useState([]);
+    const [marketSentiment, setMarketSentiment] = useState(0);
 
 
-    useAppSync(setStocks, setBalance, setCurrentNews);
+
+    useAppSync(setStocks, setBalance, setCurrentNews, setMarketSentiment);
 
 
+    // Sync owned shares with backend on mount
     useEffect(() => {
         const syncStateWithBackend = async () => {
             try {
@@ -41,8 +46,7 @@ function App() {
         };
 
         syncStateWithBackend();
-    }, []); // Sync only on component mount
-
+    }, []);
 
     useEffect(() => {
         localStorage.setItem('balance', balance);
@@ -52,12 +56,11 @@ function App() {
         localStorage.setItem('ownedShares', JSON.stringify(ownedShares));
     }, [ownedShares]);
 
-
     function handleTransaction(type, amount, ticker) {
         const stock = stocks.find((s) => s.ticker === ticker);
         if (!stock) return alert('Stock not found!');
         
-        const transactionAmount = amount * stock.price;
+
 
         fetch('http://localhost:5000/api/balance', {
             method: 'POST',
@@ -87,7 +90,6 @@ function App() {
                     return updatedShares;
                 });
 
-
                 fetch('http://localhost:5000/api/sync-shares', {
                     method: 'POST',
                     headers: {
@@ -108,17 +110,23 @@ function App() {
             });
     }
 
-
     const StockList = () => (
         <div>
             <h1>Stock List</h1>
             <p>Balance: ${typeof balance === 'number' ? balance.toFixed(2) : '0.00'}</p>
-            {currentNews && (
+            <p>
+                Market Sentiment: {marketSentiment > 0 ? 'Bullish' : marketSentiment < 0 ? 'Bearish' : 'Neutral'}
+            </p>
+            {currentNews && currentNews.length > 0 && (
                 <div style={{ border: '1px solid black', padding: '10px', margin: '10px 0' }}>
                     <h3>Current News:</h3>
-                    <p>
-                        <strong>{currentNews.ticker}</strong>: {currentNews.description}
-                    </p>
+                    {currentNews.map((newsItem, index) => (
+                        <p key={index}>
+                            <strong>{newsItem.type.toUpperCase()}</strong>: {newsItem.description}
+                            {newsItem.ticker && <span> (Ticker: {newsItem.ticker})</span>}
+
+                        </p>
+                    ))}
                 </div>
             )}
             <table>
