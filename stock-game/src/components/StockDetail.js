@@ -85,6 +85,7 @@ export default function StockDetail() {
             <h1>{stock.ticker} Details</h1>
             <p>Price: ${stock.price.toFixed(2)}</p>
             <p>Change: {stock.change}%</p>
+            <p>P/E Ratio: {stock.peRatio ? stock.peRatio.toFixed(2) : 'N/A'}</p>
             <p>Balance: ${balance.toFixed(2)}</p>
             <button
                 onClick={() =>

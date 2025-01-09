@@ -135,6 +135,7 @@ function App() {
                         <th>Ticker</th>
                         <th>Price</th>
                         <th>Change (%)</th>
+                        <th>P/E Ratio</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -161,6 +162,7 @@ function App() {
                                 {stock.change > 0 ? '+' : ''}
                                 {typeof stock.change === 'number' ? stock.change.toFixed(2) : '0.00'}%
                             </td>
+                            <td>{stock.peRatio ? stock.peRatio.toFixed(2) : 'N/A'}</td>
                             <td>
                                 <button
                                     onClick={() => {
