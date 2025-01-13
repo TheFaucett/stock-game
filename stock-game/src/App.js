@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+
+//components
 import StockDetail from './components/StockDetail';
+import Portfolio from './components/Portfolio';
+import Watchlist from './components/Watchlist';
+//hooks
 import useAppSync from './hooks/useAppSync';
+
 
 function App() {
     const [stocks, setStocks] = useState([]);
@@ -20,6 +26,10 @@ function App() {
     const [currentNews, setCurrentNews] = useState([]);
     const [marketSentiment, setMarketSentiment] = useState(0);
 
+    const [watchlist, setWatchlist] = useState(() => {
+        const savedWatchlist = localStorage.getItem('watchlist');
+        return savedWatchlist ? JSON.parse(savedWatchlist) : [];
+    });
 
 
     useAppSync(setStocks, setBalance, setCurrentNews, setMarketSentiment);
@@ -55,6 +65,23 @@ function App() {
     useEffect(() => {
         localStorage.setItem('ownedShares', JSON.stringify(ownedShares));
     }, [ownedShares]);
+
+    useEffect(() => {
+        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+    }, [watchlist]);
+
+    const addToWatchlist = (ticker) => {
+        if (!watchlist.includes(ticker)) {
+            setWatchlist((prev) => [...prev, ticker]);
+        }
+    };
+
+    const removeFromWatchlist = (ticker) => {
+        setWatchlist((prev) => prev.filter((item) => item !== ticker));
+    };
+
+
+
 
     function handleTransaction(type, amount, ticker) {
         const stock = stocks.find((s) => s.ticker === ticker);
@@ -117,6 +144,9 @@ function App() {
             <p>
                 Market Sentiment: {marketSentiment > 0 ? 'Bullish' : marketSentiment < 0 ? 'Bearish' : 'Neutral'}
             </p>
+            <Link to="/portfolio">Portfolio</Link>
+            <Link to="/watchlist" style={{ marginLeft: '15px' }}>Watchlist</Link>
+
             {currentNews && currentNews.length > 0 && (
                 <div style={{ border: '1px solid black', padding: '10px', margin: '10px 0' }}>
                     <h3>Current News:</h3>
@@ -124,11 +154,11 @@ function App() {
                         <p key={index}>
                             <strong>{newsItem.type.toUpperCase()}</strong>: {newsItem.description}
                             {newsItem.ticker && <span> (Ticker: {newsItem.ticker})</span>}
-
                         </p>
                     ))}
                 </div>
             )}
+
             <table>
                 <thead>
                     <tr>
@@ -180,6 +210,13 @@ function App() {
                                 >
                                     Sell
                                 </button>
+                                <button
+                                    onClick={() => {
+                                        addToWatchlist(stock.ticker);
+                                    }}
+                                >
+                                    Add to Watchlist
+                                </button>
                             </td>
                         </tr>
                     ))}
@@ -188,14 +225,19 @@ function App() {
         </div>
     );
 
+    // Add a Watchlist route and component
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<StockList />} />
                 <Route path="/stock/:ticker" element={<StockDetail />} />
+                <Route path="/portfolio" element={<Portfolio />} />
+                <Route path="/watchlist" element={<Watchlist />} />
             </Routes>
         </BrowserRouter>
     );
+
+
 }
 
 export default App;

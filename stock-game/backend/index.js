@@ -5,8 +5,12 @@ const cors = require('cors');
 const app = express();
 const PORT = 5000;
 
-let clientBalance = 10000;
-const ownedShares = {};
+const userPortfolio = {
+    balance: 10000,
+    transactions: [],
+    ownedShares: {}, // { ticker: sharesOwned }
+};
+
 // Enable CORS so frontend can access backend
 app.use(cors());
 app.use(express.json()); // Enable JSON body parsing
@@ -270,7 +274,10 @@ function applyImpactToStocks(newsItem, stocks, weight, sensitivity) {
         if (stock.history.length > 30) {
             stock.history.shift();
         }
-
+        if (userPortfolio.ownedShares[stock.ticker]) {
+            const newValue = userPortfolio.ownedShares[stock.ticker] * stock.price;
+            console.log(`Portfolio value for ${stock.ticker} updated to $${newValue.toFixed(2)}`);
+        }
         // Update stock change percentage
         const previousPrice = stock.history[stock.history.length - 2] || stock.price;
         stock.change = parseFloat(((newPrice - previousPrice) / previousPrice * 100).toFixed(2));
@@ -328,6 +335,50 @@ function updateAppState() {
 setInterval(() => {
     updateAppState();
 }, tradeWindow); // Refresh every 30 seconds
+
+app.get('/api/portfolio', (req, res) => {
+    res.json(userPortfolio);
+});
+app.post('/api/portfolio/transaction', (req, res) => {
+    const { type, ticker, shares, price } = req.body;
+
+    if (!ticker || shares <= 0 || price <= 0) {
+        return res.status(400).json({ error: 'Invalid transaction data' });
+    }
+
+    const transactionTotal = shares * price;
+
+    if (type === 'buy') {
+        if (userPortfolio.balance < transactionTotal) {
+            return res.status(400).json({ error: 'Insufficient balance' });
+        }
+        userPortfolio.balance -= transactionTotal;
+        userPortfolio.ownedShares[ticker] = (userPortfolio.ownedShares[ticker] || 0) + shares;
+    } else if (type === 'sell') {
+        if (!userPortfolio.ownedShares[ticker] || userPortfolio.ownedShares[ticker] < shares) {
+            return res.status(400).json({ error: 'Not enough shares to sell.' });
+        }
+        userPortfolio.balance += transactionTotal;
+        userPortfolio.ownedShares[ticker] -= shares;
+        if (userPortfolio.ownedShares[ticker] === 0) {
+            delete userPortfolio.ownedShares[ticker];
+        }
+    } else {
+        return res.status(400).json({ error: 'Invalid transaction type' });
+    }
+
+    // Add transaction to history
+    userPortfolio.transactions.push({
+        type,
+        ticker,
+        shares,
+        price,
+        total: transactionTotal,
+        date: new Date().toISOString(),
+    });
+
+    res.json(userPortfolio);
+});
 
 // API Endpoints
 app.get('/api/stocks', (req, res) => {
@@ -390,24 +441,35 @@ app.post('/api/balance', (req, res) => {
 
     const transactionAmount = amount * stock.price;
 
-    if (type === 'buy' && clientBalance >= transactionAmount) {
-        clientBalance -= transactionAmount;
-        ownedShares[stock.ticker] = (ownedShares[stock.ticker] || 0) + amount;
+    if (type === 'buy' && userPortfolio.balance >= transactionAmount) {
+        userPortfolio.balance -= transactionAmount;
+        userPortfolio.ownedShares[stock.ticker] = (userPortfolio.ownedShares[stock.ticker] || 0) + amount;
     } else if (type === 'sell') {
-        if (!ownedShares[stock.ticker] || ownedShares[stock.ticker] < amount) {
+        if (!userPortfolio.ownedShares[stock.ticker] || userPortfolio.ownedShares[stock.ticker] < amount) {
             return res.status(400).json({ error: 'Not enough shares to sell.' });
         }
-        clientBalance += transactionAmount;
-        ownedShares[stock.ticker] -= amount;
-        if (ownedShares[stock.ticker] <= 0) {
-            delete ownedShares[stock.ticker];
+        userPortfolio.balance += transactionAmount;
+        userPortfolio.ownedShares[stock.ticker] -= amount;
+        if (userPortfolio.ownedShares[stock.ticker] <= 0) {
+            delete userPortfolio.ownedShares[stock.ticker];
         }
     } else {
         return res.status(400).json({ error: 'Invalid transaction or insufficient funds.' });
     }
 
-    res.json({ balance: clientBalance });
+    // Add to transaction history
+    userPortfolio.transactions.push({
+        type,
+        ticker,
+        shares: amount,
+        price: stock.price,
+        total: transactionAmount,
+        date: new Date().toISOString(),
+    });
+
+    res.json({ balance: userPortfolio.balance });
 });
+
 app.post('/api/sync-shares', (req, res) => {
     console.log('Incoming sync request:', req.body);
 
