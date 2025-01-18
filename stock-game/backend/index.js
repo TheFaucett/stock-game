@@ -21,154 +21,151 @@ app.get('/api/message', (req, res) => {
 
 
 const stocks = [
-    { ticker: 'ASTC', price: 153.42, change: 2.45, sector: 'Industrials', eps: 8.29 },
-    { ticker: 'GRBX', price: 27.85, change: -0.32, sector: 'Energy', eps: 1.95 },
-    { ticker: 'HMTL', price: 345.68, change: 1.12, sector: 'Health Care', eps: 15.23 },
-    { ticker: 'FNXY', price: 92.30, change: -1.67, sector: 'Financials', eps: 7.16 },
-    { ticker: 'CNTK', price: 18.45, change: 0.56, sector: 'Consumer Staples', eps: 0.97 },
-    { ticker: 'GLMT', price: 57.19, change: 1.03, sector: 'Information Technology', eps: 2.25 },
-    { ticker: 'VTRD', price: 42.76, change: -0.78, sector: 'Materials', eps: 2.71 },
-    { ticker: 'TRFX', price: 66.21, change: 2.34, sector: 'Utilities', eps: 5.66 },
-    { ticker: 'PXNL', price: 15.97, change: -0.12, sector: 'Communication Services', eps: 1.63 },
-    { ticker: 'AETH', price: 210.43, change: 3.67, sector: 'Consumer Discretionary', eps: 7.71 },
-    { ticker: 'DRVN', price: 84.56, change: -0.23, sector: 'Industrials', eps: 5.12 },
-    { ticker: 'SUNR', price: 32.12, change: 1.89, sector: 'Energy', eps: 1.60 },
-    { ticker: 'MEDX', price: 452.23, change: 2.11, sector: 'Health Care', eps: 15.23 },
-    { ticker: 'CAPF', price: 110.50, change: -1.45, sector: 'Financials', eps: 10.52 },
-    { ticker: 'NATF', price: 24.78, change: 0.45, sector: 'Consumer Staples', eps: 1.82 },
-    { ticker: 'CODE', price: 82.34, change: 3.21, sector: 'Information Technology', eps: 2.85 },
-    { ticker: 'STEL', price: 47.89, change: -0.56, sector: 'Materials', eps: 3.15 },
-    { ticker: 'ECOG', price: 54.90, change: 1.87, sector: 'Utilities', eps: 4.46 },
-    { ticker: 'VIDE', price: 21.45, change: 0.67, sector: 'Communication Services', eps: 1.22 },
-    { ticker: 'LUXY', price: 315.67, change: 2.45, sector: 'Consumer Discretionary', eps: 13.49 },
-    { ticker: 'LOGI', price: 67.12, change: 0.98, sector: 'Information Technology', eps: 2.51 },
-    { ticker: 'SPHR', price: 135.45, change: 1.45, sector: 'Industrials', eps: 6.51 },
-    { ticker: 'HYDN', price: 39.24, change: -1.12, sector: 'Energy', eps: 3.44 },
-    { ticker: 'BIOM', price: 268.78, change: 3.45, sector: 'Health Care', eps: 10.93 },
-    { ticker: 'WLTN', price: 98.45, change: -2.13, sector: 'Financials', eps: 9.94 },
-    { ticker: 'PURE', price: 56.12, change: 0.32, sector: 'Consumer Staples', eps: 3.07 },
-    { ticker: 'TECH', price: 145.76, change: 2.67, sector: 'Information Technology', eps: 4.86 },
-    { ticker: 'GOLD', price: 65.43, change: -0.89, sector: 'Materials', eps: 4.85 },
-    { ticker: 'WAVE', price: 78.90, change: 1.56, sector: 'Utilities', eps: 7.73 },
-    { ticker: 'STREAM', price: 34.12, change: 0.78, sector: 'Communication Services', eps: 2.08 },
-    { ticker: 'FANC', price: 403.21, change: 2.89, sector: 'Consumer Discretionary', eps: 14.15 },
-    { ticker: 'SKYH', price: 122.78, change: 3.45, sector: 'Industrials', eps: 8.35 },
-    { ticker: 'WIND', price: 48.34, change: -0.56, sector: 'Energy', eps: 2.52 },
-    { ticker: 'GENX', price: 372.23, change: 1.98, sector: 'Health Care', eps: 17.01 },
-    { ticker: 'FINT', price: 140.67, change: -1.34, sector: 'Financials', eps: 12.45 },
-    { ticker: 'ORGN', price: 62.34, change: 0.21, sector: 'Consumer Staples', eps: 3.50 },
-    { ticker: 'NETX', price: 178.90, change: 3.12, sector: 'Information Technology', eps: 6.78 },
-    { ticker: 'BRCK', price: 49.12, change: -1.67, sector: 'Materials', eps: 3.17 },
-    { ticker: 'AQUA', price: 72.45, change: 2.34, sector: 'Utilities', eps: 5.53 },
-    { ticker: 'TALK', price: 41.23, change: 1.23, sector: 'Communication Services', eps: 3.25 },
-    { ticker: 'BYTE', price: 210.45, change: 2.45, sector: 'Information Technology', eps: 7.16 },
-    { ticker: 'COTN', price: 48.67, change: -1.45, sector: 'Materials', eps: 3.18 },
-    { ticker: 'LITE', price: 29.45, change: 0.34, sector: 'Utilities', eps: 2.78 },
-    { ticker: 'MOVI', price: 64.34, change: -0.89, sector: 'Communication Services', eps: 3.81 },
-    { ticker: 'FEVR', price: 341.12, change: 3.67, sector: 'Consumer Discretionary', eps: 12.54 },
-    { ticker: 'NOVA', price: 112.34, change: 1.34, sector: 'Information Technology', eps: 4.39 },
-    { ticker: 'BLZE', price: 45.67, change: -0.76, sector: 'Energy', eps: 3.09 },
-    { ticker: 'PRME', price: 78.23, change: 0.98, sector: 'Health Care', eps: 3.78 },
-    { ticker: 'ECHO', price: 23.56, change: 2.12, sector: 'Communication Services', eps: 2.03 },
-    { ticker: 'GRND', price: 98.34, change: -1.45, sector: 'Materials', eps: 6.00 },
-    { ticker: 'SNAP', price: 143.89, change: 3.56, sector: 'Consumer Discretionary', eps: 5.92 },
-    { ticker: 'TYPH', price: 67.34, change: -0.34, sector: 'Utilities', eps: 6.18 },
-    { ticker: 'FLUX', price: 89.12, change: 1.76, sector: 'Industrials', eps: 6.15 },
-    { ticker: 'STOR', price: 156.78, change: -2.45, sector: 'Real Estate', eps: 8.61 },
-    { ticker: 'CREE', price: 45.12, change: 0.89, sector: 'Consumer Staples', eps: 3.61 },
-    { ticker: 'AURA', price: 312.45, change: 1.45, sector: 'Information Technology', eps: 11.61 },
-    { ticker: 'QUAD', price: 52.89, change: -1.34, sector: 'Financials', eps: 5.18 },
-    { ticker: 'ZENO', price: 89.67, change: 2.34, sector: 'Health Care', eps: 4.19 },
-    { ticker: 'PRSM', price: 67.34, change: 0.76, sector: 'Materials', eps: 4.24 },
-    { ticker: 'BETA', price: 145.67, change: -0.67, sector: 'Communication Services', eps: 6.14 },
-    { ticker: 'CYBR', price: 210.34, change: 3.12, sector: 'Information Technology', eps: 7.43 },
-    { ticker: 'FRNT', price: 56.78, change: 0.45, sector: 'Energy', eps: 4.18 },
-    { ticker: 'GALA', price: 78.45, change: -1.23, sector: 'Utilities', eps: 6.64 },
-    { ticker: 'NEON', price: 23.67, change: 1.89, sector: 'Consumer Discretionary', eps: 1.37 },
-    { ticker: 'CLIM', price: 98.45, change: 2.45, sector: 'Industrials', eps: 6.93 },
-    { ticker: 'SPRK', price: 120.45, change: -1.89, sector: 'Materials', eps: 6.21 },
-    { ticker: 'ORCA', price: 67.12, change: 0.98, sector: 'Health Care', eps: 3.34 },
-    { ticker: 'AERO', price: 143.56, change: 2.78, sector: 'Industrials', eps: 6.27 },
-    { ticker: 'FINN', price: 98.67, change: -0.76, sector: 'Financials', eps: 10.17 },
-    { ticker: 'VOLT', price: 34.56, change: 1.34, sector: 'Utilities', eps: 3.06 },
-    { ticker: 'ELEV', price: 56.34, change: -0.98, sector: 'Communication Services', eps: 3.42 },
-    { ticker: 'CORE', price: 210.78, change: 3.89, sector: 'Information Technology', eps: 7.22 },
-    { ticker: 'SOLR', price: 76.89, change: 1.56, sector: 'Energy', eps: 3.77 },
-    { ticker: 'DRGN', price: 145.34, change: -2.34, sector: 'Consumer Discretionary', eps: 5.65 },
-    { ticker: 'CRWN', price: 56.78, change: 0.98, sector: 'Real Estate', eps: 3.81 },
-    { ticker: 'PULS', price: 123.45, change: -1.45, sector: 'Industrials', eps: 8.95 },
-    { ticker: 'LUNA', price: 87.34, change: 2.76, sector: 'Consumer Staples', eps: 4.83 },
-    { ticker: 'RUSH', price: 45.67, change: 1.89, sector: 'Communication Services', eps: 3.68 },
-    { ticker: 'HIVE', price: 178.45, change: -0.98, sector: 'Health Care', eps: 7.56 },
-    { ticker: 'BLNK', price: 64.78, change: 2.34, sector: 'Information Technology', eps: 2.50 },
-    { ticker: 'CRUX', price: 45.23, change: 0.76, sector: 'Materials', eps: 2.90 },
-    { ticker: 'WAVE', price: 89.34, change: -1.45, sector: 'Utilities', eps: 8.27 },
-    { ticker: 'ARCH', price: 134.78, change: 2.12, sector: 'Consumer Discretionary', eps: 5.44 },
-    { ticker: 'ZENI', price: 78.12, change: -0.34, sector: 'Industrials', eps: 5.83 },
-    { ticker: 'GLXY', price: 56.45, change: 1.45, sector: 'Energy', eps: 4.38 },
-    { ticker: 'BOND', price: 67.89, change: 0.67, sector: 'Financials', eps: 7.14 },
-    { ticker: 'ALTN', price: 98.23, change: 1.89, sector: 'Health Care', eps: 4.53 },
-    { ticker: 'FOXD', price: 123.45, change: -1.67, sector: 'Communication Services', eps: 7.35 },
-    { ticker: 'JUMP', price: 89.67, change: 2.34, sector: 'Consumer Discretionary', eps: 3.96 },
-    { ticker: 'QUAK', price: 56.23, change: 0.76, sector: 'Real Estate', eps: 3.93 },
-    { ticker: 'FLASH', price: 78.89, change: -0.98, sector: 'Information Technology', eps: 2.97 },
-    { ticker: 'FUME', price: 145.34, change: 2.45, sector: 'Industrials', eps: 7.34 },
-    { ticker: 'WIND', price: 76.12, change: -1.12, sector: 'Utilities', eps: 6.86 },
-    { ticker: 'RADI', price: 210.56, change: 3.12, sector: 'Energy', eps: 6.67 },
-    { ticker: 'GLOO', price: 89.45, change: 1.78, sector: 'Materials', eps: 6.11 },
-    { ticker: 'ORBT', price: 102.34, change: 2.12, sector: 'Information Technology', eps: 6.35 },
-    { ticker: 'GASP', price: 38.56, change: -0.98, sector: 'Energy', eps: 3.11 },
-    { ticker: 'HARM', price: 312.45, change: 1.78, sector: 'Health Care', eps: 13.08 },
-    { ticker: 'ZAPP', price: 27.67, change: 3.45, sector: 'Communication Services', eps: 1.61 },
-    { ticker: 'MINR', price: 67.89, change: -1.45, sector: 'Materials', eps: 4.40 },
-    { ticker: 'LUXR', price: 198.56, change: 2.98, sector: 'Consumer Discretionary', eps: 8.19 },
-    { ticker: 'ELEC', price: 54.34, change: 0.45, sector: 'Utilities', eps: 4.73 },
-    { ticker: 'XACT', price: 176.45, change: -2.34, sector: 'Industrials', eps: 11.83 },
-    { ticker: 'BLOC', price: 87.12, change: 1.76, sector: 'Real Estate', eps: 6.36 },
-    { ticker: 'GRNV', price: 123.45, change: 2.34, sector: 'Consumer Staples', eps: 6.23 },
-    { ticker: 'FIRM', price: 98.12, change: -0.98, sector: 'Financials', eps: 7.32 },
-    { ticker: 'KYTE', price: 56.78, change: 1.89, sector: 'Energy', eps: 4.30 },
-    { ticker: 'PLAS', price: 87.34, change: 0.56, sector: 'Materials', eps: 6.02 },
-    { ticker: 'INVO', price: 143.23, change: -1.12, sector: 'Industrials', eps: 6.76 },
-    { ticker: 'RAZE', price: 67.45, change: 2.76, sector: 'Utilities', eps: 5.87 },
-    { ticker: 'BEAC', price: 212.34, change: 3.56, sector: 'Information Technology', eps: 7.64 },
-    { ticker: 'GENE', price: 78.23, change: 0.98, sector: 'Health Care', eps: 3.74 },
-    { ticker: 'SAND', price: 45.34, change: -0.78, sector: 'Communication Services', eps: 3.02 },
-    { ticker: 'WELD', price: 123.89, change: 1.45, sector: 'Materials', eps: 6.77 },
-    { ticker: 'RISE', price: 89.67, change: 2.45, sector: 'Consumer Discretionary', eps: 4.01 },
-    { ticker: 'CRED', price: 67.34, change: -1.23, sector: 'Financials', eps: 6.88 },
-    { ticker: 'FLIT', price: 54.78, change: 0.76, sector: 'Utilities', eps: 4.28 },
-    { ticker: 'LAVA', price: 98.45, change: 2.98, sector: 'Energy', eps: 4.58 },
-    { ticker: 'SPIN', price: 176.23, change: -1.67, sector: 'Industrials', eps: 12.23 },
-    { ticker: 'NOVA', price: 56.34, change: 1.56, sector: 'Real Estate', eps: 3.35 },
-    { ticker: 'SOLN', price: 123.78, change: 3.45, sector: 'Consumer Staples', eps: 6.65 },
-    { ticker: 'CLAR', price: 87.12, change: 0.98, sector: 'Health Care', eps: 4.13 },
-    { ticker: 'WATT', price: 67.45, change: -0.67, sector: 'Information Technology', eps: 2.67 },
-    { ticker: 'VEST', price: 54.67, change: 2.34, sector: 'Financials', eps: 5.87 },
-    { ticker: 'ALFA', price: 89.34, change: -1.12, sector: 'Consumer Discretionary', eps: 7.78 },
-    { ticker: 'HEAT', price: 176.45, change: 1.89, sector: 'Energy', eps: 4.51 },
-    { ticker: 'LOOP', price: 45.78, change: 2.56, sector: 'Communication Services', eps: 3.02 },
-    { ticker: 'ECHO', price: 143.12, change: -2.34, sector: 'Industrials', eps: 6.78 },
-    { ticker: 'SHLD', price: 67.89, change: 0.76, sector: 'Materials', eps: 5.83 },
-    { ticker: 'TORN', price: 212.34, change: 3.12, sector: 'Information Technology', eps: 7.40 },
-    { ticker: 'CUBE', price: 78.45, change: -0.98, sector: 'Real Estate', eps: 5.80 },
-    { ticker: 'CYCL', price: 54.89, change: 1.23, sector: 'Utilities', eps: 5.08 },
-    { ticker: 'GIGA', price: 98.34, change: 2.78, sector: 'Energy', eps: 5.41 },
-    { ticker: 'VORT', price: 123.45, change: -1.45, sector: 'Health Care', eps: 7.62 },
-    { ticker: 'POND', price: 67.34, change: 1.76, sector: 'Consumer Staples', eps: 3.83 },
-    { ticker: 'HARM', price: 143.67, change: 3.98, sector: 'Consumer Discretionary', eps: 5.79 },
-    { ticker: 'FUEL', price: 87.89, change: -2.34, sector: 'Industrials', eps: 5.34 },
-    { ticker: 'WAVE', price: 176.45, change: 1.56, sector: 'Utilities', eps: 6.54 },
-    { ticker: 'BOLT', price: 98.12, change: 0.45, sector: 'Energy', eps: 4.21 },
-    { ticker: 'LIFT', price: 123.78, change: -1.12, sector: 'Communication Services', eps: 6.95 },
-    { ticker: 'ELEV', price: 78.34, change: 2.89, sector: 'Materials', eps: 4.89 },
-    { ticker: 'GRIP', price: 54.45, change: -0.76, sector: 'Financials', eps: 3.67 },
-    { ticker: 'ZONE', price: 212.34, change: 3.56, sector: 'Real Estate', eps: 6.93 },
-    { ticker: 'CONE', price: 67.78, change: 1.12, sector: 'Information Technology', eps: 6.97 },
+    { ticker: 'ASTC', price: 153.42, change: 2.45, sector: 'Industrials', eps: 8.29, outstandingShares: 50_000_000 },
+    { ticker: 'GRBX', price: 27.85, change: -0.32, sector: 'Energy', eps: 1.95, outstandingShares: 120_000_000 },
+    { ticker: 'HMTL', price: 345.68, change: 1.12, sector: 'Health Care', eps: 15.23, outstandingShares: 25_000_000 },
+    { ticker: 'FNXY', price: 92.30, change: -1.67, sector: 'Financials', eps: 7.16, outstandingShares: 75_000_000 },
+    { ticker: 'CNTK', price: 18.45, change: 0.56, sector: 'Consumer Staples', eps: 0.97, outstandingShares: 200_000_000 },
+    { ticker: 'GLMT', price: 57.19, change: 1.03, sector: 'Information Technology', eps: 2.25, outstandingShares: 150_000_000 },
+    { ticker: 'VTRD', price: 42.76, change: -0.78, sector: 'Materials', eps: 2.71, outstandingShares: 85_000_000 },
+    { ticker: 'TRFX', price: 66.21, change: 2.34, sector: 'Utilities', eps: 5.66, outstandingShares: 90_000_000 },
+    { ticker: 'PXNL', price: 15.97, change: -0.12, sector: 'Communication Services', eps: 1.63, outstandingShares: 300_000_000 },
+    { ticker: 'AETH', price: 210.43, change: 3.67, sector: 'Consumer Discretionary', eps: 7.71, outstandingShares: 40_000_000 },
+    { ticker: 'DRVN', price: 84.56, change: -0.23, sector: 'Industrials', eps: 5.12, outstandingShares: 100_000_000 },
+    { ticker: 'SUNR', price: 32.12, change: 1.89, sector: 'Energy', eps: 1.60, outstandingShares: 220_000_000 },
+    { ticker: 'MEDX', price: 452.23, change: 2.11, sector: 'Health Care', eps: 15.23, outstandingShares: 18_000_000 },
+    { ticker: 'CAPF', price: 110.50, change: -1.45, sector: 'Financials', eps: 10.52, outstandingShares: 60_000_000 },
+    { ticker: 'NATF', price: 24.78, change: 0.45, sector: 'Consumer Staples', eps: 1.82, outstandingShares: 190_000_000 },
+    { ticker: 'CODE', price: 82.34, change: 3.21, sector: 'Information Technology', eps: 2.85, outstandingShares: 130_000_000 },
+    { ticker: 'STEL', price: 47.89, change: -0.56, sector: 'Materials', eps: 3.15, outstandingShares: 95_000_000 },
+    { ticker: 'ECOG', price: 54.90, change: 1.87, sector: 'Utilities', eps: 4.46, outstandingShares: 140_000_000 },
+    { ticker: 'VIDE', price: 21.45, change: 0.67, sector: 'Communication Services', eps: 1.22, outstandingShares: 280_000_000 },
+    { ticker: 'LUXY', price: 315.67, change: 2.45, sector: 'Consumer Discretionary', eps: 13.49, outstandingShares: 30_000_000 },
+    { ticker: 'LOGI', price: 67.12, change: 0.98, sector: 'Information Technology', eps: 2.51, outstandingShares: 120_000_000 },
+    { ticker: 'SPHR', price: 135.45, change: 1.45, sector: 'Industrials', eps: 6.51, outstandingShares: 80_000_000 },
+    { ticker: 'HYDN', price: 39.24, change: -1.12, sector: 'Energy', eps: 3.44, outstandingShares: 190_000_000 },
+    { ticker: 'BIOM', price: 268.78, change: 3.45, sector: 'Health Care', eps: 10.93, outstandingShares: 22_000_000 },
+    { ticker: 'WLTN', price: 98.45, change: -2.13, sector: 'Financials', eps: 9.94, outstandingShares: 50_000_000 },
+    { ticker: 'PURE', price: 56.12, change: 0.32, sector: 'Consumer Staples', eps: 3.07, outstandingShares: 180_000_000 },
+    { ticker: 'TECH', price: 145.76, change: 2.67, sector: 'Information Technology', eps: 4.86, outstandingShares: 95_000_000 },
+    { ticker: 'GOLD', price: 65.43, change: -0.89, sector: 'Materials', eps: 4.85, outstandingShares: 70_000_000 },
+
+    { ticker: 'STREAM', price: 34.12, change: 0.78, sector: 'Communication Services', eps: 2.08, outstandingShares: 250_000_000 },
+    { ticker: 'FANC', price: 403.21, change: 2.89, sector: 'Consumer Discretionary', eps: 14.15, outstandingShares: 15_000_000 },
+    { ticker: 'SKYH', price: 122.78, change: 3.45, sector: 'Industrials', eps: 8.35, outstandingShares: 65_000_000 },
+    { ticker: 'WIND', price: 48.34, change: -0.56, sector: 'Energy', eps: 2.52, outstandingShares: 230_000_000 },
+    { ticker: 'GENX', price: 372.23, change: 1.98, sector: 'Health Care', eps: 17.01, outstandingShares: 12_000_000 },
+    { ticker: 'FINT', price: 140.67, change: -1.34, sector: 'Financials', eps: 12.45, outstandingShares: 55_000_000 },
+    { ticker: 'ORGN', price: 62.34, change: 0.21, sector: 'Consumer Staples', eps: 3.50, outstandingShares: 170_000_000 },
+    { ticker: 'NETX', price: 178.90, change: 3.12, sector: 'Information Technology', eps: 6.78, outstandingShares: 75_000_000 },
+    { ticker: 'BRCK', price: 49.12, change: -1.67, sector: 'Materials', eps: 3.17, outstandingShares: 85_000_000 },
+    { ticker: 'AQUA', price: 72.45, change: 2.34, sector: 'Utilities', eps: 5.53, outstandingShares: 110_000_000 },
+    { ticker: 'TALK', price: 41.23, change: 1.23, sector: 'Communication Services', eps: 3.25, outstandingShares: 240_000_000 },
+    { ticker: 'BYTE', price: 210.45, change: 2.45, sector: 'Information Technology', eps: 7.16, outstandingShares: 30_000_000 },
+    { ticker: 'COTN', price: 48.67, change: -1.45, sector: 'Materials', eps: 3.18, outstandingShares: 100_000_000 },
+    { ticker: 'LITE', price: 29.45, change: 0.34, sector: 'Utilities', eps: 2.78, outstandingShares: 220_000_000 },
+    { ticker: 'MOVI', price: 64.34, change: -0.89, sector: 'Communication Services', eps: 3.81, outstandingShares: 210_000_000 },
+    { ticker: 'FEVR', price: 341.12, change: 3.67, sector: 'Consumer Discretionary', eps: 12.54, outstandingShares: 20_000_000 },
+    { ticker: 'BLZE', price: 45.67, change: -0.76, sector: 'Energy', eps: 3.09, outstandingShares: 160_000_000 },
+    { ticker: 'PRME', price: 78.23, change: 0.98, sector: 'Health Care', eps: 3.78, outstandingShares: 140_000_000 },
+    { ticker: 'GRND', price: 98.34, change: -1.45, sector: 'Materials', eps: 6.00, outstandingShares: 55_000_000 },
+    { ticker: 'SNAP', price: 143.89, change: 3.56, sector: 'Consumer Discretionary', eps: 5.92, outstandingShares: 45_000_000 },
+    { ticker: 'TYPH', price: 67.34, change: -0.34, sector: 'Utilities', eps: 6.18, outstandingShares: 130_000_000 },
+    { ticker: 'FLUX', price: 89.12, change: 1.76, sector: 'Industrials', eps: 6.15, outstandingShares: 100_000_000 },
+    { ticker: 'STOR', price: 156.78, change: -2.45, sector: 'Real Estate', eps: 8.61, outstandingShares: 50_000_000 },
+    { ticker: 'CREE', price: 45.12, change: 0.89, sector: 'Consumer Staples', eps: 3.61, outstandingShares: 160_000_000 },
+    { ticker: 'AURA', price: 312.45, change: 1.45, sector: 'Information Technology', eps: 11.61, outstandingShares: 22_000_000 },
+    { ticker: 'QUAD', price: 52.89, change: -1.34, sector: 'Financials', eps: 5.18, outstandingShares: 80_000_000 },
+    { ticker: 'ZENO', price: 89.67, change: 2.34, sector: 'Health Care', eps: 4.19, outstandingShares: 100_000_000 },
+    { ticker: 'PRSM', price: 67.34, change: 0.76, sector: 'Materials', eps: 4.24, outstandingShares: 85_000_000 },
+    { ticker: 'BETA', price: 145.67, change: -0.67, sector: 'Communication Services', eps: 6.14, outstandingShares: 125_000_000 },
+    { ticker: 'CYBR', price: 210.34, change: 3.12, sector: 'Information Technology', eps: 7.43, outstandingShares: 25_000_000 },
+    { ticker: 'FRNT', price: 56.78, change: 0.45, sector: 'Energy', eps: 4.18, outstandingShares: 190_000_000 },
+    { ticker: 'GALA', price: 78.45, change: -1.23, sector: 'Utilities', eps: 6.64, outstandingShares: 150_000_000 },
+    { ticker: 'NEON', price: 23.67, change: 1.89, sector: 'Consumer Discretionary', eps: 1.37, outstandingShares: 310_000_000 },
+    { ticker: 'CLIM', price: 98.45, change: 2.45, sector: 'Industrials', eps: 6.93, outstandingShares: 65_000_000 },
+    { ticker: 'SPRK', price: 120.45, change: -1.89, sector: 'Materials', eps: 6.21, outstandingShares: 70_000_000 },
+    { ticker: 'ORCA', price: 67.12, change: 0.98, sector: 'Health Care', eps: 3.34, outstandingShares: 90_000_000 },
+    { ticker: 'AERO', price: 143.56, change: 2.78, sector: 'Industrials', eps: 6.27, outstandingShares: 55_000_000 },
+    { ticker: 'FINN', price: 98.67, change: -0.76, sector: 'Financials', eps: 10.17, outstandingShares: 45_000_000 },
+    { ticker: 'VOLT', price: 34.56, change: 1.34, sector: 'Utilities', eps: 3.06, outstandingShares: 200_000_000 },
+    { ticker: 'CORE', price: 210.78, change: 3.89, sector: 'Information Technology', eps: 7.22, outstandingShares: 25_000_000 },
+    { ticker: 'SOLR', price: 76.89, change: 1.56, sector: 'Energy', eps: 3.77, outstandingShares: 110_000_000 },
+    { ticker: 'DRGN', price: 145.34, change: -2.34, sector: 'Consumer Discretionary', eps: 5.65, outstandingShares: 35_000_000 },
+    { ticker: 'CRWN', price: 56.78, change: 0.98, sector: 'Real Estate', eps: 3.81, outstandingShares: 130_000_000 },
+    { ticker: 'PULS', price: 123.45, change: -1.45, sector: 'Industrials', eps: 8.95, outstandingShares: 50_000_000 },
+    { ticker: 'LUNA', price: 87.34, change: 2.76, sector: 'Consumer Staples', eps: 4.83, outstandingShares: 140_000_000 },
+    { ticker: 'RUSH', price: 45.67, change: 1.89, sector: 'Communication Services', eps: 3.68, outstandingShares: 260_000_000 },
+    { ticker: 'HIVE', price: 178.45, change: -0.98, sector: 'Health Care', eps: 7.56, outstandingShares: 20_000_000 },
+    { ticker: 'BLNK', price: 64.78, change: 2.34, sector: 'Information Technology', eps: 2.50, outstandingShares: 160_000_000 },
+    { ticker: 'CRUX', price: 45.23, change: 0.76, sector: 'Materials', eps: 2.90, outstandingShares: 110_000_000 },
+    { ticker: 'WAVE', price: 89.34, change: -1.45, sector: 'Utilities', eps: 8.27, outstandingShares: 120_000_000 },
+    { ticker: 'ARCH', price: 134.78, change: 2.12, sector: 'Consumer Discretionary', eps: 5.44, outstandingShares: 40_000_000 },
+    { ticker: 'ZENI', price: 78.12, change: -0.34, sector: 'Industrials', eps: 5.83, outstandingShares: 90_000_000 },
+    { ticker: 'GLXY', price: 56.45, change: 1.45, sector: 'Energy', eps: 4.38, outstandingShares: 180_000_000 },
+    { ticker: 'BOND', price: 67.89, change: 0.67, sector: 'Financials', eps: 7.14, outstandingShares: 70_000_000 },
+    { ticker: 'ALTN', price: 98.23, change: 1.89, sector: "Health Care", eps: 4.53, outstandingShares: 150000000 },
+    { ticker: 'FOXD', price: 123.45, change: -1.67, sector: "Communication Services", eps: 7.35, outstandingShares: 250000000 },
+    { ticker: 'JUMP', price: 89.67, change: 2.34, sector: "Consumer Discretionary", eps: 3.96, outstandingShares: 100000000 },
+    { ticker: 'QUAK', price: 56.23, change: 0.76, sector: "Real Estate", eps: 3.93, outstandingShares: 80000000 },
+    { ticker: 'FLASH', price: 78.89, change: -0.98, sector: "Information Technology", eps: 2.97, outstandingShares: 200000000 },
+    { ticker: 'FUME', price: 145.34, change: 2.45, sector: "Industrials", eps: 7.34, outstandingShares: 50000000 },
+  
+    { ticker: 'RADI', price: 210.56, change: 3.12, sector: "Energy", eps: 6.67, outstandingShares: 40000000 },
+    { ticker: 'GLOO', price: 89.45, change: 1.78, sector: "Materials", eps: 6.11, outstandingShares: 100000000 },
+    { ticker: 'ORBT', price: 102.34, change: 2.12, sector: "Information Technology", eps: 6.35, outstandingShares: 150000000 },
+    { ticker: 'GASP', price: 38.56, change: -0.98, sector: "Energy", eps: 3.11, outstandingShares: 180000000 },
+    { ticker: 'HARM', price: 312.45, change: 1.78, sector: "Health Care", eps: 13.08, outstandingShares: 30000000 },
+    { ticker: 'ZAPP', price: 27.67, change: 3.45, sector: "Communication Services", eps: 1.61, outstandingShares: 220000000 },
+    { ticker: 'MINR', price: 67.89, change: -1.45, sector: "Materials", eps: 4.40, outstandingShares: 75000000 },
+    { ticker: 'LUXR', price: 198.56, change: 2.98, sector: "Consumer Discretionary", eps: 8.19, outstandingShares: 40000000 },
+    { ticker: 'ELEC', price: 54.34, change: 0.45, sector: "Utilities", eps: 4.73, outstandingShares: 100000000 },
+    { ticker: 'XACT', price: 176.45, change: -2.34, sector: "Industrials", eps: 11.83, outstandingShares: 45000000 },
+    { ticker: 'BLOC', price: 87.12, change: 1.76, sector: "Real Estate", eps: 6.36, outstandingShares: 85000000 },
+    { ticker: 'GRNV', price: 123.45, change: 2.34, sector: "Consumer Staples", eps: 6.23, outstandingShares: 90000000 },
+    { ticker: 'FIRM', price: 98.12, change: -0.98, sector: "Financials", eps: 7.32, outstandingShares: 110000000 },
+    { ticker: 'KYTE', price: 56.78, change: 1.89, sector: "Energy", eps: 4.30, outstandingShares: 160000000 },
+    { ticker: 'PLAS', price: 87.34, change: 0.56, sector: "Materials", eps: 6.02, outstandingShares: 120000000 },
+    { ticker: 'INVO', price: 143.23, change: -1.12, sector: "Industrials", eps: 6.76, outstandingShares: 70000000 },
+    { ticker: 'RAZE', price: 67.45, change: 2.76, sector: "Utilities", eps: 5.87, outstandingShares: 95000000 },
+    { ticker: 'BEAC', price: 212.34, change: 3.56, sector: "Information Technology", eps: 7.64, outstandingShares: 50000000 },
+    { ticker: 'GENE', price: 78.23, change: 0.98, sector: "Health Care", eps: 3.74, outstandingShares: 180000000 },
+    { ticker: 'SAND', price: 45.34, change: -0.78, sector: "Communication Services", eps: 3.02, outstandingShares: 220000000 },
+    { ticker: 'WELD', price: 123.89, change: 1.45, sector: "Materials", eps: 6.77, outstandingShares: 95000000 },
+    { ticker: 'RISE', price: 89.67, change: 2.45, sector: "Consumer Discretionary", eps: 4.01, outstandingShares: 80000000 },
+    { ticker: 'CRED', price: 67.34, change: -1.23, sector: "Financials", eps: 6.88, outstandingShares: 110000000 },
+    { ticker: 'FLIT', price: 54.78, change: 0.76, sector: "Utilities", eps: 4.28, outstandingShares: 130000000 },
+    { ticker: 'LAVA', price: 98.45, change: 2.98, sector: "Energy", eps: 4.58, outstandingShares: 140000000 },
+    { ticker: 'SPIN', price: 176.23, change: -1.67, sector: "Industrials", eps: 12.23, outstandingShares: 60000000 },
+    { ticker: 'NOVA', price: 56.34, change: 1.56, sector: "Real Estate", eps: 3.35, outstandingShares: 85000000 },
+    { ticker: 'SOLN', price: 123.78, change: 3.45, sector: "Consumer Staples", eps: 6.65, outstandingShares: 95000000 },
+    { ticker: 'CLAR', price: 87.12, change: 0.98, sector: "Health Care", eps: 4.13, outstandingShares: 180000000 },
+    { ticker: 'WATT', price: 67.45, change: -0.67, sector: "Information Technology", eps: 2.67, outstandingShares: 200000000 },
+    { ticker: 'VEST', price: 54.67, change: 2.34, sector: "Financials", eps: 5.87, outstandingShares: 110000000 },
+    { ticker: 'ALFA', price: 89.34, change: -1.12, sector: "Consumer Discretionary", eps: 7.78, outstandingShares: 70000000 },
+    { ticker: 'HEAT', price: 176.45, change: 1.89, sector: "Energy", eps: 4.51, outstandingShares: 45000000 },
+    { ticker: 'LOOP', price: 45.78, change: 2.56, sector: "Communication Services", eps: 3.02, outstandingShares: 220000000 },
+    { ticker: 'ECHO', price: 143.12, change: -2.34, sector: "Industrials", eps: 6.78, outstandingShares: 80000000 },
+    { ticker: 'SHLD', price: 67.89, change: 0.76, sector: "Materials", eps: 5.83, outstandingShares: 100000000 },
+    { ticker: 'TORN', price: 212.34, change: 3.12, sector: "Information Technology", eps: 7.40, outstandingShares: 50000000 },
+    { ticker: 'CUBE', price: 78.45, change: -0.98, sector: "Real Estate", eps: 5.80, outstandingShares: 90000000 },
+    { ticker: 'CYCL', price: 54.89, change: 1.23, sector: "Utilities", eps: 5.08, outstandingShares: 110000000 },
+    { ticker: 'GIGA', price: 98.34, change: 2.78, sector: "Energy", eps: 5.41, outstandingShares: 60000000 },
+    { ticker: 'VORT', price: 123.45, change: -1.45, sector: "Health Care", eps: 7.62, outstandingShares: 45000000 },
+    { ticker: 'POND', price: 67.34, change: 1.76, sector: "Consumer Staples", eps: 3.83, outstandingShares: 110000000 },
+    { ticker: 'FUEL', price: 87.89, change: -2.34, sector: "Industrials", eps: 5.34, outstandingShares: 75000000 },
+
+    { ticker: 'BOLT', price: 98.12, change: 0.45, sector: "Energy", eps: 4.21, outstandingShares: 160000000 },
+    { ticker: 'LIFT', price: 123.78, change: -1.12, sector: "Communication Services", eps: 6.95, outstandingShares: 150000000 },
+    { ticker: 'ELEV', price: 78.34, change: 2.89, sector: "Materials", eps: 4.89, outstandingShares: 90000000 },
+    { ticker: 'GRIP', price: 54.45, change: -0.76, sector: "Financials", eps: 3.67, outstandingShares: 110000000 },
+    { ticker: 'ZONE', price: 212.34, change: 3.56, sector: "Real Estate", eps: 6.93, outstandingShares: 50000000 },
+    { ticker: 'CONE', price: 67.78, change: 1.12, sector: "Information Technology", eps: 6.97, outstandingShares: 140000000 }
 ];
 
 stocks.forEach((stock) => {
-    stock.peRatio = stock.price / stock.eps;
+    stock.peRatio = (stock.price / stock.eps).toFixed(2);
+
 });
 
 let newsData = require('./news.json');
@@ -183,7 +180,54 @@ weights = {
 };
 let marketSentiment = 0; 
 let currentNews = null; 
-const tradeWindow = 1000; // 30 seconds 
+const tradeWindow = 10000; // 30 seconds 
+
+
+//debug
+console.log("ary: ", stocks);
+
+//const tickers = stocks.map((stock) => stock.ticker);
+//const duplicates = tickers.filter((ticker, index, self) => self.indexOf(ticker) !== index);
+//console.log("Duplicate tickers found:", duplicates);
+
+
+
+let marketIndex = 0;
+let initialIndex = 0;
+
+function calculateMarketIndex() {
+    if (stocks.length === 0) return 0;
+
+    const totalPrice = stocks.reduce((sum, stock) => {
+        if (isNaN(stock.price)) {
+            console.error("Invalid stock price detected:", stock);
+            return sum;
+        }
+        return sum + stock.price;
+    }, 0);
+
+    marketIndex = totalPrice / stocks.length;
+
+    if (isNaN(marketIndex)) {
+        console.error("Market index calculation failed. Total price:", totalPrice);
+        return;
+    }
+
+    if (initialIndex === 0) initialIndex = marketIndex;
+
+    return marketIndex;
+}
+
+
+
+
+
+function getIndexPerformance() {
+// where performance is a percentage
+    if (initialIndex === 0) return 0;
+    return ((marketIndex - initialIndex) / initialIndex) * 100;
+}
+
 
 function ogHistory(stock) {
     const history = [];
@@ -200,7 +244,6 @@ function ogHistory(stock) {
 
 stocks.forEach((stock) => {
     stock.history = ogHistory(stock);
-
 })
 
 function getRandomNews() {
@@ -281,6 +324,7 @@ function applyImpactToStocks(newsItem, stocks, weight, sensitivity) {
         // Update stock change percentage
         const previousPrice = stock.history[stock.history.length - 2] || stock.price;
         stock.change = parseFloat(((newPrice - previousPrice) / previousPrice * 100).toFixed(2));
+        calculateMarketIndex();
     });
 }
 
@@ -288,7 +332,7 @@ function applyImpactToStocks(newsItem, stocks, weight, sensitivity) {
 function updateAppState() {
     const currentNewsItems = [];
 
-    // Global News
+
     const globalNews = getGlobalNews();
     if (globalNews) {
         currentNewsItems.push({
@@ -300,7 +344,7 @@ function updateAppState() {
     }
 
 
-    // Sector News
+ 
     const sectorNews = getSectorNews();
     if (sectorNews && sectorNews.sector) {
         currentNewsItems.push({
@@ -312,7 +356,7 @@ function updateAppState() {
         applyImpactToStocks(sectorNews, stocks, weights.sector);
     }
 
-    // Stock-Specific News
+
     const stockSpecificNews = getRandomNews();
     if (stockSpecificNews && stockSpecificNews.ticker) {
         currentNewsItems.push({
@@ -331,7 +375,7 @@ function updateAppState() {
 }
 
 
-// Periodically fetch new news and apply impact
+
 setInterval(() => {
     updateAppState();
 }, tradeWindow); // Refresh every 30 seconds
@@ -422,9 +466,17 @@ app.get('/api/market-sentiment', (req, res) => {
    // console.log("GET /api/market-sentiment CALLED");
     res.json(marketSentiment);
 });
+
+app.get('/api/market-index', (req, res) => {
+    res.json({
+        indexValue: marketIndex.toFixed(2),
+        performance: getIndexPerformance().toFixed(2),
+    });
+});
+
 app.get('/api/balance', (req, res) => {
    // console.log("GET /api/balance CALLED");
-    res.json({ balance: clientBalance });
+    res.json({ balance: userPortfolio.balance });
 });
 
 app.post('/api/balance', (req, res) => {

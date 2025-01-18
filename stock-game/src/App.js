@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import StockDetail from './components/StockDetail';
 import Portfolio from './components/Portfolio';
 import Watchlist from './components/Watchlist';
+import MarketIndex from './components/MarketIndex';
 //hooks
 import useAppSync from './hooks/useAppSync';
 
@@ -192,7 +193,7 @@ function App() {
                                 {stock.change > 0 ? '+' : ''}
                                 {typeof stock.change === 'number' ? stock.change.toFixed(2) : '0.00'}%
                             </td>
-                            <td>{stock.peRatio ? stock.peRatio.toFixed(2) : 'N/A'}</td>
+                            <td>{stock.peRatio ? stock.peRatio : 'N/A'}</td>
                             <td>
                                 <button
                                     onClick={() => {
@@ -228,6 +229,7 @@ function App() {
     // Add a Watchlist route and component
     return (
         <BrowserRouter>
+            <MarketIndex />
             <Routes>
                 <Route path="/" element={<StockList />} />
                 <Route path="/stock/:ticker" element={<StockDetail />} />
