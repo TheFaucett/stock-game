@@ -49,7 +49,6 @@ const stocks = [
     { ticker: 'PURE', price: 56.12, change: 0.32, sector: 'Consumer Staples', eps: 3.07, outstandingShares: 180_000_000 },
     { ticker: 'TECH', price: 145.76, change: 2.67, sector: 'Information Technology', eps: 4.86, outstandingShares: 95_000_000 },
     { ticker: 'GOLD', price: 65.43, change: -0.89, sector: 'Materials', eps: 4.85, outstandingShares: 70_000_000 },
-
     { ticker: 'STREAM', price: 34.12, change: 0.78, sector: 'Communication Services', eps: 2.08, outstandingShares: 250_000_000 },
     { ticker: 'FANC', price: 403.21, change: 2.89, sector: 'Consumer Discretionary', eps: 14.15, outstandingShares: 15_000_000 },
     { ticker: 'SKYH', price: 122.78, change: 3.45, sector: 'Industrials', eps: 8.35, outstandingShares: 65_000_000 },
@@ -110,7 +109,6 @@ const stocks = [
     { ticker: 'QUAK', price: 56.23, change: 0.76, sector: "Real Estate", eps: 3.93, outstandingShares: 80000000 },
     { ticker: 'FLASH', price: 78.89, change: -0.98, sector: "Information Technology", eps: 2.97, outstandingShares: 200000000 },
     { ticker: 'FUME', price: 145.34, change: 2.45, sector: "Industrials", eps: 7.34, outstandingShares: 50000000 },
-  
     { ticker: 'RADI', price: 210.56, change: 3.12, sector: "Energy", eps: 6.67, outstandingShares: 40000000 },
     { ticker: 'GLOO', price: 89.45, change: 1.78, sector: "Materials", eps: 6.11, outstandingShares: 100000000 },
     { ticker: 'ORBT', price: 102.34, change: 2.12, sector: "Information Technology", eps: 6.35, outstandingShares: 150000000 },
@@ -154,7 +152,6 @@ const stocks = [
     { ticker: 'VORT', price: 123.45, change: -1.45, sector: "Health Care", eps: 7.62, outstandingShares: 45000000 },
     { ticker: 'POND', price: 67.34, change: 1.76, sector: "Consumer Staples", eps: 3.83, outstandingShares: 110000000 },
     { ticker: 'FUEL', price: 87.89, change: -2.34, sector: "Industrials", eps: 5.34, outstandingShares: 75000000 },
-
     { ticker: 'BOLT', price: 98.12, change: 0.45, sector: "Energy", eps: 4.21, outstandingShares: 160000000 },
     { ticker: 'LIFT', price: 123.78, change: -1.12, sector: "Communication Services", eps: 6.95, outstandingShares: 150000000 },
     { ticker: 'ELEV', price: 78.34, change: 2.89, sector: "Materials", eps: 4.89, outstandingShares: 90000000 },
@@ -165,7 +162,7 @@ const stocks = [
 
 stocks.forEach((stock) => {
     stock.peRatio = (stock.price / stock.eps).toFixed(2);
-
+    stock.dividendYield = (stock.eps * 0.4) / stock.price; //using 40% as a payout ratio
 });
 
 let newsData = require('./news.json');
@@ -180,7 +177,7 @@ weights = {
 };
 let marketSentiment = 0; 
 let currentNews = null; 
-const tradeWindow = 10000; // 30 seconds 
+const tradeWindow = 1000; // 30 seconds 
 
 
 //debug
@@ -228,6 +225,32 @@ function getIndexPerformance() {
     return ((marketIndex - initialIndex) / initialIndex) * 100;
 }
 
+function distributeDividends() {
+    const dividendRecords = [];
+
+    for (const stock of stocks) {
+        if (!stock.dividendYield) continue; // Skip stocks without dividends
+
+        const dividendPerShare = (stock.dividendYield / 100) * stock.price;
+        console.log("DEBUG SIGNAL: ", userPortfolio.ownedShares);
+        for (const [ticker, sharesOwned] of Object.entries(userPortfolio.ownedShares)) {
+            if (ticker === stock.ticker) {
+                const dividend = sharesOwned * dividendPerShare;
+                userPortfolio.balance += dividend;
+                dividendRecords.push({
+                    ticker,
+                    sharesOwned,
+                    dividendPerShare: dividendPerShare.toFixed(2),
+                    totalDividend: dividend.toFixed(2),
+                    date: new Date().toISOString(),
+                });
+            }
+        }
+    }
+
+    console.log('Dividends distributed:', dividendRecords);
+    return dividendRecords;
+}
 
 function ogHistory(stock) {
     const history = [];
@@ -380,6 +403,9 @@ setInterval(() => {
     updateAppState();
 }, tradeWindow); // Refresh every 30 seconds
 
+setInterval(() => {
+    distributeDividends();
+}, tradeWindow * 10); // 10 times every tradewindow
 app.get('/api/portfolio', (req, res) => {
     res.json(userPortfolio);
 });
@@ -534,7 +560,8 @@ app.post('/api/sync-shares', (req, res) => {
 
     try {
         Object.keys(ownedShares).forEach((ticker) => {
-            ownedShares[ticker] = ownedShares[ticker];
+            userPortfolio.ownedShares[ticker] = ownedShares[ticker];
+            console.log(userPortfolio.ownedShares);
         });
 
         console.log('Owned shares after sync:', ownedShares);
