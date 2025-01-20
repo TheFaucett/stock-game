@@ -6,10 +6,15 @@ import StockDetail from './components/StockDetail';
 import Portfolio from './components/Portfolio';
 import Watchlist from './components/Watchlist';
 import MarketIndex from './components/MarketIndex';
-
-// Hooks
+//hooks
 import useAppSync from './hooks/useAppSync';
 
+//styles 
+import './styles/style.css';
+
+if (process.env.NODE_ENV === 'development') {
+    console.log('Development Mode');
+}
 function App() {
     const [stocks, setStocks] = useState([]);
     const [balance, setBalance] = useState(() => {
@@ -115,89 +120,40 @@ function App() {
     };
 
     const StockList = () => (
-        <div>
-            <h1>Stock List</h1>
-            <p>Balance: ${typeof balance === 'number' ? balance.toFixed(2) : '0.00'}</p>
-            <p>
-                Market Sentiment:{' '}
-                {marketSentiment > 0 ? 'Bullish' : marketSentiment < 0 ? 'Bearish' : 'Neutral'}
-            </p>
-            <Link to="/portfolio">Portfolio</Link>
-            <Link to="/watchlist" style={{ marginLeft: '15px' }}>
-                Watchlist
-            </Link>
-
-            {currentNews.length > 0 && (
-                <div style={{ border: '1px solid black', padding: '10px', margin: '10px 0' }}>
-                    <h3>Current News:</h3>
-                    {currentNews.map((newsItem, index) => (
-                        <p key={index}>
-                            <strong>{newsItem.type.toUpperCase()}</strong>: {newsItem.description}
-                            {newsItem.ticker && <span> (Ticker: {newsItem.ticker})</span>}
-                        </p>
-                    ))}
+        <div className="homepage-container">
+            {/* News Section */}
+            <div className="news-section">
+                <div className="news-box">
+                    <p><strong>GLOBAL:</strong> Lorem ipsum dolor sit amet</p>
+                    <p><strong>SECTOR:</strong> Lorem ipsum dolor sit amet</p>
+                    <p><strong>STOCK:</strong> Lorem ipsum dolor sit amet</p>
                 </div>
-            )}
+            </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Ticker</th>
-                        <th>Price</th>
-                        <th>Change (%)</th>
-                        <th>P/E Ratio</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {stocks.map((stock) => (
-                        <tr key={stock.ticker}>
-                            <td>
-                                <Link
-                                    to={`/stock/${stock.ticker}`}
-                                    style={{
-                                        color: stock.change > 0 ? 'green' : 'red',
-                                        textDecoration: 'none',
-                                    }}
-                                >
-                                    {stock.ticker}
-                                </Link>
-                            </td>
-                            <td>${stock.price.toFixed(2)}</td>
-                            <td
-                                style={{
-                                    color: stock.change > 0 ? 'green' : 'red',
-                                }}
-                            >
-                                {stock.change > 0 ? '+' : ''}
-                                {stock.change.toFixed(2)}%
-                            </td>
-                            <td>{stock.peRatio || 'N/A'}</td>
-                            <td>
-                                <button
-                                    onClick={() => {
-                                        const amount = prompt('Enter the number of shares to buy:');
-                                        if (amount) handleTransaction('buy', parseInt(amount, 10), stock.ticker);
-                                    }}
-                                >
-                                    Buy
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        const amount = prompt('Enter the number of shares to sell:');
-                                        if (amount) handleTransaction('sell', parseInt(amount, 10), stock.ticker);
-                                    }}
-                                >
-                                    Sell
-                                </button>
-                                <button onClick={() => addToWatchlist(stock.ticker)}>Add to Watchlist</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {/* Watchlist and Portfolio Section */}
+            <div className="main-section">
+                {/* Watchlist */}
+                <div className="watchlist-section">
+                    <h3>WATCHLIST</h3>
+                    <div className="watchlist-item">
+                        <img src="chart1.png" alt="Chart 1" />
+                        <p>LOREM</p>
+                    </div>
+                    <div className="watchlist-item">
+                        <img src="chart2.png" alt="Chart 2" />
+                        <p>IPSUM</p>
+                    </div>
+                </div>
+
+                {/* Portfolio */}
+                <div className="portfolio-section">
+                    <h3>PORTFOLIO</h3>
+                    <p>Lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet</p>
+                </div>
+            </div>
         </div>
     );
+
 
     return (
         <BrowserRouter>

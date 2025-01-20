@@ -1,6 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 
+const isProduction = process.env.NODE_ENV === 'production';
+console.log(`Running in ${isProduction ? 'production' : 'development'} mode`);
+
+
+
 
 const app = express();
 const PORT = 5000;
