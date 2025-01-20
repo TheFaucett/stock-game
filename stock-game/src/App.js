@@ -6,15 +6,13 @@ import StockDetail from './components/StockDetail';
 import Portfolio from './components/Portfolio';
 import Watchlist from './components/Watchlist';
 import MarketIndex from './components/MarketIndex';
-//hooks
+
+// Hooks
 import useAppSync from './hooks/useAppSync';
 
-//styles 
+// Styles
 import './styles/style.css';
 
-if (process.env.NODE_ENV === 'development') {
-    console.log('Development Mode');
-}
 function App() {
     const [stocks, setStocks] = useState([]);
     const [balance, setBalance] = useState(() => {
@@ -24,7 +22,6 @@ function App() {
 
     const [ownedShares, setOwnedShares] = useState(() => {
         const savedShares = localStorage.getItem('ownedShares');
-        console.log('Saved Shares:', savedShares);
         return savedShares ? JSON.parse(savedShares) : {};
     });
 
@@ -39,121 +36,89 @@ function App() {
     // Custom Hook to Sync State with Backend
     useAppSync(setStocks, setBalance, setCurrentNews, setMarketSentiment);
 
-    // Sync owned shares with backend on component mount
     useEffect(() => {
-        const syncStateWithBackend = async () => {
-            try {
-                const response = await fetch('http://localhost:5000/api/sync-shares', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ ownedShares }),
-                });
-                if (!response.ok) {
-                    throw new Error('Failed to sync owned shares with backend');
-                }
-                console.log('Owned shares synced successfully with backend');
-            } catch (error) {
-                console.error('Error syncing owned shares with backend:', error);
-            }
-        };
-
         if (Object.keys(ownedShares).length > 0) {
-            syncStateWithBackend();
+            fetch('http://localhost:5000/api/sync-shares', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ownedShares }),
+            })
+                .then((res) => res.ok && console.log('Owned shares synced successfully.'))
+                .catch((error) => console.error('Error syncing owned shares:', error));
         }
     }, [ownedShares]);
 
-    // Persist balance to localStorage
+    // Persist local state to `localStorage`
     useEffect(() => {
         localStorage.setItem('balance', balance);
     }, [balance]);
 
-    // Persist owned shares to localStorage
     useEffect(() => {
         localStorage.setItem('ownedShares', JSON.stringify(ownedShares));
     }, [ownedShares]);
 
-    // Persist watchlist to localStorage
     useEffect(() => {
         localStorage.setItem('watchlist', JSON.stringify(watchlist));
     }, [watchlist]);
-
-    const addToWatchlist = (ticker) => {
-        if (!watchlist.includes(ticker)) {
-            setWatchlist((prev) => [...prev, ticker]);
-        }
-    };
-
-    const removeFromWatchlist = (ticker) => {
-        setWatchlist((prev) => prev.filter((item) => item !== ticker));
-    };
-
-    const handleTransaction = (type, amount, ticker) => {
-        const stock = stocks.find((s) => s.ticker === ticker);
-        if (!stock) return alert('Stock not found!');
-
-        fetch('http://localhost:5000/api/balance', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ type, amount, ticker }),
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setBalance(data.balance);
-                setOwnedShares((prevShares) => {
-                    const updatedShares = { ...prevShares };
-                    if (type === 'buy') {
-                        updatedShares[ticker] = (updatedShares[ticker] || 0) + amount;
-                    } else if (type === 'sell') {
-                        updatedShares[ticker] -= amount;
-                        if (updatedShares[ticker] <= 0) {
-                            delete updatedShares[ticker];
-                        }
-                    }
-                    return updatedShares;
-                });
-            })
-            .catch((error) => console.error('Error processing transaction:', error));
-    };
 
     const StockList = () => (
         <div className="homepage-container">
             {/* News Section */}
             <div className="news-section">
                 <div className="news-box">
-                    <p><strong>GLOBAL:</strong> Lorem ipsum dolor sit amet</p>
-                    <p><strong>SECTOR:</strong> Lorem ipsum dolor sit amet</p>
-                    <p><strong>STOCK:</strong> Lorem ipsum dolor sit amet</p>
+                    {currentNews.length ? (
+                        currentNews.map((news, index) => (
+                            <p key={index}>
+                                <strong>{news.type.toUpperCase()}:</strong> {news.description}
+                                {news.ticker && <span> (Ticker: {news.ticker})</span>}
+                            </p>
+                        ))
+                    ) : (
+                        <p>No current news available.</p>
+                    )}
                 </div>
             </div>
 
-            {/* Watchlist and Portfolio Section */}
+            {/* Main Section */}
             <div className="main-section">
-                {/* Watchlist */}
+                {/* Watchlist Section */}
                 <div className="watchlist-section">
                     <h3>WATCHLIST</h3>
-                    <div className="watchlist-item">
-                        <img src="chart1.png" alt="Chart 1" />
-                        <p>LOREM</p>
-                    </div>
-                    <div className="watchlist-item">
-                        <img src="chart2.png" alt="Chart 2" />
-                        <p>IPSUM</p>
-                    </div>
+                    {watchlist.length ? (
+                        watchlist.map((ticker, index) => (
+                            <div key={index} className="watchlist-item">
+                                <img src={`https://via.placeholder.com/50`} alt={`Stock ${ticker}`} />
+                                <p>{ticker}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p>Your watchlist is empty.</p>
+                    )}
                 </div>
 
-                {/* Portfolio */}
+                {/* Portfolio Section */}
                 <div className="portfolio-section">
                     <h3>PORTFOLIO</h3>
-                    <p>Lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet</p>
+                    <p>
+                        <strong>Balance:</strong> ${balance.toFixed(2)}
+                    </p>
+                    {Object.keys(ownedShares).length > 0 ? (
+                        <ul>
+                            {Object.entries(ownedShares).map(([ticker, shares]) => (
+                                <li key={ticker}>
+                                    {ticker}: {shares} shares
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>You do not own any shares.</p>
+                    )}
                 </div>
             </div>
         </div>
     );
-
 
     return (
         <BrowserRouter>

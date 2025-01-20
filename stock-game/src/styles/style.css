@@ -1,19 +1,31 @@
-/* Homepage Layout */
+:root {
+    --bg-color: #f8f9fa;
+    --primary-color: #ffffff;
+    --accent-color: #007bff;
+    --text-color: #333;
+    --text-secondary: #555;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* General Layout */
 .homepage-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px;
     gap: 20px;
-    background-color: var(--bg-color);
-    color: var(--text-color);
 }
 
 /* News Section */
 .news-section {
     width: 100%;
-    display: flex;
-    justify-content: center;
+    max-width: 1200px;
     margin-bottom: 20px;
 }
 
@@ -21,36 +33,37 @@
     background-color: var(--primary-color);
     padding: 20px;
     border-radius: 10px;
-    color: var(--text-secondary);
     text-align: center;
-    width: 60%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Main Section (Watchlist + Portfolio) */
+/* Main Section */
 .main-section {
     display: flex;
     justify-content: space-between;
+    gap: 20px;
     width: 100%;
     max-width: 1200px;
-    gap: 20px;
 }
 
-/* Watchlist Section */
-.watchlist-section, .portfolio-section {
+/* Watchlist & Portfolio */
+.watchlist-section,
+.portfolio-section {
     flex: 1;
     background-color: var(--primary-color);
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.watchlist-section h3, .portfolio-section h3 {
+.watchlist-section h3,
+.portfolio-section h3 {
     color: var(--accent-color);
-    margin-bottom: 15px;
     text-align: center;
+    margin-bottom: 15px;
 }
 
+/* Watchlist Items */
 .watchlist-item {
     display: flex;
     align-items: center;
@@ -62,27 +75,15 @@
     height: 50px;
     margin-right: 10px;
     border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.watchlist-item p {
-    color: var(--text-secondary);
-}
-
-/* Portfolio Section */
-.portfolio-section p {
-    line-height: 1.5;
-    color: var(--text-secondary);
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     .main-section {
         flex-direction: column;
-        align-items: center;
     }
 
     .news-box {
-        width: 90%;
+        width: 100%;
     }
 }
