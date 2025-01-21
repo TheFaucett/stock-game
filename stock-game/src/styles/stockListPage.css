@@ -1,0 +1,104 @@
+/* Stock List Page Container */
+.stock-list-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #1e1e2f;
+    color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.stock-list-container h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #4caf50;
+}
+
+/* Table Styling */
+.stock-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+    font-size: 1rem;
+}
+
+.stock-list-table thead {
+    background-color: #282a36;
+    color: #ffffff;
+}
+
+.stock-list-table th, .stock-list-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+}
+
+.stock-list-table th {
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Table Row Styling */
+.stock-list-table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.stock-list-table tbody tr:hover {
+    background-color: #44475a;
+}
+
+/* Positive/Negative Change */
+.positive-change {
+    color: #4caf50; /* Green for positive change */
+    font-weight: bold;
+}
+
+.negative-change {
+    color: #f44336; /* Red for negative change */
+    font-weight: bold;
+}
+
+/* Stock Link */
+.stock-link {
+    color: #61dafb;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.stock-link:hover {
+    text-decoration: underline;
+}
+
+/* View Details Button */
+.view-details-button {
+    background-color: #4caf50;
+    color: #ffffff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.view-details-button:hover {
+    background-color: #388e3c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .stock-list-container {
+        padding: 10px;
+    }
+
+    .stock-list-table th, .stock-list-table td {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .stock-list-container h1 {
+        font-size: 1.5rem;
+    }
+}

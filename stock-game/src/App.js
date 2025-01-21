@@ -6,7 +6,7 @@ import StockDetail from './components/StockDetail';
 import Portfolio from './components/Portfolio';
 import Watchlist from './components/Watchlist';
 import MarketIndex from './components/MarketIndex';
-
+import StockListPage from './components/StockListPage';
 // Hooks
 import useAppSync from './hooks/useAppSync';
 
@@ -125,7 +125,8 @@ function App() {
             <MarketIndex />
             <Routes>
                 <Route path="/" element={<StockList />} />
-                <Route path="/stock/:ticker" element={<StockDetail />} />
+                <Route path="/stocks" element={<StockListPage stocks={stocks}/>} />
+                <Route path="/stocks/:ticker" element={<StockDetail />} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/watchlist" element={<Watchlist />} />
             </Routes>
