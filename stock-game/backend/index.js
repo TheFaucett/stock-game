@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 
+
 const isProduction = process.env.NODE_ENV === 'production';
 console.log(`Running in ${isProduction ? 'production' : 'development'} mode`);
 
@@ -174,13 +175,16 @@ let newsData = require('./news.json');
 let globalNewsData = require('./globalNews.json');
 let sectorNewsData = require('./sectorNews.json');
 
+
+
 weights = {
     global: 0.2,
     sector: 0.3,
     stock: 0.5
-
 };
 let marketSentiment = 0; 
+
+let pastNews = [];
 let currentNews = null; 
 const tradeWindow = 1000; // 30 seconds 
 
@@ -318,7 +322,7 @@ function getSectorNews() {
     };
 }
 
-function applyImpactToStocks(newsItem, stocks, weight, sensitivity) {
+function applyImpactToStocks(newsItem, stocks, weight, ) {
     // Determine affected stocks based on the news type
     const affectedStocks = newsItem.ticker
         ? stocks.filter((stock) => stock.ticker === newsItem.ticker)
@@ -360,46 +364,55 @@ function applyImpactToStocks(newsItem, stocks, weight, sensitivity) {
 function updateAppState() {
     const currentNewsItems = [];
 
-
+    // Process global news
     const globalNews = getGlobalNews();
     if (globalNews) {
         currentNewsItems.push({
-            type: 'global',
+            type: "global",
             description: globalNews.description,
             sentimentScore: globalNews.sentimentScore,
         });
         applyImpactToStocks(globalNews, stocks, weights.global);
+
     }
 
-
- 
+    // Process sector news
     const sectorNews = getSectorNews();
     if (sectorNews && sectorNews.sector) {
         currentNewsItems.push({
-            type: 'sector',
+            type: "sector",
             sector: sectorNews.sector,
             description: sectorNews.description,
             sentimentScore: sectorNews.sentimentScore,
         });
         applyImpactToStocks(sectorNews, stocks, weights.sector);
+
+
     }
 
-
+    // Process stock-specific news
     const stockSpecificNews = getRandomNews();
     if (stockSpecificNews && stockSpecificNews.ticker) {
         currentNewsItems.push({
-            type: 'stock',
+            type: "stock",
             ticker: stockSpecificNews.ticker,
             description: stockSpecificNews.description,
             sentimentScore: stockSpecificNews.sentimentScore,
+            time: new Date()
         });
         applyImpactToStocks(stockSpecificNews, stocks, weights.stock);
+
+
     }
 
-    // Update the global current news state
+    pastNews = [...pastNews, ...currentNewsItems];
+    if (pastNews.length > 100) {
+        pastNews.slice(100);
+    }
+    // Update the current news
     currentNews = currentNewsItems;
 
-    console.log('App state updated with news:', currentNews);
+    console.log("App state updated with news:", currentNews);
 }
 
 
@@ -463,7 +476,7 @@ app.get('/api/stocks', (req, res) => {
 
 app.get('/api/news', (req, res) => {
    // console.log("GET /api/news CALLED");
-    res.json(newsData);
+    res.json({ currentNews, pastNews});
 });
 
 app.get('/api/news/sector/:sector', (req, res) => {
@@ -493,6 +506,11 @@ app.get('/api/current-news', (req, res) => {
         res.status(404).json({ message: 'No news currently available.' });
     }
 });
+
+
+
+
+
 app.get('/api/market-sentiment', (req, res) => {
    // console.log("GET /api/market-sentiment CALLED");
     res.json(marketSentiment);

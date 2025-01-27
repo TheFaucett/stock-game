@@ -4,7 +4,7 @@ import PageWrapper from './PageWrapper';
 import '../styles/stockListPage.css';
 const StockListPage = ({ stocks }) => {
     return (
-        <PageWrapper>
+
 
             <div className="stock-list-container">
                 <h1>All Stocks</h1>
@@ -44,7 +44,7 @@ const StockListPage = ({ stocks }) => {
                     </tbody>
                 </table>
             </div>
-        </PageWrapper>
+
 
 
     );

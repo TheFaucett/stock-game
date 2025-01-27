@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 
 // Components
 import StockDetail from './components/StockDetail';
@@ -7,6 +7,7 @@ import Portfolio from './components/Portfolio';
 import Watchlist from './components/Watchlist';
 import MarketIndex from './components/MarketIndex';
 import StockListPage from './components/StockListPage';
+import NewsDashboard from './components/NewsDashboard';
 // Hooks
 import useAppSync from './hooks/useAppSync';
 
@@ -14,7 +15,7 @@ import useAppSync from './hooks/useAppSync';
 import './styles/style.css';
 
 function App() {
-    const [stocks, setStocks] = useState([]);
+    const [stocks, setStocks] = useState([]); 
     const [balance, setBalance] = useState(() => {
         const savedBalance = localStorage.getItem('balance');
         return savedBalance ? parseFloat(savedBalance) : 10000;
@@ -63,6 +64,9 @@ function App() {
         localStorage.setItem('watchlist', JSON.stringify(watchlist));
     }, [watchlist]);
 
+    // Use `useLocation` to determine the current route
+    const location = useLocation();
+
     const StockList = () => (
         <div className="homepage-container">
             {/* News Section */}
@@ -85,7 +89,9 @@ function App() {
             <div className="main-section">
                 {/* Watchlist Section */}
                 <div className="watchlist-section">
-                    <h3>WATCHLIST</h3>
+                    <Link to="/watchlist" className="watchlist-link">
+                        <h3>WATCHLIST</h3>
+                    </Link>
                     {watchlist.length ? (
                         watchlist.map((ticker, index) => (
                             <div key={index} className="watchlist-item">
@@ -100,7 +106,9 @@ function App() {
 
                 {/* Portfolio Section */}
                 <div className="portfolio-section">
-                    <h3>PORTFOLIO</h3>
+                    <Link to="/portfolio" className="portfolio-link">
+                        <h3>PORTFOLIO</h3>
+                    </Link>
                     <p>
                         <strong>Balance:</strong> ${balance.toFixed(2)}
                     </p>
@@ -121,16 +129,17 @@ function App() {
     );
 
     return (
-        <BrowserRouter>
-            <MarketIndex />
+        <>
+            {location.pathname === '/' && <MarketIndex />}
             <Routes>
                 <Route path="/" element={<StockList />} />
-                <Route path="/stocks" element={<StockListPage stocks={stocks}/>} />
-                <Route path="/stocks/:ticker" element={<StockDetail />} />
+                <Route path="/stocks" element={<StockListPage stocks={stocks} />} /> {/* Pass `stocks` prop */}
+                <Route path="/news-dashboard" element={<NewsDashboard />} />
+                <Route path="/stock/:ticker" element={<StockDetail />} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/watchlist" element={<Watchlist />} />
             </Routes>
-        </BrowserRouter>
+        </>
     );
 }
 
