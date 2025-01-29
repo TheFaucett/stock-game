@@ -1,28 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 
 // Components
-import StockDetail from './components/StockDetail';
-import Portfolio from './components/Portfolio';
-import Watchlist from './components/Watchlist';
-import MarketIndex from './components/MarketIndex';
-import StockListPage from './components/StockListPage';
-import NewsDashboard from './components/NewsDashboard';
+import StockDetail from "./components/StockDetail";
+import Portfolio from "./components/Portfolio";
+import Watchlist from "./components/Watchlist";
+import MarketIndex from "./components/MarketIndex";
+import StockListPage from "./components/StockListPage";
+import NewsDashboard from "./components/NewsDashboard";
 // Hooks
-import useAppSync from './hooks/useAppSync';
+import useAppSync from "./hooks/useAppSync";
 
 // Styles
-import './styles/style.css';
+import "./styles/style.css";
 
 function App() {
-    const [stocks, setStocks] = useState([]); 
+    const [stocks, setStocks] = useState([]);
     const [balance, setBalance] = useState(() => {
-        const savedBalance = localStorage.getItem('balance');
+        const savedBalance = localStorage.getItem("balance");
         return savedBalance ? parseFloat(savedBalance) : 10000;
     });
 
     const [ownedShares, setOwnedShares] = useState(() => {
-        const savedShares = localStorage.getItem('ownedShares');
+        const savedShares = localStorage.getItem("ownedShares");
         return savedShares ? JSON.parse(savedShares) : {};
     });
 
@@ -30,7 +30,7 @@ function App() {
     const [marketSentiment, setMarketSentiment] = useState(0);
 
     const [watchlist, setWatchlist] = useState(() => {
-        const savedWatchlist = localStorage.getItem('watchlist');
+        const savedWatchlist = localStorage.getItem("watchlist");
         return savedWatchlist ? JSON.parse(savedWatchlist) : [];
     });
 
@@ -39,29 +39,29 @@ function App() {
 
     useEffect(() => {
         if (Object.keys(ownedShares).length > 0) {
-            fetch('http://localhost:5000/api/sync-shares', {
-                method: 'POST',
+            fetch("http://localhost:5000/api/sync-shares", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ ownedShares }),
             })
-                .then((res) => res.ok && console.log('Owned shares synced successfully.'))
-                .catch((error) => console.error('Error syncing owned shares:', error));
+                .then((res) => res.ok && console.log("Owned shares synced successfully."))
+                .catch((error) => console.error("Error syncing owned shares:", error));
         }
     }, [ownedShares]);
 
     // Persist local state to `localStorage`
     useEffect(() => {
-        localStorage.setItem('balance', balance);
+        localStorage.setItem("balance", balance);
     }, [balance]);
 
     useEffect(() => {
-        localStorage.setItem('ownedShares', JSON.stringify(ownedShares));
+        localStorage.setItem("ownedShares", JSON.stringify(ownedShares));
     }, [ownedShares]);
 
     useEffect(() => {
-        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+        localStorage.setItem("watchlist", JSON.stringify(watchlist));
     }, [watchlist]);
 
     // Use `useLocation` to determine the current route
@@ -70,7 +70,11 @@ function App() {
     const StockList = () => (
         <div className="homepage-container">
             {/* News Section */}
-            <div className="news-section">
+            <div className="news-section card clickable">
+                <Link to="/news-dashboard" className="section-link">
+                    <h2>Latest News</h2>
+                </Link>
+                
                 <div className="news-box">
                     {currentNews.length ? (
                         currentNews.map((news, index) => (
@@ -88,14 +92,13 @@ function App() {
             {/* Main Section */}
             <div className="main-section">
                 {/* Watchlist Section */}
-                <div className="watchlist-section">
-                    <Link to="/watchlist" className="watchlist-link">
+                <div className="watchlist-section card clickable">
+                    <Link to="/watchlist" className="section-link">
                         <h3>WATCHLIST</h3>
                     </Link>
                     {watchlist.length ? (
                         watchlist.map((ticker, index) => (
                             <div key={index} className="watchlist-item">
-                                <img src={`https://via.placeholder.com/50`} alt={`Stock ${ticker}`} />
                                 <p>{ticker}</p>
                             </div>
                         ))
@@ -105,8 +108,8 @@ function App() {
                 </div>
 
                 {/* Portfolio Section */}
-                <div className="portfolio-section">
-                    <Link to="/portfolio" className="portfolio-link">
+                <div className="portfolio-section card clickable">
+                    <Link to="/portfolio" className="section-link">
                         <h3>PORTFOLIO</h3>
                     </Link>
                     <p>
@@ -130,10 +133,10 @@ function App() {
 
     return (
         <>
-            {location.pathname === '/' && <MarketIndex />}
+            {location.pathname === "/" && <MarketIndex />}
             <Routes>
                 <Route path="/" element={<StockList />} />
-                <Route path="/stocks" element={<StockListPage stocks={stocks} />} /> {/* Pass `stocks` prop */}
+                <Route path="/stocks" element={<StockListPage stocks={stocks} />} />
                 <Route path="/news-dashboard" element={<NewsDashboard />} />
                 <Route path="/stock/:ticker" element={<StockDetail />} />
                 <Route path="/portfolio" element={<Portfolio />} />

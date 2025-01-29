@@ -1,97 +1,61 @@
-:root {
-    --bg-color: #f8f9fa;
-    --primary-color: #ffffff;
-    --accent-color: #007bff;
-    --text-color: #333;
-    --text-secondary: #555;
-}
-
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-}
-
-/* General Layout */
-.homepage-container {
+/* Links */
+.section-link {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 20px;
-    gap: 20px;
+    justify-content: center;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    background-color: #00bcd4;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, transform 0.2s;
 }
 
-/* News Section */
-.news-section {
-    width: 100%;
-    max-width: 1200px;
+.section-link:hover {
+    background-color: #0097a7;
+    transform: translateY(-3px);
+}
+
+/* Card */
+.card {
+    background-color: #242424;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     margin-bottom: 20px;
 }
 
-.news-box {
-    background-color: var(--primary-color);
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.card.clickable {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.3s;
 }
 
-/* Main Section */
-.main-section {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    width: 100%;
-    max-width: 1200px;
+.card.clickable:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Typography */
+h3 {
+    font-size: 22px;
+    margin: 0;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+p {
+    margin: 10px 0;
 }
 
 /* Watchlist & Portfolio */
+.main-section {
+    display: flex;
+    gap: 20px;
+}
+
 .watchlist-section,
 .portfolio-section {
     flex: 1;
-    background-color: var(--primary-color);
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.watchlist-section h3,
-.portfolio-section h3 {
-    color: var(--accent-color);
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-/* Watchlist Items */
-.watchlist-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.watchlist-item img {
-    width: 50px;
-    height: 50px;
-    margin-right: 10px;
-    border-radius: 5px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .main-section {
-        flex-direction: column;
-    }
-
-    .news-box {
-        width: 100%;
-    }
-}
-.page-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: var(--primary-color);
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
