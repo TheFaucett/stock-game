@@ -189,14 +189,33 @@ let currentNews = null;
 const tradeWindow = 1000; // 30 seconds 
 
 
-//debug
-console.log("ary: ", stocks);
+let currentDate = new Date();
 
-//const tickers = stocks.map((stock) => stock.ticker);
-//const duplicates = tickers.filter((ticker, index, self) => self.indexOf(ticker) !== index);
-//console.log("Duplicate tickers found:", duplicates);
+function startTradingDay() {
+    stocks.forEach((stock) => {
+        stock.openPrice = stock.price;
+        stock.highPrice = stock.price;
+        stock.lowPrice = stock.price;
+    });
+
+}
 
 
+function endTradingDay() {
+    stocks.forEach((stock) => {
+        stock.closePrice = stock.price;
+    });
+
+
+}
+
+
+function newDay() {
+    endTradingDay();
+    currentDate.setDate(currentDate.getDate() + 1);
+    startTradingDay();
+}
+startTradingDay();
 
 let marketIndex = 0;
 let initialIndex = 0;
@@ -241,7 +260,7 @@ function distributeDividends() {
         if (!stock.dividendYield) continue; // Skip stocks without dividends
 
         const dividendPerShare = (stock.dividendYield / 100) * stock.price;
-        console.log("DEBUG SIGNAL: ", userPortfolio.ownedShares);
+      //  console.log("DEBUG SIGNAL: ", userPortfolio.ownedShares);
         for (const [ticker, sharesOwned] of Object.entries(userPortfolio.ownedShares)) {
             if (ticker === stock.ticker) {
                 const dividend = sharesOwned * dividendPerShare;
@@ -343,6 +362,11 @@ function applyImpactToStocks(newsItem, stocks, weight, ) {
         const newPrice = parseFloat((stock.price + totalImpact).toFixed(2));
         stock.price = newPrice;
 
+        stock.highPrice = Math.max(stock.highPrice, stock.price);
+        stock.lowPrice = Math.min(stock.lowPrice, stock.price);
+
+
+
         if (stock.history[stock.history.length - 1] !== newPrice) {
             stock.history.push(newPrice);
         }
@@ -398,7 +422,6 @@ function updateAppState() {
             ticker: stockSpecificNews.ticker,
             description: stockSpecificNews.description,
             sentimentScore: stockSpecificNews.sentimentScore,
-            time: new Date()
         });
         applyImpactToStocks(stockSpecificNews, stocks, weights.stock);
 
@@ -419,14 +442,23 @@ function updateAppState() {
 
 setInterval(() => {
     updateAppState();
-}, tradeWindow); // Refresh every 30 seconds
+}, tradeWindow); 
 
 setInterval(() => {
     distributeDividends();
-}, tradeWindow * 10); // 10 times every tradewindow
+}, tradeWindow * 10); // 
+
+setInterval(() => {
+    newDay();
+
+}, tradeWindow ); 
+
 app.get('/api/portfolio', (req, res) => {
     res.json(userPortfolio);
 });
+
+
+
 app.post('/api/portfolio/transaction', (req, res) => {
     const { type, ticker, shares, price } = req.body;
 
@@ -508,6 +540,19 @@ app.get('/api/current-news', (req, res) => {
 });
 
 
+app.get('/api/stocks/candlestick', (req, res) => {
+    console.log("GET /api/stocks/candlestick CALLED");
+    const candlestickData = stocks.map(stock => ({
+        ticker: stock.ticker,
+        open: stock.openPrice,
+        high: stock.highPrice,
+        low: stock.lowPrice,
+        close: stock.closePrice || stock.price, // If market hasn't closed, use latest price
+        date: currentDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+    }));
+
+    res.json(candlestickData);
+});
 
 
 
