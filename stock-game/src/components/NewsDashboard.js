@@ -7,7 +7,7 @@ const NewsDashboard = () => {
 
   useEffect(() => {
     fetchNews();
-    const interval = setInterval(fetchNews, 30000); // Fetch news every 30 seconds
+    const interval = setInterval(fetchNews, 1000); // Fetch news every 30 seconds
     return () => clearInterval(interval);
   }, []);
 

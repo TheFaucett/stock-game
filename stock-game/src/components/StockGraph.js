@@ -5,22 +5,33 @@ function StockGraph({ ticker, data, currentPrice }) {
     const [chartData, setChartData] = useState([]);
 
     useEffect(() => {
-        // Create chart data from historical prices
-        const updatedData = data.map((price, index) => ({
-            day: `Day ${index + 1}`,
-            price,
-        }));
+        // Update chartData incrementally, appending new data points
+        setChartData((prevChartData) => {
+            const updatedData = [...prevChartData];
 
-        // Add the latest price if it's not already in the data
-        if (updatedData[updatedData.length - 1]?.price !== currentPrice) {
-            updatedData.push({
-                day: `Day ${updatedData.length + 1}`,
-                price: currentPrice,
+            // Add new historical data points if they are not already in the chart
+            data.forEach((price, index) => {
+                const dayLabel = `Day ${index + 1}`;
+                if (!updatedData.find((entry) => entry.day === dayLabel)) {
+                    updatedData.push({ day: dayLabel, price });
+                }
             });
-        }
 
-        setChartData(updatedData);
-    }, [data, currentPrice]); // Re-run whenever `data` or `currentPrice` changes
+            // Add the latest price if it's not already in the chart
+            const latestDayLabel = `Day ${updatedData.length + 1}`;
+            if (
+                updatedData[updatedData.length - 1]?.price !== currentPrice &&
+                !updatedData.find((entry) => entry.day === latestDayLabel)
+            ) {
+                updatedData.push({
+                    day: latestDayLabel,
+                    price: currentPrice,
+                });
+            }
+
+            return updatedData;
+        });
+    }, [data, currentPrice]); // Only update when `data` or `currentPrice` changes
 
     return (
         <LineChart
