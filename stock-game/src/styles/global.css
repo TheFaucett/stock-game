@@ -1,0 +1,85 @@
+/* Set a gray background and white text globally */
+body {
+    background-color: #2b2b2b; /* Dark gray background */
+    color: #ffffff; /* White text */
+    font-family: 'Arial', sans-serif; /* Clean and simple font */
+    margin: 0;
+    padding: 0;
+}
+
+/* Center container for content */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+    color: #ffffff; /* White headings */
+    margin-bottom: 15px;
+}
+
+/* Links */
+a {
+    color: #4da6ff; /* Bright blue for links */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Buttons */
+button {
+    background-color: #4da6ff; /* Blue background */
+    color: #ffffff; /* White text */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #005f99; /* Darker blue on hover */
+}
+
+/* Cards and content containers */
+.card {
+    background-color: #383838; /* Slightly lighter gray for cards */
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Tables */
+table {
+    background-color: #383838;
+    color: #ffffff;
+    border-collapse: collapse;
+    width: 100%;
+    margin: 20px 0;
+}
+
+table th, table td {
+    border: 1px solid #4a4a4a; /* Slightly darker border */
+    padding: 10px;
+    text-align: left;
+}
+
+table th {
+    background-color: #4a4a4a; /* Darker header background */
+    color: #ffffff;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 10px 0;
+    background-color: #1f1f1f; /* Darker gray for footer */
+    color: #ffffff;
+    margin-top: 20px;
+    border-top: 1px solid #4a4a4a;
+}

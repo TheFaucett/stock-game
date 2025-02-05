@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import StockGraph from './StockGraph';
 import CandleChart from './CandleChart'; // Component for candlestick charts
 
+
 export default function StockDetail() {
     const { ticker } = useParams();
     const [stock, setStock] = useState(null);

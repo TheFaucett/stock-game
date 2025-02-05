@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+import '../styles/global.css';
 const MarketIndex = () => {
     const [indexValue, setIndexValue] = useState(null);
     const [performance, setPerformance] = useState(null);

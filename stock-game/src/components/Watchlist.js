@@ -1,3 +1,5 @@
+import '../styles/global.css';
+
 const Watchlist = ({ stocks = [], watchlist = [], onRemoveFromWatchlist = () => {} }) => {
     return (
         <div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/NewsDashboard.css"; // Import the CSS file
+import "../styles/global.css";
 
 const NewsDashboard = () => {
   const [news, setNews] = useState({ currentNews: [], pastNews: [] });
@@ -7,7 +8,7 @@ const NewsDashboard = () => {
 
   useEffect(() => {
     fetchNews();
-    const interval = setInterval(fetchNews, 1000); // Fetch news every 30 seconds
+    const interval = setInterval(fetchNews, 1000); // Fetch news every 30 seconds*
     return () => clearInterval(interval);
   }, []);
 

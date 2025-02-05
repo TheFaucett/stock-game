@@ -12,6 +12,7 @@ import NewsDashboard from "./components/NewsDashboard";
 import useAppSync from "./hooks/useAppSync";
 
 // Styles
+import "./styles/global.css";
 import "./styles/style.css";
 
 function App() {
