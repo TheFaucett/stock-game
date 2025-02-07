@@ -62,8 +62,19 @@ function App() {
     }, [ownedShares]);
 
     useEffect(() => {
+
         localStorage.setItem("watchlist", JSON.stringify(watchlist));
+        
     }, [watchlist]);
+    const addToWatchlist = (ticker) => {
+        setWatchlist((prevWatchlist) => {
+            if (!prevWatchlist.includes(ticker)) {
+                return [...prevWatchlist, ticker]; // Add the new ticker
+            }
+            return prevWatchlist; // Return the same state if already present
+        });
+    };
+
 
     // Use `useLocation` to determine the current route
     const location = useLocation();
@@ -128,6 +139,15 @@ function App() {
                         <p>You do not own any shares.</p>
                     )}
                 </div>
+                <div className="all-stocks-section card clickable">
+                    <Link to="/stocks" className="section-link">
+                        <h3>ALL STOCKS</h3>
+                    </Link>
+                    <p>Total Stocks: {stocks.length}</p>
+                <div/>
+            </div>
+
+
             </div>
         </div>
     );
@@ -139,9 +159,9 @@ function App() {
                 <Route path="/" element={<StockList />} />
                 <Route path="/stocks" element={<StockListPage stocks={stocks} />} />
                 <Route path="/news-dashboard" element={<NewsDashboard />} />
-                <Route path="/stock/:ticker" element={<StockDetail />} />
+                <Route path="/stock/:ticker" element={<StockDetail watchlist={watchlist} addToWatchlist={addToWatchlist} />} />
                 <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/watchlist" element={<Watchlist />} />
+                <Route path="/watchlist" element={<Watchlist watchlist={watchlist} />} />
             </Routes>
         </>
     );

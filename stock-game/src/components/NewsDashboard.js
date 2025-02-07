@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/NewsDashboard.css"; // Import the CSS file
-import "../styles/global.css";
+//import "../styles/global.css";
 
 const NewsDashboard = () => {
   const [news, setNews] = useState({ currentNews: [], pastNews: [] });

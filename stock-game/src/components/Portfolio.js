@@ -11,7 +11,13 @@ const Portfolio = () => {
     useEffect(() => {
         fetch('http://localhost:5000/api/portfolio')
             .then((response) => response.json())
-            .then((data) => setPortfolio(data))
+            .then((data) => {
+                // Filter out stocks with 0 shares
+                const filteredShares = Object.fromEntries(
+                    Object.entries(data.ownedShares).filter(([_, shares]) => shares > 0)
+                );
+                setPortfolio({ ...data, ownedShares: filteredShares });
+            })
             .catch((error) => console.error('Error fetching portfolio:', error));
     }, []);
 

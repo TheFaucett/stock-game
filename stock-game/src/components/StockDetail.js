@@ -1,28 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import StockGraph from './StockGraph';
-import CandleChart from './CandleChart'; // Component for candlestick charts
+import CandleChart from './CandleChart';
 
-
-export default function StockDetail() {
+export default function StockDetail({ watchlist, addToWatchlist, ownedShares = {}, setOwnedShares }) {
     const { ticker } = useParams();
     const [stock, setStock] = useState(null);
     const [priceHistory, setPriceHistory] = useState([]);
-    const [candleData, setCandleData] = useState([]);
     const [balance, setBalance] = useState(0);
     const [showCandlestick, setShowCandlestick] = useState(false);
 
     useEffect(() => {
-
         const fetchStockData = async () => {
             try {
                 const response = await fetch(`http://localhost:5000/api/stocks`);
                 const stocks = await response.json();
                 const selectedStock = stocks.find((s) => s.ticker === ticker);
-
                 if (selectedStock) {
                     setStock(selectedStock);
-
                     const simulatedHistory = Array.from({ length: 30 }, (_, index) => ({
                         day: `Day ${index + 1}`,
                         price: (selectedStock.price + Math.random() * 10 - 5).toFixed(2),
@@ -34,15 +29,10 @@ export default function StockDetail() {
             }
         };
 
-        // Poll for stock data every 5 seconds
-        const intervalId = setInterval(fetchStockData, 1000);
-        fetchStockData(); // Initial fetch
-
-        return () => clearInterval(intervalId); // Cleanup on unmount
+        fetchStockData();
     }, [ticker]);
 
     useEffect(() => {
-        // Function to fetch user balance
         const fetchBalance = async () => {
             try {
                 const response = await fetch('http://localhost:5000/api/balance');
@@ -53,56 +43,68 @@ export default function StockDetail() {
             }
         };
 
-        fetchBalance(); // Initial fetch
+        fetchBalance();
     }, []);
 
-    useEffect(() => {
-        // Function to fetch candlestick data
-        const fetchCandleData = async () => {
-            try {
-                const response = await fetch(`http://localhost:5000/api/stocks/candlestick`);
-                const data = await response.json();
+    const handleAddToWatchlist = () => {
+        if (!watchlist.includes(ticker)) {
+            addToWatchlist(ticker);
+        } else {
+            alert(`${ticker} is already in your watchlist.`);
+        }
+    };
 
-                // Filter candlestick data for the specific ticker
-                const stockCandleData = data.filter((s) => s.ticker === ticker);
-                if (stockCandleData.length > 0) {
-                    const formattedData = stockCandleData.map((item) => ({
-                        x: new Date(item.date), // Convert date to JavaScript Date object
-                        open: item.open,
-                        high: item.high,
-                        low: item.low,
-                        close: item.close,
-                    }));
-                    setCandleData(formattedData);
-                } else {
-                    console.warn(`No candlestick data found for ticker: ${ticker}`);
-                    setCandleData([]);
-                }
-            } catch (error) {
-                console.error('Error fetching candlestick data:', error);
+    const handleTransaction = async (type, amount) => {
+        if (!amount || amount <= 0) {
+            alert('Please enter a valid number of shares.');
+            return;
+        }
+
+        // Ensure ownedShares is not undefined and check for sufficient shares before selling
+        if (type === 'sell') {
+            const owned = ownedShares?.[ticker] || 0; // Use optional chaining and default value
+            if (owned < amount) {
+                alert(`You do not own enough shares of ${ticker} to sell.`);
+                return;
             }
-        };
+        }
 
-        // Poll for candlestick data every 5 seconds
-        const intervalId = setInterval(fetchCandleData, 5000);
-        fetchCandleData(); // Initial fetch
+        try {
+            const response = await fetch('http://localhost:5000/api/balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, amount, ticker }),
+            });
 
-        return () => clearInterval(intervalId); // Cleanup on unmount
-    }, [ticker]);
+            if (!response.ok) {
+                const error = await response.json();
+                alert(`Transaction failed: ${error.error}`);
+                return;
+            }
 
-    // Function to handle buy/sell transactions
-    function handleTransaction(type, amount) {
-        fetch('http://localhost:5000/api/balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, amount, ticker }),
-        })
-            .then((response) => response.json())
-            .then((data) => setBalance(data.balance))
-            .catch((error) => console.error('Error processing transaction:', error));
-    }
+            const data = await response.json();
+            setBalance(data.balance);
 
-    // Render fallback for when stock data is unavailable
+            // Update owned shares after the transaction
+            setOwnedShares((prevOwnedShares) => {
+                const updatedShares = { ...prevOwnedShares };
+                if (type === 'buy') {
+                    updatedShares[ticker] = (updatedShares[ticker] || 0) + amount;
+                } else if (type === 'sell') {
+                    updatedShares[ticker] -= amount;
+                    if (updatedShares[ticker] <= 0) {
+                        delete updatedShares[ticker]; // Remove stock entry if shares are zero
+                    }
+                }
+                return updatedShares;
+            });
+
+            alert(`${type === 'buy' ? 'Bought' : 'Sold'} ${amount} shares of ${ticker}.`);
+        } catch (error) {
+            console.error('Error processing transaction:', error);
+        }
+    };
+
     if (!stock) {
         return (
             <div>
@@ -113,29 +115,25 @@ export default function StockDetail() {
         );
     }
 
-    // Render the component
     return (
         <div>
             <h1>{stock.ticker} Details</h1>
             <p>Price: ${stock.price.toFixed(2)}</p>
             <p>Change: {stock.change}%</p>
-            <p>
-                P/E Ratio: {typeof stock.peRatio === 'number' ? stock.peRatio.toFixed(2) : 'N/A'}
-            </p>
+            <p>P/E Ratio: {typeof stock.peRatio === 'number' ? stock.peRatio.toFixed(2) : 'N/A'}</p>
             <p>Balance: ${balance.toFixed(2)}</p>
-            <button onClick={() => handleTransaction('buy', parseInt(prompt(`Enter shares to buy:`)))}>Buy</button>
-            <button onClick={() => handleTransaction('sell', parseInt(prompt(`Enter shares to sell:`)))}>Sell</button>
+            <button onClick={handleAddToWatchlist}>Add to Watchlist</button>
             <br />
-
-            {/* Toggle Button */}
+            {/* Buy and Sell Buttons */}
+            <button onClick={() => handleTransaction('buy', parseInt(prompt('Enter shares to buy:')))}>Buy</button>
+            <button onClick={() => handleTransaction('sell', parseInt(prompt('Enter shares to sell:')))}>Sell</button>
+            <br />
             <button onClick={() => setShowCandlestick(!showCandlestick)}>
                 {showCandlestick ? 'Show Line Chart' : 'Show Candlestick Chart'}
             </button>
-
-            {/* Chart Display */}
             <div>
                 {showCandlestick ? (
-                    <CandleChart data={candleData} />
+                    <CandleChart data={priceHistory} />
                 ) : (
                     <StockGraph
                         ticker={ticker}
@@ -144,7 +142,6 @@ export default function StockDetail() {
                     />
                 )}
             </div>
-
             <Link to="/">Back to Stock List</Link>
         </div>
     );

@@ -45,13 +45,25 @@ function StockGraph({ ticker, data, currentPrice }) {
                 bottom: 5,
             }}
         >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="day" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="price" stroke="#8884d8" activeDot={{ r: 8 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#4a4a4a" />
+            <XAxis dataKey="day" tick={{ fill: '#ffffff' }} />
+            <YAxis tick={{ fill: '#ffffff' }} />
+            <Tooltip
+                contentStyle={{
+                    backgroundColor: '#383838', // Tooltip background
+                    color: '#ffffff', // Tooltip text
+                    border: '1px solid #4a4a4a',
+                }}
+            />
+            <Legend wrapperStyle={{ color: '#ffffff' }} />
+            <Line
+                type="monotone"
+                dataKey="price"
+                stroke="#4da6ff"
+                activeDot={{ r: 8 }}
+            />
         </LineChart>
+
     );
 }
 
