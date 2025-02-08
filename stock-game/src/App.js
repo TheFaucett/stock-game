@@ -74,7 +74,9 @@ function App() {
             return prevWatchlist; // Return the same state if already present
         });
     };
-
+    const removeFromWatchlist = (ticker) => {
+        setWatchlist((prevWatchlist) => prevWatchlist.filter((t) => t !== ticker));
+    };
 
     // Use `useLocation` to determine the current route
     const location = useLocation();
@@ -159,7 +161,7 @@ function App() {
                 <Route path="/" element={<StockList />} />
                 <Route path="/stocks" element={<StockListPage stocks={stocks} />} />
                 <Route path="/news-dashboard" element={<NewsDashboard />} />
-                <Route path="/stock/:ticker" element={<StockDetail watchlist={watchlist} addToWatchlist={addToWatchlist} />} />
+                <Route path="/stock/:ticker" element={<StockDetail watchlist={watchlist} addToWatchlist={addToWatchlist}  z removeFromWatchlist={removeFromWatchlist} ownedShares={ownedShares} setOwnedShares={setOwnedShares}/>} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/watchlist" element={<Watchlist watchlist={watchlist} />} />
             </Routes>

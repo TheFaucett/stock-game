@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import StockGraph from './StockGraph';
 import CandleChart from './CandleChart';
 
-export default function StockDetail({ watchlist, addToWatchlist, ownedShares = {}, setOwnedShares }) {
+export default function StockDetail({ watchlist, addToWatchlist, removeFromWatchlist, ownedShares, setOwnedShares }) {
     const { ticker } = useParams();
     const [stock, setStock] = useState(null);
     const [priceHistory, setPriceHistory] = useState([]);
@@ -22,6 +22,7 @@ export default function StockDetail({ watchlist, addToWatchlist, ownedShares = {
                         day: `Day ${index + 1}`,
                         price: (selectedStock.price + Math.random() * 10 - 5).toFixed(2),
                     }));
+                    console.log(simulatedHistory);
                     setPriceHistory(simulatedHistory);
                 }
             } catch (error) {
@@ -54,15 +55,22 @@ export default function StockDetail({ watchlist, addToWatchlist, ownedShares = {
         }
     };
 
+    const handleRemoveFromWatchlist = () => {
+        if (watchlist.includes(ticker)) {
+            removeFromWatchlist(ticker);
+        } else {
+            alert(`${ticker} is not in your watchlist.`);
+        }
+    };
+
     const handleTransaction = async (type, amount) => {
         if (!amount || amount <= 0) {
             alert('Please enter a valid number of shares.');
             return;
         }
 
-        // Ensure ownedShares is not undefined and check for sufficient shares before selling
         if (type === 'sell') {
-            const owned = ownedShares?.[ticker] || 0; // Use optional chaining and default value
+            const owned = ownedShares?.[ticker] || 0;
             if (owned < amount) {
                 alert(`You do not own enough shares of ${ticker} to sell.`);
                 return;
@@ -85,7 +93,6 @@ export default function StockDetail({ watchlist, addToWatchlist, ownedShares = {
             const data = await response.json();
             setBalance(data.balance);
 
-            // Update owned shares after the transaction
             setOwnedShares((prevOwnedShares) => {
                 const updatedShares = { ...prevOwnedShares };
                 if (type === 'buy') {
@@ -93,7 +100,7 @@ export default function StockDetail({ watchlist, addToWatchlist, ownedShares = {
                 } else if (type === 'sell') {
                     updatedShares[ticker] -= amount;
                     if (updatedShares[ticker] <= 0) {
-                        delete updatedShares[ticker]; // Remove stock entry if shares are zero
+                        delete updatedShares[ticker];
                     }
                 }
                 return updatedShares;
@@ -122,12 +129,19 @@ export default function StockDetail({ watchlist, addToWatchlist, ownedShares = {
             <p>Change: {stock.change}%</p>
             <p>P/E Ratio: {typeof stock.peRatio === 'number' ? stock.peRatio.toFixed(2) : 'N/A'}</p>
             <p>Balance: ${balance.toFixed(2)}</p>
-            <button onClick={handleAddToWatchlist}>Add to Watchlist</button>
+
+            {/* Conditionally show Add/Remove buttons */}
+            {!watchlist.includes(ticker) ? (
+                <button onClick={handleAddToWatchlist}>Add to Watchlist</button>
+            ) : (
+                <button onClick={handleRemoveFromWatchlist}>Remove from Watchlist</button>
+            )}
+
             <br />
-            {/* Buy and Sell Buttons */}
             <button onClick={() => handleTransaction('buy', parseInt(prompt('Enter shares to buy:')))}>Buy</button>
             <button onClick={() => handleTransaction('sell', parseInt(prompt('Enter shares to sell:')))}>Sell</button>
             <br />
+
             <button onClick={() => setShowCandlestick(!showCandlestick)}>
                 {showCandlestick ? 'Show Line Chart' : 'Show Candlestick Chart'}
             </button>

@@ -5,12 +5,17 @@ function CandleChart({ data }) {
     const [chartData, setChartData] = useState([]);
 
     useEffect(() => {
-        // Incrementally update the candlestick chart data
+        // Ensure all `x` values are converted to valid Date objects
+        const processedData = data.map((point) => ({
+            ...point,
+            x: point.x instanceof Date ? point.x : new Date(point.x), // Convert `x` to Date if it's not already
+        }));
+
         setChartData((prevChartData) => {
             const updatedData = [...prevChartData];
 
             // Add new data points only if they don't already exist in the chart
-            data.forEach((newDataPoint) => {
+            processedData.forEach((newDataPoint) => {
                 const exists = updatedData.some(
                     (existingDataPoint) =>
                         existingDataPoint.x.getTime() === newDataPoint.x.getTime()
@@ -22,7 +27,7 @@ function CandleChart({ data }) {
 
             return updatedData;
         });
-    }, [data]); // Run whenever `data` changes
+    }, [data]);
 
     return (
         <ResponsiveContainer width="100%" height={400}>
@@ -30,12 +35,21 @@ function CandleChart({ data }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                     dataKey="x"
-                    tickFormatter={(tick) => tick.toLocaleDateString()} // Format the date on the X-axis
+                    tickFormatter={(tick) => {
+                        if (tick instanceof Date) {
+                            return tick.toLocaleDateString();
+                        }
+                        const parsedDate = new Date(tick);
+                        return isNaN(parsedDate.getTime()) ? 'Invalid Date' : parsedDate.toLocaleDateString();
+                    }}
                 />
                 <YAxis domain={['auto', 'auto']} />
                 <Tooltip
                     formatter={(value, name) => [value, name]}
-                    labelFormatter={(label) => label.toLocaleDateString()}
+                    labelFormatter={(label) => {
+                        const parsedDate = new Date(label);
+                        return isNaN(parsedDate.getTime()) ? 'Invalid Date' : parsedDate.toLocaleDateString();
+                    }}
                 />
                 <Bar dataKey="low" fill="#ff0000" />
                 <Bar dataKey="high" fill="#00ff00" />
