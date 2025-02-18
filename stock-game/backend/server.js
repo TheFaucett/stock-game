@@ -3,10 +3,17 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+//ROUTES
 const globalNewsRoutes = require('./routes/globalNewsRoutes');
 const sectorNewsRoutes = require('./routes/sectorNewsRoutes');
 const stockNewsRoutes = require('./routes/stockNewsRoutes');
+const portfolioRoutes = require('./routes/portfolioRoutes');
+
+//CONTROLLERS
 const { updateMarket } = require('./controllers/marketController');
+
+
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -29,7 +36,7 @@ setInterval(async () => {
 app.use('/api/news/global', globalNewsRoutes);
 app.use('/api/news/sector', sectorNewsRoutes);
 app.use('/api/news/stock', stockNewsRoutes);
-
+app.use('/api/portfolio', portfolioRoutes);
 // 📌 Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
