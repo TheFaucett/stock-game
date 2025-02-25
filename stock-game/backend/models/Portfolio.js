@@ -13,7 +13,8 @@ const portfolioSchema = new mongoose.Schema({
             total: { type: Number, required: true },
             date: { type: Date, default: Date.now }
         }
-    ]
+    ],
+    watchlist: { type: [String], default: [] }
 });
 
 module.exports = mongoose.model('Portfolio', portfolioSchema);

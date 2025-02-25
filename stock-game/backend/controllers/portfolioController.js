@@ -6,7 +6,7 @@ const { ObjectId } = mongoose.Types;
 exports.getPortfolio = async (req, res) => {
     try {
         console.log("Incoming request for portfolio:", req.query);
-        let { userId } = req.query;
+        let { userId } = req.params;
 
         if (!userId) {
             return res.status(400).json({ error: 'User ID is required' });
@@ -29,47 +29,39 @@ exports.getPortfolio = async (req, res) => {
 
 exports.executeTransaction = async (req, res) => {
     try {
-        const { userId, type, ticker, shares } = req.body; // Make sure userId is coming from the body
+        const { userId, type, ticker, shares } = req.body;
 
         if (!userId || !ticker || shares <= 0) {
-            return res.status(400).json({ error: 'Invalid transaction data. userId is required.' });
+            return res.status(400).json({ error: 'Invalid transaction data.' });
         }
 
-        const stock = await Stock.findOne({ ticker });
-        if (!stock) {
-            return res.status(404).json({ error: 'Stock not found' });
+        const stock = await Stock.findOne({ ticker: ticker.toUpperCase() });
+        if (!stock) return res.status(404).json({ error: 'Stock not found' });
+
+        const portfolio = await Portfolio.findOneAndUpdate(
+            { userId: new mongoose.Types.ObjectId(userId) },
+            { $setOnInsert: { balance: 10000, ownedShares: new Map(), transactions: [] } },
+            { new: true, upsert: true }
+        );
+
+        const totalCost = shares * stock.price;
+
+        if (type === 'buy' && portfolio.balance < totalCost) {
+            return res.status(400).json({ error: 'Insufficient balance' });
+        }
+        if (type === 'sell' && (!portfolio.ownedShares.get(ticker) || portfolio.ownedShares.get(ticker) < shares)) {
+            return res.status(400).json({ error: 'Not enough shares to sell' });
         }
 
-        let portfolio = await Portfolio.findOne({ userId }); // Ensure query uses userId
+        const balanceChange = type === 'buy' ? -totalCost : totalCost;
+        const shareChange = type === 'buy' ? shares : -shares;
 
-        if (!portfolio) {
-            portfolio = new Portfolio({ 
-                userId, 
-                balance: 10000, 
-                ownedShares: new Map(), 
-                transactions: [] 
-            });
-        }
+        // ✅ Atomic update
+        portfolio.balance += balanceChange;
+        portfolio.ownedShares.set(ticker, (portfolio.ownedShares.get(ticker) || 0) + shareChange);
 
-        const transactionTotal = shares * stock.price;
-
-        if (type === 'buy') {
-            if (portfolio.balance < transactionTotal) {
-                return res.status(400).json({ error: 'Insufficient balance' });
-            }
-            portfolio.balance -= transactionTotal;
-            portfolio.ownedShares.set(ticker, (portfolio.ownedShares.get(ticker) || 0) + shares);
-        } else if (type === 'sell') {
-            if (!portfolio.ownedShares.get(ticker) || portfolio.ownedShares.get(ticker) < shares) {
-                return res.status(400).json({ error: 'Not enough shares to sell' });
-            }
-            portfolio.balance += transactionTotal;
-            portfolio.ownedShares.set(ticker, portfolio.ownedShares.get(ticker) - shares);
-            if (portfolio.ownedShares.get(ticker) === 0) {
-                portfolio.ownedShares.delete(ticker);
-            }
-        } else {
-            return res.status(400).json({ error: 'Invalid transaction type' });
+        if (portfolio.ownedShares.get(ticker) === 0) {
+            portfolio.ownedShares.delete(ticker);
         }
 
         portfolio.transactions.push({
@@ -77,14 +69,15 @@ exports.executeTransaction = async (req, res) => {
             ticker,
             shares,
             price: stock.price,
-            total: transactionTotal,
-            date: new Date().toISOString(),
+            total: totalCost,
+            date: new Date()
         });
 
         await portfolio.save();
-        res.json(portfolio);
+        res.json({ message: `Transaction successful`, portfolio });
+
     } catch (error) {
-        console.error('Error processing transaction:', error);
+        console.error('Transaction error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -110,6 +103,76 @@ exports.syncShares = async (req, res) => {
         res.json({ message: 'Owned shares synced successfully' });
     } catch (error) {
         console.error('Error syncing shares:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+// 📌 GET User Watchlist
+exports.getWatchlist = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: 'Invalid user ID format' });
+        }
+
+        const portfolio = await Portfolio.findOne({ userId });
+
+        if (!portfolio) {
+            return res.status(404).json({ error: 'Portfolio not found' });
+        }
+
+        res.json({ watchlist: portfolio.watchlist });
+    } catch (error) {
+        console.error('Error fetching watchlist:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// 📌 ADD Stock to Watchlist
+exports.addToWatchlist = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { ticker } = req.body;
+
+        if (!ticker || typeof ticker !== 'string') {
+            return res.status(400).json({ error: 'Invalid stock ticker' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: 'Invalid user ID format' });
+        }
+
+        const portfolio = await Portfolio.findOneAndUpdate(
+            { userId },
+            { $addToSet: { watchlist: ticker.toUpperCase() } }, // ✅ Prevent duplicates
+            { new: true, upsert: true }
+        );
+
+        res.json({ watchlist: portfolio.watchlist });
+    } catch (error) {
+        console.error('Error adding to watchlist:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// 📌 REMOVE Stock from Watchlist
+exports.removeFromWatchlist = async (req, res) => {
+    try {
+        const { userId, ticker } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: 'Invalid user ID format' });
+        }
+
+        const portfolio = await Portfolio.findOneAndUpdate(
+            { userId },
+            { $pull: { watchlist: ticker.toUpperCase() } }, // ✅ Remove stock from watchlist
+            { new: true }
+        );
+
+        res.json({ watchlist: portfolio.watchlist });
+    } catch (error) {
+        console.error('Error removing from watchlist:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
