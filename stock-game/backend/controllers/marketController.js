@@ -1,20 +1,14 @@
+const { applyImpactToStocks } = require("../controllers/newsImpactController");
 const Stock = require("../models/Stock");
-
-/*
-    NOTE THAT MUCH OF THE RETURN AND MONGOOSE FUNCTIONALITY IS BLACKBOXED FOR THE FOLLOWING REASONS:
-
-    Errors concerning a mismatch of the "__v" value that mongoose uses for every stock after it is updated
-    It uses this complicated ahh fix to avoid some race conditions
-
-*/
-
-
 
 async function updateMarket() {
     try {
         console.log("🔄 Updating market state...");
 
-        // Fetch all stocks from MongoDB
+        // ✅ Fetch news and apply impact before market fluctuations
+        await applyImpactToStocks();
+
+        // Fetch all stocks after news impact
         const stocks = await Stock.find();
 
         if (!stocks || stocks.length === 0) {
@@ -25,10 +19,10 @@ async function updateMarket() {
         const bulkUpdates = stocks.map((stock) => {
             if (!stock || !stock.ticker) {
                 console.error("❌ Invalid stock found:", stock);
-                return null; // Skip invalid stocks
+                return null;
             }
 
-            // Calculate new price with a fluctuation
+            // Apply a minor daily fluctuation (without overriding news impact)
             let fluctuation = (Math.random() - 0.5) * 2;
             let newPrice = Math.max(stock.price + (stock.price * fluctuation / 100), 0.01);
 
@@ -39,22 +33,18 @@ async function updateMarket() {
             let previousPrice = stock.history.length > 1 ? stock.history[stock.history.length - 1] : stock.price;
             let newChange = parseFloat(((newPrice - previousPrice) / previousPrice * 100).toFixed(2));
 
-            // Return bulk update object for MongoDB
             return {
                 updateOne: {
                     filter: { _id: stock._id },
-                    update: {
-                        $set: { price: newPrice, change: newChange, history: updatedHistory }
-                    }
+                    update: { $set: { price: newPrice, change: newChange, history: updatedHistory } }
                 }
             };
-        }).filter(update => update !== null); // Remove any null values
+        }).filter(update => update !== null);
 
         if (bulkUpdates.length > 0) {
-            await Stock.bulkWrite(bulkUpdates); // Execute bulk update
+            await Stock.bulkWrite(bulkUpdates);
             console.log(`✅ Market update complete. ${bulkUpdates.length} stocks updated.`);
         }
-
     } catch (error) {
         console.error("⚠️ Error updating stock prices:", error);
     }

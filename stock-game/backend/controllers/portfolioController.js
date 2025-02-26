@@ -1,6 +1,7 @@
 const Portfolio = require('../models/Portfolio');
 const Stock = require('../models/Stock');
 const mongoose = require('mongoose');
+const User = require('../models/User');
 const { ObjectId } = mongoose.Types;
 
 exports.getPortfolio = async (req, res) => {

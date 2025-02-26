@@ -1,49 +1,55 @@
 const Stock = require("../models/Stock");
+const { getLatestNewsData } = require("../controllers/newsController");
 
 /**
- * Apply impact of news on affected stocks and persist to MongoDB.
- * @param {Object} newsItem - The news event affecting stocks.
- * @param {Number} weight - The impact weight of the news type.
+ * Apply impact of latest news on affected stocks and persist to MongoDB.
  */
-async function applyImpactToStocks(newsItem, weight) {
+async function applyImpactToStocks() {
     try {
-        let query = {};
+        const newsData = await getLatestNewsData(); // ✅ Fetch latest news and weights
 
-        if (newsItem.ticker) {
-            query = { ticker: newsItem.ticker }; // News affects a single stock
-        } else if (newsItem.sector) {
-            query = { sector: newsItem.sector }; // News affects an entire sector
+        if (newsData.length === 0) {
+            console.log("ℹ️ No news impact to apply.");
+            return;
         }
 
-        // Fetch affected stocks from MongoDB
-        const affectedStocks = await Stock.find(query);
+        for (const { newsItem, weight } of newsData) {
+            let query = {};
 
-        if (affectedStocks.length === 0) return;
+            if (newsItem.ticker) {
+                query = { ticker: newsItem.ticker }; // News affects a single stock
+            } else if (newsItem.sector) {
+                query = { sector: newsItem.sector }; // News affects an entire sector
+            }
 
-        for (const stock of affectedStocks) {
-            let marketSentiment = (Math.random() - 0.5) * 2; // Random market effect
-            let sentimentImpact = (marketSentiment / 100) * stock.price;
-            let newsImpact = (newsItem.sentimentScore * weight / 100) * stock.price;
-            let totalImpact = newsImpact + sentimentImpact;
+            // Fetch affected stocks from MongoDB
+            const affectedStocks = await Stock.find(query);
 
-            stock.price = Math.max(stock.price + totalImpact, 0.01);
-            stock.highPrice = Math.max(stock.highPrice, stock.price);
-            stock.lowPrice = Math.min(stock.lowPrice, stock.price);
+            if (affectedStocks.length === 0) continue;
 
-            // Maintain 30-day rolling history
-            stock.history.push(stock.price);
-            if (stock.history.length > 30) stock.history.shift();
+            for (const stock of affectedStocks) {
+                let marketSentiment = (Math.random() - 0.5) * 2; // Random market effect
+                let sentimentImpact = (marketSentiment / 100) * stock.price;
+                let newsImpact = (newsItem.sentimentScore * weight / 100) * stock.price;
+                let totalImpact = newsImpact + sentimentImpact;
 
-            // Update stock change percentage
-            let previousPrice = stock.history.length > 1 ? stock.history[stock.history.length - 2] : stock.price;
-            stock.change = parseFloat(((stock.price - previousPrice) / previousPrice * 100).toFixed(2));
+                stock.price = Math.max(stock.price + totalImpact, 0.01);
+                stock.highPrice = Math.max(stock.highPrice, stock.price);
+                stock.lowPrice = Math.min(stock.lowPrice, stock.price);
 
-            // Persist updates to MongoDB
+                // Maintain 30-day rolling history
+                stock.history.push(stock.price);
+                if (stock.history.length > 30) stock.history.shift();
 
-            await stock.save();
+                // Update stock change percentage
+                let previousPrice = stock.history.length > 1 ? stock.history[stock.history.length - 2] : stock.price;
+                stock.change = parseFloat(((stock.price - previousPrice) / previousPrice * 100).toFixed(2));
+
+                await stock.save();
+            }
+
+            console.log(`📊 Updated ${affectedStocks.length} stocks based on news impact.`);
         }
-
-        console.log(`📊 Updated ${affectedStocks.length} stocks based on news impact.`);
     } catch (error) {
         console.error("⚠️ Error updating stock prices:", error);
     }

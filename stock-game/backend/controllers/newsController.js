@@ -3,19 +3,42 @@ const SectorNews = require("../models/SectorNews");
 const StockNews = require("../models/StockNews");
 
 /**
- * Fetch current news data
+ * Fetch and return the latest news data
  */
-async function getCurrentNews(req, res) {
+async function getLatestNewsData() {
     try {
+        console.log("📰 Fetching latest news...");
         const globalNews = await GlobalNews.getLatest();
         const sectorNews = await SectorNews.getLatest();
         const stockNews = await StockNews.getLatest();
 
-        res.json({ globalNews, sectorNews, stockNews });
+        const newsItems = [...(globalNews || []), ...(sectorNews || []), ...(stockNews || [])];
+
+        if (newsItems.length === 0) {
+            console.log("ℹ️ No relevant news to process.");
+            return [];
+        }
+
+        return newsItems.map(newsItem => ({
+            newsItem,
+            weight: determineNewsWeight(newsItem)
+        }));
     } catch (error) {
         console.error("⚠️ Error fetching news:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        return [];
     }
 }
 
-module.exports = { getCurrentNews };
+/**
+ * Determine the impact weight of a news item
+ * @param {Object} newsItem - The news event affecting stocks
+ * @returns {Number} - Weight of impact
+ */
+function determineNewsWeight(newsItem) {
+    if (newsItem.type === "global") return 2.0;
+    if (newsItem.type === "sector") return 1.5;
+    if (newsItem.type === "stock") return 1.0;
+    return 1.0; // Default weight
+}
+
+module.exports = { getLatestNewsData };
