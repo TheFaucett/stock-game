@@ -6,7 +6,7 @@ const { getLatestNewsData } = require("../controllers/newsController");
  */
 async function applyImpactToStocks() {
     try {
-        const newsData = await getLatestNewsData(); // ✅ Fetch latest news and weights
+        const newsData = await getLatestNewsData();
 
         if (newsData.length === 0) {
             console.log("ℹ️ No news impact to apply.");
@@ -14,41 +14,44 @@ async function applyImpactToStocks() {
         }
 
         for (const { newsItem, weight } of newsData) {
-            let query = {};
+            let query = newsItem.ticker ? { ticker: newsItem.ticker } : { sector: newsItem.sector };
 
-            if (newsItem.ticker) {
-                query = { ticker: newsItem.ticker }; // News affects a single stock
-            } else if (newsItem.sector) {
-                query = { sector: newsItem.sector }; // News affects an entire sector
-            }
-
-            // Fetch affected stocks from MongoDB
             const affectedStocks = await Stock.find(query);
-
             if (affectedStocks.length === 0) continue;
 
             for (const stock of affectedStocks) {
-                let marketSentiment = (Math.random() - 0.5) * 2; // Random market effect
+                let marketSentiment = (Math.random() - 0.5) * 1.5; // ✅ Reduce sentiment fluctuation
                 let sentimentImpact = (marketSentiment / 100) * stock.price;
-                let newsImpact = (newsItem.sentimentScore * weight / 100) * stock.price;
-                let totalImpact = newsImpact + sentimentImpact;
 
-                stock.price = Math.max(stock.price + totalImpact, 0.01);
+                // ✅ Scale the news impact more reasonably
+                let maxNewsImpact = stock.price * 0.03; // ✅ Max 3% drop per news event
+                let adjustedWeight = weight / 2; // ✅ Reduce weight influence slightly
+                let newsImpact = Math.max(
+                    (newsItem.sentimentScore * adjustedWeight / 100) * stock.price,
+                    -maxNewsImpact
+                );
+
+                // ✅ Cap max total drop per update to 5%
+                let maxTotalDrop = stock.price * 0.05;
+                let totalImpact = Math.max(newsImpact + sentimentImpact, -maxTotalDrop);
+
+                const newPrice = parseFloat((stock.price + totalImpact).toFixed(2));
+                stock.price = newPrice;
+
                 stock.highPrice = Math.max(stock.highPrice, stock.price);
                 stock.lowPrice = Math.min(stock.lowPrice, stock.price);
 
-                // Maintain 30-day rolling history
                 stock.history.push(stock.price);
                 if (stock.history.length > 30) stock.history.shift();
 
-                // Update stock change percentage
                 let previousPrice = stock.history.length > 1 ? stock.history[stock.history.length - 2] : stock.price;
                 stock.change = parseFloat(((stock.price - previousPrice) / previousPrice * 100).toFixed(2));
 
+                console.log(`🧐 ${stock.ticker} | News Score: ${newsItem.sentimentScore}, Weight: ${weight}`);
+                console.log(`   📌 Old Price: ${previousPrice} -> 💰 New Price: ${stock.price}`);
+
                 await stock.save();
             }
-
-            console.log(`📊 Updated ${affectedStocks.length} stocks based on news impact.`);
         }
     } catch (error) {
         console.error("⚠️ Error updating stock prices:", error);

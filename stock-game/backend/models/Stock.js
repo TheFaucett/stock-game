@@ -10,6 +10,6 @@ const StockSchema = new mongoose.Schema({
     peRatio: { type: Number },
     dividendYield: { type: Number },
     history: { type: [Number], default: [] }
-}, { timestamps: true });
+}, { timestamps: true, versionKey: false }); // ✅ Disables __v versioning
 
 module.exports = mongoose.model('Stock', StockSchema);

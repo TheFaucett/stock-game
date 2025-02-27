@@ -6,4 +6,9 @@ const GlobalNewsSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now }
 });
 
+GlobalNewsSchema.statics.getLatest = async function () {
+    return this.find().sort({ createdAt: -1 }).limit(5);
+}
+
+
 module.exports = mongoose.model('GlobalNews', GlobalNewsSchema);

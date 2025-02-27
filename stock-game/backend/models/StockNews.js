@@ -5,4 +5,8 @@ const StockNewsSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now }
 });
 
+StockNewsSchema.statics.getLatest = async function () {
+    return this.find().sort({ createdAt: -1 }).limit(5);
+}
+
 module.exports = mongoose.model('StockNews', StockNewsSchema);
