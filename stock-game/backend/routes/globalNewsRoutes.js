@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
         res.json({ success: true, news });
     } catch (error) {
         console.error('Error fetching global news:', error);
-        res.status(500).json({ success: false, error: 'Error fetching global news' });
+        res.status(500).json({ success: false, error: ' FLAG Error fetching global news' });
     }
 });
 
