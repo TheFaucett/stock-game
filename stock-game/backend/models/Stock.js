@@ -9,7 +9,8 @@ const StockSchema = new mongoose.Schema({
     outstandingShares: { type: Number, required: true },
     peRatio: { type: Number },
     dividendYield: { type: Number },
-    history: { type: [Number], default: [] }
+    history: { type: [Number], default: [] },
+    volatility: { type: Number, default: 0.02 },
 }, { timestamps: true, versionKey: false }); // ✅ Disables __v versioning
 
 module.exports = mongoose.model('Stock', StockSchema);

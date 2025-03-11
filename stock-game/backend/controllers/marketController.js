@@ -1,11 +1,14 @@
 const { applyImpactToStocks } = require("../controllers/newsImpactController");
 const Stock = require("../models/Stock");
+const { applyGaussian } = require("../utils/applyGaussian.js");
+
 
 async function updateMarket() {
     try {
         console.log("🔄 Updating market state...");
 
         // ✅ Fetch news and apply impact before market fluctuations
+        applyGaussian();
         await applyImpactToStocks();
 
         // Fetch all stocks after news impact
