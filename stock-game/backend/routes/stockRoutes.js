@@ -23,5 +23,32 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Error fetching stocks' });
     }
 });
+router.get("/heatmap", async (req, res) => {
+    try {
+        // Get all stocks from the database
+        const stocks = await Stock.find();
 
+        // 📌 Group stocks by sector
+        const groupedStocks = stocks.reduce((acc, stock) => {
+            if (!acc[stock.sector]) acc[stock.sector] = [];
+            acc[stock.sector].push({
+                ticker: stock.ticker,
+                marketCap: stock.outstandingShares * stock.price, // Determines size
+                change: stock.change // Determines color
+            });
+            return acc;
+        }, {});
+
+        // Convert into array of sector objects
+        const sectors = Object.keys(groupedStocks).map(sector => ({
+            name: sector,
+            stocks: groupedStocks[sector]
+        }));
+
+        res.json({ success: true, sectors });
+    } catch (error) {
+        console.error("❌ Error fetching heatmap data:", error);
+        res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+});
 module.exports = router;

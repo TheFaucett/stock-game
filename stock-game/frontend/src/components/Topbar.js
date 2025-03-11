@@ -4,21 +4,34 @@ import axios from 'axios';
 import "../styles/topbar.css";
 
 const fetchNews = async () => {
-    const globalNews = await axios.get('http://localhost:5000/api/news/global');
-   // const sectorNews = await axios.get('http://localhost:5000/api/news/sector');
-    const stockNews = await axios.get('http://localhost:5000/api/news/stock');
+    try {
+        const [globalNewsRes, sectorNewsRes, stockNewsRes] = await Promise.all([
+            axios.get('http://localhost:5000/api/news/global'),
+            axios.get('http://localhost:5000/api/news/sector'),
+            axios.get('http://localhost:5000/api/news/stock')
+        ]);
 
-    return {
-        global: globalNews.data.news, // Adjusted to match API response
-      //  sector: sectorNews.data.news, // Assuming a similar response structure
-        stock: stockNews.data.news,  // Assuming a similar response structure
-    };
+        // ✅ Handle stock news properly
+        const globalNews = globalNewsRes.data.news || null;
+        const sectorNews = sectorNewsRes.data.news || null;
+        const stockNews = Array.isArray(stockNewsRes.data.news) && stockNewsRes.data.news.length > 0 
+        ? stockNewsRes.data.news[0]  // ✅ Fix: Get the first element if it's an array
+        : null;
+
+        console.log("🔄 Fetching latest news:", { globalNews, sectorNews, stockNews });
+
+        return { global: globalNews, sector: sectorNews, stock: stockNews };
+    } catch (error) {
+        console.error("⚠️ Error fetching news:", error);
+        return { global: null, sector: null, stock: null };
+    }
 };
 
 const Topbar = () => {
     const { data: news, isLoading, error } = useQuery({
         queryKey: ['news'],
-        queryFn: fetchNews
+        queryFn: fetchNews,
+        refetchInterval: 30000 // ✅ Refreshes every 30 seconds
     });
 
     const [isOpen, setIsOpen] = useState(true);
@@ -34,26 +47,32 @@ const Topbar = () => {
                 {error && <p>Error fetching news.</p>}
                 {news && (
                     <div className="news-content">
-                        <h3>🌎 Global News</h3>
-                        <ul>
-                            {news.global.map((item) => (
-                                <li key={item._id}>{item.description} (Sentiment: {item.sentimentScore})</li>
-                            ))}
-                        </ul>
+                        {news.global ? (
+                            <div>
+                                <h3>🌎 Global News</h3>
+                                <p>{news.global.description} (Sentiment: {news.global.sentimentScore})</p>
+                            </div>
+                        ) : (
+                            <p>🌎 No global news available.</p>
+                        )}
 
-                        <h3>🏢 Sector News</h3>
-                        <ul>
-                            {/*news.sector.map((item) => (
-                               <li key={item._id}>{item.description} (Sentiment: {item.sentimentScore})</li>
-                            ))*/}
-                        </ul>
+                        {news.sector ? (
+                            <div>
+                                <h3>🏢 Sector News</h3>
+                                <p>{news.sector.description} (Sentiment: {news.sector.sentimentScore})</p>
+                            </div>
+                        ) : (
+                            <p>🏢 No sector news available.</p>
+                        )}
 
-                        <h3>📈 Stock News</h3>
-                        <ul>
-                            {news.stock.map((item) => (
-                                <li key={item._id}>{item.description} (Sentiment: {item.sentimentScore})</li>
-                            ))}
-                        </ul>
+                        {news.stock ? (
+                            <div>
+                                <h3>📈 Stock News</h3>
+                                <p>{news.stock.description} (Sentiment: {news.stock.sentimentScore})</p>
+                            </div>
+                        ) : (
+                            <p>📈 No stock news available.</p>
+                        )}
                     </div>
                 )}
             </div>

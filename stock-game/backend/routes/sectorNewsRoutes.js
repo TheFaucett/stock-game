@@ -2,34 +2,49 @@ const express = require('express');
 const router = express.Router();
 const SectorNews = require('../models/SectorNews');
 
-// 📌 Get Sector News
+/**
+ * Fetch a random sector if none is provided
+ */
+async function getRandomSector() {
+    try {
+        const sectorDoc = await SectorNews.findOne().sort({ date: -1 });
+
+        if (!sectorDoc || !sectorDoc.sectors) return null;
+
+        const sectorKeys = Object.keys(sectorDoc.sectors);
+        if (sectorKeys.length === 0) return null;
+
+        return sectorKeys[Math.floor(Math.random() * sectorKeys.length)];
+    } catch (error) {
+        console.error("⚠️ Error fetching random sector:", error);
+        return null;
+    }
+}
+
+// 📌 Get Sector News (With Random Selection)
 router.get('/:sector?', async (req, res) => {
     try {
-        const sectorParam = req.params.sector;
-        console.log(`Fetching sector news for: ${sectorParam || "all sectors"}`);
+        let sector = req.params.sector;
+
+        if (!sector) {
+            sector = await getRandomSector(); // ✅ Pick a random sector if none provided
+            if (!sector) return res.json({ success: true, news: [] });
+        }
 
         const sectorDoc = await SectorNews.findOne().sort({ date: -1 });
 
-        if (!sectorDoc) {
+        if (!sectorDoc || !sectorDoc.sectors[sector]) {
             return res.json({ success: true, news: [] });
         }
 
-        if (sectorParam) {
-            // If a specific sector is requested
-            const sectorNews = sectorDoc.sectors[sectorParam];
-            if (!sectorNews) {
-                return res.json({ success: true, news: [] });
-            }
-            console.log(`Sector news found:`, sectorNews);
-            return res.json({ success: true, news: sectorNews });
-        }
+        // ✅ Pick a random news item from that sector
+        const sectorNewsArray = sectorDoc.sectors[sector];
+        const randomNews = sectorNewsArray[Math.floor(Math.random() * sectorNewsArray.length)];
 
-        // If no specific sector is requested, return all sector news
-        console.log(`Returning all sector news.`);
-        return res.json({ success: true, news: sectorDoc.sectors });
+        res.json({ success: true, news: randomNews });
 
     } catch (error) {
-        console.error('Error fetching sector news:', error);
+        console.error('⚠️ Error fetching sector news:', error);
         res.status(500).json({ success: false, error: 'Error fetching sector news' });
     }
 });
