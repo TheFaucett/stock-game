@@ -23,32 +23,70 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Error fetching stocks' });
     }
 });
+
+
+const getSectorData = async () => {
+    try {
+        const sectors = await Stock.aggregate([
+            {
+                $group: {
+                    _id: "$sector",
+                    totalMarketCap: { $sum: { $multiply: ["$price", "$outstandingShares"] } },
+                    stocks: {
+                        $push: {
+                            ticker: "$ticker",
+                            price: "$price",
+                            change: "$change",
+                            marketCap: { $multiply: ["$price", "$outstandingShares"] }
+                        }
+                    }
+                }
+            },
+            { $sort: { totalMarketCap: -1 } } // Sort by highest market cap
+        ]);
+
+        return sectors.map(sector => ({
+            name: sector._id,
+            value: sector.totalMarketCap,
+            children: sector.stocks.map(stock => ({
+                name: stock.ticker,
+                value: stock.marketCap,
+                change: stock.change
+            }))
+        }));
+    } catch (error) {
+        console.error("Error fetching heatmap data:", error);
+        return [];
+    }
+};
+
 router.get("/heatmap", async (req, res) => {
     try {
-        // Get all stocks from the database
-        const stocks = await Stock.find();
-
-        // 📌 Group stocks by sector
-        const groupedStocks = stocks.reduce((acc, stock) => {
-            if (!acc[stock.sector]) acc[stock.sector] = [];
-            acc[stock.sector].push({
-                ticker: stock.ticker,
-                marketCap: stock.outstandingShares * stock.price, // Determines size
-                change: stock.change // Determines color
-            });
-            return acc;
-        }, {});
-
-        // Convert into array of sector objects
-        const sectors = Object.keys(groupedStocks).map(sector => ({
-            name: sector,
-            stocks: groupedStocks[sector]
-        }));
-
-        res.json({ success: true, sectors });
+        const heatmapData = await getSectorData();
+        res.json({ success: true, heatmapData });
     } catch (error) {
-        console.error("❌ Error fetching heatmap data:", error);
-        res.status(500).json({ success: false, error: "Internal Server Error" });
+        res.status(500).json({ success: false, message: "Error fetching heatmap" });
     }
 });
+router.get('/sector-heatmap', async (req, res) => {
+    try {
+        const sectorData = await Stock.aggregate([
+            {
+                $group: {
+                    _id: "$sector",
+                    totalMarketCap: { $sum: { $multiply: ["$price", "$outstandingShares"] } },
+                    avgChange: { $avg: "$change" }, // Average price change percentage
+                    count: { $sum: 1 } // Number of stocks in the sector
+                }
+            },
+            { $sort: { totalMarketCap: -1 } } // Sort by market cap (largest first)
+        ]);
+
+        res.json({ success: true, sectors: sectorData });
+    } catch (error) {
+        console.error("❌ Error fetching sector heatmap data:", error);
+        res.status(500).json({ success: false, error: "Server error" });
+    }
+});
+
 module.exports = router;

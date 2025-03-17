@@ -34,6 +34,8 @@ router.get('/:userId/balance', async (req, res) => {
 });
 
 // 📌 UPDATE User Balance
+
+/* This logic is already implemented in portfolioController.js 
 router.post('/:userId/balance', async (req, res) => {
     const { amount } = req.body;
 
@@ -61,5 +63,5 @@ router.post('/:userId/balance', async (req, res) => {
         res.status(500).json({ error: 'Error updating balance' });
     }
 });
-
+*/
 module.exports = router;

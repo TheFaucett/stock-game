@@ -15,7 +15,7 @@ const fetchNews = async () => {
         const globalNews = globalNewsRes.data.news || null;
         const sectorNews = sectorNewsRes.data.news || null;
         const stockNews = Array.isArray(stockNewsRes.data.news) && stockNewsRes.data.news.length > 0 
-        ? stockNewsRes.data.news[0]  // ✅ Fix: Get the first element if it's an array
+        ? stockNewsRes.data.news[0]  // gets the first element because I provided an array (oopsie)
         : null;
 
         console.log("🔄 Fetching latest news:", { globalNews, sectorNews, stockNews });
