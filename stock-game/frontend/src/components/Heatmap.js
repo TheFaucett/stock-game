@@ -1,113 +1,63 @@
-import React, { useState } from "react";
+import React from "react";
+import { Treemap, Tooltip, ResponsiveContainer } from "recharts";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Treemap, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
-// Fetch heatmap data from backend
+// ✅ Fetch Heatmap Data
 const fetchHeatmapData = async () => {
     const { data } = await axios.get("http://localhost:5000/api/stocks/heatmap");
-    return data.heatmapData;
+    return data.heatmapData || [];
 };
 
-// Function to determine color based on stock price change
+// ✅ Determine Color Based on Change %
 const getColor = (change) => {
-    if (change > 0) return `rgb(0, ${Math.min(255, 50 + change * 10)}, 0)`; // Green for gains
-    if (change < 0) return `rgb(${Math.min(255, 50 - change * 10)}, 0, 0)`; // Red for losses
-    return "gray"; // Neutral color for no change
+    if (!change || isNaN(change)) return "gray";
+    return change > 0 ? `rgb(0, ${Math.min(255, 50 + change * 15)}, 0)` : `rgb(${Math.min(255, 50 - change * 15)}, 0, 0)`;
 };
 
-const Heatmap = () => {
+const Heatmap = ({ sector }) => {
     const { data, isLoading, error } = useQuery({
-        queryKey: ["heatmap"],
-        queryFn: fetchHeatmapData
+        queryKey: ["heatmap", sector],
+        queryFn: fetchHeatmapData,
+        refetchInterval: 5000,  // 🔥 Auto-refresh every 5 seconds
+        refetchOnWindowFocus: false,  // Prevent refetching when switching tabs
     });
-
-    const [selectedSector, setSelectedSector] = useState(null);
 
     if (isLoading) return <p>Loading heatmap...</p>;
     if (error) return <p>Error loading data.</p>;
 
     return (
         <div className="heatmap-container">
-            {/* ✅ Sector-Level Heatmap */}
-            {!selectedSector && (
-                <>
-                    <h2>Sector Heatmap</h2>
-                    <ResponsiveContainer width="100%" height={400}>
-                        <Treemap
-                            width={800}
-                            height={400}
-                            data={data}
-                            dataKey="value"
-                            aspectRatio={2}
-                            stroke="#fff"
-                            fill="#ffa500"
-                            onClick={(entry) => {
-                                if (entry.children) setSelectedSector(entry); // Selects a sector
-                            }}
-                        >
-                            {/* Dynamically color sectors */}
-                            {data.map((sector, index) => (
-                                <Cell key={`sector-${index}`} fill={getColor(sector.change)} />
-                            ))}
-                            <Tooltip
-                                content={({ payload }) => {
-                                    if (payload && payload.length) {
-                                        return (
-                                            <div style={{ background: "black", padding: "5px", color: "white" }}>
-                                                <strong>{payload[0].payload.name}</strong>
-                                                <p>Market Cap: ${Math.round(payload[0].payload.value / 1e9)}B</p>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                }}
-                            />
-                        </Treemap>
-                    </ResponsiveContainer>
-                </>
-            )}
-
-            {/* ✅ Stock-Level Heatmap with Color Coding */}
-            {selectedSector && (
-                <>
-                    <button className="back-btn" onClick={() => setSelectedSector(null)}>🔙 Back to Sectors</button>
-                    <h2>{selectedSector.name} Stocks</h2>
-
-                    <ResponsiveContainer width="100%" height={500}>
-                        <Treemap
-                            width={800}
-                            height={500}
-                            data={selectedSector.children.map((stock, index) => ({
-                                name: stock.name || `Stock ${index}`,
-                                value: stock.marketCap || 0,
-                                change: stock.change || 0,
-                                key: stock.id || stock.name || `stock-${index}` // 🔥 Unique key
-                            }))}
-                            dataKey="value"
-                            aspectRatio={3 / 2}
-                            stroke="#fff"
-                            fill={(entry) => getColor(entry.change)}
-                        >
-                            <Tooltip
-                                content={({ payload }) => {
-                                    if (payload && payload.length) {
-                                        return (
-                                            <div style={{ background: "black", padding: "5px", color: "white" }}>
-                                                <strong>{payload[0].payload.name}</strong>
-                                                <p>Market Cap: ${Math.round(payload[0].payload.value / 1e6)}M</p>
-                                                <p>Change: {payload[0].payload.change}%</p>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                }}
-                            />
-                        </Treemap>
-                    </ResponsiveContainer>
-                </>
-            )}
-
+            <h2>{sector ? `${sector} Stocks` : "Stock Heatmap"}</h2>
+            <ResponsiveContainer width="100%" height={500}>
+                <Treemap
+                    width={800}
+                    height={500}
+                    data={data}
+                    dataKey="value"
+                    aspectRatio={3 / 2}
+                    stroke="#fff"
+                    content={({ x, y, width, height, name, change }) => (
+                        <Link to={`/stock/${name}`} style={{ textDecoration: "none" }}>
+                            <g transform={`translate(${x},${y})`} style={{ cursor: "pointer" }}>
+                                {/* ✅ Entire Box is Clickable */}
+                                <rect width={width} height={height} fill={getColor(change)} stroke="#fff" />
+                                {width > 50 && height > 20 && (
+                                    <>
+                                        <text x={10} y={20} fontSize={14} fontWeight="bold" fill="white">{name}</text>
+                                        <text x={10} y={40} fontSize={12} fill="white">
+                                            Change: {change?.toFixed(2)}%
+                                        </text>
+                                    </>
+                                )}
+                            </g>
+                        </Link>
+                    )}
+                >
+                    <Tooltip />
+                </Treemap>
+            </ResponsiveContainer>
         </div>
     );
 };

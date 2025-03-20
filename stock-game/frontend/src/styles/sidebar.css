@@ -20,7 +20,7 @@
 }
 
 .toggle-btn {
-    position: absolute;
+    position: fixed;
     left: calc(17.75% + 5px);
     top: 20px;
 

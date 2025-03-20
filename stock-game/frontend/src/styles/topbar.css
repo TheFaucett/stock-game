@@ -32,6 +32,7 @@
 
 /* Keeps button in view when topbar is hidden */
 .topbar-container.closed .toggle-btn-top {
+    position: fixed;
     top: 360px;
     right: 40px;
 }

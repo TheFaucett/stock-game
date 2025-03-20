@@ -89,4 +89,16 @@ router.get('/sector-heatmap', async (req, res) => {
     }
 });
 
+//For StockDetail
+router.get("/:ticker", async (req, res) => {
+    try {
+        const stock = await Stock.findOne({ ticker: req.params.ticker.toUpperCase() });
+        if (!stock) {
+            return res.status(404).json({ error: "Stock not found" });
+        }
+        res.json(stock);
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
 module.exports = router;
