@@ -71,13 +71,13 @@ const SectorHeatmap = ({ onSectorClick }) => {
                             />
                             {width > 70 && height > 30 && (
                                 <>
-                                    <text x={10} y={20} fill="white" fontSize={14}  letter-spacing="0.09rem">
+                                    <text x={10} y={20} fill="white" fontSize={14}  letterSpacing="0.09rem">
                                         {name} {/* ✅ Fix: Display correct sector name */}
                                     </text>
-                                    <text x={10} y={40} fill="white" fontSize={12} letter-spacing="0.09rem">
+                                    <text x={10} y={40} fill="white" fontSize={12} letterSpacing="0.09rem">
                                         {formatMarketCap(value)}
                                     </text>
-                                    <text x={10} y={60} fill="white" fontSize={12} letter-spacing="0.09rem">
+                                    <text x={10} y={60} fill="white" fontSize={12} letterSpacing="0.09rem">
                                         Change: {parseFloat(change).toFixed(2)}%
                                     </text>
                                 </>

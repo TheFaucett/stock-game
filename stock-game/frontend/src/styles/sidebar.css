@@ -1,29 +1,40 @@
 .sidebar-container {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
     display: flex;
+    flex-direction: row;
+    pointer-events: none; /* Allow interactions only when open */
+}
+
+.sidebar-container .toggle-btn {
+    pointer-events: all; /* ✅ Ensure toggle button remains clickable */
 }
 
 .sidebar {
-    width: 15%;
+    width: 250px;
+    height: 100%;
     background: #1e1e1e;
     padding: 20px;
-    height: 100vh;
+    transform: translateX(0);
     transition: transform 0.3s ease-in-out;
+    pointer-events: all; /* Enable interaction */
 }
 
-.closed .sidebar {
+.sidebar-container.closed .sidebar {
     transform: translateX(-100%);
 }
 
-.open .sidebar {
+.sidebar-container.open .sidebar {
     transform: translateX(0);
 }
 
 .toggle-btn {
     position: fixed;
-    left: calc(17.75% + 5px);
+    left: calc(250px + 10px);
     top: 20px;
-
     transition: left 0.3s ease-in-out;
     background: #333;
     color: white;
@@ -31,11 +42,13 @@
     padding: 10px;
     cursor: pointer;
     border-radius: 5px;
+    z-index: 1100; /* Keep it above other elements */
 }
 
 .toggle-btn:hover {
     background: #555;
 }
+
 .sidebar-container.closed .toggle-btn {
-    left: 5px;
+    left: 10px;
 }
