@@ -15,6 +15,14 @@ const getColor = (change) => {
     if (!change || isNaN(change)) return "gray";
     return change > 0 ? `rgb(0, ${Math.min(255, 50 + change * 15)}, 0)` : `rgb(${Math.min(255, 50 - change * 15)}, 0, 0)`;
 };
+// ✅ Format Market Cap for Tooltip
+const formatMarketCap = (value) => {
+    if (!value || isNaN(value)) return "$0";
+    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+    return `$${value.toFixed(2)}`;
+};
 
 const Heatmap = ({ sector }) => {
     const { data, isLoading, error } = useQuery({
@@ -55,7 +63,22 @@ const Heatmap = ({ sector }) => {
                         </Link>
                     )}
                 >
-                    <Tooltip />
+                    <Tooltip
+                        content={({ payload }) => {
+                            if (payload && payload.length > 0) {
+                            const stock = payload[0].payload;
+                            return (
+                                <div style={{ background: "black", padding: "8px", color: "white", borderRadius: "5px" }}>
+                                <strong>{stock.name}</strong>
+                                <p>Market Cap: {formatMarketCap(stock.value)}</p>
+                                <p>Change: {parseFloat(stock.change).toFixed(2)}%</p>
+                                </div>
+                            );
+                            }
+                            return null;
+                        }}
+                    />
+
                 </Treemap>
             </ResponsiveContainer>
         </div>

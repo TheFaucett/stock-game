@@ -101,4 +101,25 @@ router.get("/:ticker", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+//also for stockdetail (graph)
+router.get('/:ticker/history', async (req, res) => {
+    try {
+        const ticker = req.params.ticker.toUpperCase(); // Ensures ticker is uppercase
+        const stock = await Stock.findOne({ ticker });
+
+        if (!stock) {
+            return res.status(404).json({ error: 'Stock not found' });
+        }
+
+        res.json({
+            ticker: stock.ticker,
+            history: stock.history
+        });
+    } catch (err) {
+        console.error('Error fetching stock history:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 module.exports = router;

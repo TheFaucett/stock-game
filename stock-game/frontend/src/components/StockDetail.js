@@ -1,44 +1,64 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import StockGraph from './StockGraph';
 
 export default function StockDetail() {
     const { ticker } = useParams();
     const [stock, setStock] = useState(null);
+    const [history, setHistory] = useState([]);
 
     useEffect(() => {
-        const fetchStockData = async () => {
+        const fetchStock = async () => {
             try {
                 const response = await fetch(`http://localhost:5000/api/stocks`);
                 const stocks = await response.json();
-                const selectedStock = stocks.find((s) => s.ticker === ticker);
-                if (selectedStock) {
-                    setStock(selectedStock);
-                }
+                const selected = stocks.find(s => s.ticker === ticker);
+                if (selected) setStock(selected);
             } catch (error) {
-                console.error('Error fetching stock data:', error);
+                console.error('Error fetching stock:', error);
             }
         };
 
-        fetchStockData();
+        const fetchHistory = async () => {
+            try {
+                const response = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`);
+                const data = await response.json();
+                if (data.history) setHistory(data.history);
+            } catch (error) {
+                console.error('Error fetching history:', error);
+            }
+        };
+
+        fetchStock();
+        fetchHistory();
     }, [ticker]);
 
     if (!stock) {
         return (
             <div>
-                <h1>Stock Not Found</h1>
-                <p>The stock ticker "{ticker}" could not be found.</p>
-                <Link to="/">Back to Stock List</Link>
+                <h2>Stock Not Found</h2>
+                <p>{ticker} does not exist.</p>
+                <Link to="/">← Back</Link>
             </div>
         );
     }
 
     return (
-        <div>
-            <h1>{stock.ticker} Details</h1>
+        <div style={{ padding: '20px' }}>
+            <h1>{stock.ticker}</h1>
             <p>Price: ${stock.price.toFixed(2)}</p>
             <p>Change: {stock.change}%</p>
-            <p>P/E Ratio: {typeof stock.peRatio === 'number' ? stock.peRatio.toFixed(2) : 'N/A'}</p>
-            <Link to="/">Back to Stock List</Link>
+            <p>EPS: {stock.eps}</p>
+            <p>Market Cap: ${(stock.price * stock.outstandingShares / 1e9).toFixed(2)}B</p>
+
+            {history.length > 0 && (
+                <>
+                    <h3>Price History</h3>
+                    <StockGraph ticker={ticker} history={history} />
+                </>
+            )}
+
+            <Link to="/">← Back</Link>
         </div>
     );
 }
