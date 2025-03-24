@@ -46,3 +46,38 @@ A full-stack stock market simulator where users can view sector-level and stock-
 ```bash
 git clone https://github.com/your-username/stock-market-game.git
 cd stock-market-game
+```
+### 2. Install Deps. 
+
+```bash
+cd backend
+npm install
+
+cd..
+cd frontend
+npm install
+```
+3. Env Setup
+   Create a .env file and define your MONGO_URI
+
+```env
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
+PORT=5000
+```
+
+4. Run the app
+Simply node server and npm start
+
+```bash
+cd backend
+node server.js
+```
+and 
+```bash
+cd frontend
+npm start
+```
+
+
+
+
