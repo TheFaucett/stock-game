@@ -77,7 +77,5 @@ and
 cd frontend
 npm start
 ```
-
-
-
+*and yes, I made this whole readme with ai, but don't we all? 
 
