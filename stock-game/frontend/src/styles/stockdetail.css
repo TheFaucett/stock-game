@@ -1,0 +1,27 @@
+.stock-actions {
+  margin-top: 20px;
+}
+
+.stock-btn {
+  background-color: #5e60ce;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.stock-btn:hover {
+  background-color: #4ea8de;
+}
+
+.stock-btn.sell {
+  background-color: #6930c3;
+}
+
+.stock-btn.sell:hover {
+  background-color: #7b2cbf;
+}

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import StockGraph from './StockGraph';
+import "../styles/stockdetail.css";
+
 
 export default function StockDetail() {
     const { ticker } = useParams();
@@ -33,6 +35,29 @@ export default function StockDetail() {
         fetchHistory();
     }, [ticker]);
 
+    const performTransaction = async (type, amount) => {
+        const userId = "67af822e5609849ac14d7942";
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/transactions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, ticker, shares:amount, type })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(`Transaction failed: ${data.error}`);
+            } else {
+                alert(`${type === 'buy' ? 'Bought' : 'Sold'} ${amount} shares of ${ticker}`);
+            }
+        } catch (err) {
+            console.error("Error in transaction:", err);
+            alert("Something went wrong");
+        }
+    };
+
     if (!stock) {
         return (
             <div>
@@ -50,6 +75,29 @@ export default function StockDetail() {
             <p>Change: {stock.change}%</p>
             <p>EPS: {stock.eps}</p>
             <p>Market Cap: ${(stock.price * stock.outstandingShares / 1e9).toFixed(2)}B</p>
+
+            <div className="stock-actions">
+            <button
+                className="stock-btn"
+                onClick={() => {
+                const amt = parseInt(prompt("How many shares would you like to BUY?"));
+                if (!isNaN(amt) && amt > 0) performTransaction('buy', amt);
+                }}
+            >
+                Buy
+            </button>
+
+            <button
+                className="stock-btn sell"
+                onClick={() => {
+                const amt = parseInt(prompt("How many shares would you like to SELL?"));
+                if (!isNaN(amt) && amt > 0) performTransaction('sell', amt);
+                }}
+            >
+                Sell
+            </button>
+            </div>
+
 
             {history.length > 0 && (
                 <>

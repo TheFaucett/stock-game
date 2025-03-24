@@ -75,6 +75,15 @@ exports.executeTransaction = async (req, res) => {
         });
 
         await portfolio.save();
+
+
+
+        await User.updateOne(
+            { _id: new ObjectId(userId) },
+            { $set: { balance: portfolio.balance } }
+        );
+
+
         res.json({ message: `Transaction successful`, portfolio });
 
     } catch (error) {

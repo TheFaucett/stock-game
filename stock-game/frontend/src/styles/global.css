@@ -1,0 +1,12 @@
+body {
+    margin: 0;
+    background-color: #121212; /* Dark background */
+    color: #f0f0f0; /* Light text for contrast */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    background-color: #121212; /* Ensure containers don’t override it */
+    color: #f0f0f0;
+    min-height: 100vh;
+}
