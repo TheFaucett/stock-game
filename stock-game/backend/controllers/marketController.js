@@ -2,16 +2,13 @@ const { applyImpactToStocks } = require("../controllers/newsImpactController");
 const Stock = require("../models/Stock");
 const { applyGaussian } = require("../utils/applyGaussian.js");
 
-
 async function updateMarket() {
     try {
         console.log("🔄 Updating market state...");
 
-        // ✅ Fetch news and apply impact before market fluctuations
         applyGaussian();
         await applyImpactToStocks();
 
-        // Fetch all stocks after news impact
         const stocks = await Stock.find();
 
         if (!stocks || stocks.length === 0) {
@@ -25,24 +22,46 @@ async function updateMarket() {
                 return null;
             }
 
-            // Apply a minor daily fluctuation (without overriding news impact)
-            let fluctuation = (Math.random() - 0.5) * 2;
-            let newPrice = Math.max(stock.price + (stock.price * fluctuation / 100), 0.01);
+            const prevPrice = stock.history.length > 1
+                ? stock.history[stock.history.length - 1]
+                : stock.price;
 
-            // Ensure history is always 30 entries
-            let updatedHistory = [...stock.history.slice(-29), newPrice];
+            const currentVolatility = stock.volatility ?? 0.03;
 
-            // Calculate change percentage
-            let previousPrice = stock.history.length > 1 ? stock.history[stock.history.length - 1] : stock.price;
-            let newChange = parseFloat(((newPrice - previousPrice) / previousPrice * 100).toFixed(2));
+            // 🔥 Volatility affects price movement
+            const baseFluctuation = (Math.random() - 0.5) * 2; // -1 to 1
+            const adjustedFluctuation = baseFluctuation * currentVolatility * 100;
+            const newPrice = Math.max(stock.price * (1 + adjustedFluctuation / 100), 0.01);
+
+            const updatedHistory = [...stock.history.slice(-29), newPrice];
+            const newChange = parseFloat(
+                ((newPrice - prevPrice) / prevPrice * 100).toFixed(2)
+            );
+
+            // 🔁 Smooth volatility update
+            const changeMagnitude = Math.abs(newChange / 100);
+            const shock = Math.random() < 0.05 ? 1 + Math.random() * 0.5 : 1;
+            const adjustedChange = changeMagnitude * shock;
+
+            let newVolatility = 0.9 * currentVolatility + 0.1 * adjustedChange;
+
+            // Clamp volatility between min and max
+            newVolatility = Math.max(0.01, Math.min(newVolatility, 0.5));
 
             return {
                 updateOne: {
                     filter: { _id: stock._id },
-                    update: { $set: { price: newPrice, change: newChange, history: updatedHistory } }
+                    update: {
+                        $set: {
+                            price: newPrice,
+                            change: newChange,
+                            history: updatedHistory,
+                            volatility: parseFloat(newVolatility.toFixed(4))
+                        }
+                    }
                 }
             };
-        }).filter(update => update !== null);
+        }).filter(Boolean);
 
         if (bulkUpdates.length > 0) {
             await Stock.bulkWrite(bulkUpdates);

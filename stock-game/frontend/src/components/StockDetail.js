@@ -106,7 +106,7 @@ export default function StockDetail() {
                 </>
             )}
 
-            <Link to="/">← Back</Link>
+            <Link to="/" className="back-button">← Back</Link>
         </div>
     );
 }

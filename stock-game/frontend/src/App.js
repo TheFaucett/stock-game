@@ -7,7 +7,7 @@ import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Heatmap from "./components/Heatmap";
 import SectorHeatmap from "./components/SectorHeatmap";
-import StockDetail from "./components/StockDetail"; // ✅ Import this!
+import StockDetail from "./components/StockDetail"; 
 
 import "./styles/global.css";
 
@@ -41,9 +41,7 @@ function App() {
                     <Route path="/" element={<HeatmapContainer />} />
                     <Route path="/stock/:ticker" element={<StockDetail />} />
                 </Routes>
-                <div className="content">
-                    <h1>Stock Market Game</h1>
-                </div>
+
             </div>
         </Router>
     </QueryClientProvider>

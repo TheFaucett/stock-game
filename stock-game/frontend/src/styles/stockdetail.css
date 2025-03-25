@@ -25,3 +25,18 @@
 .stock-btn.sell:hover {
   background-color: #7b2cbf;
 }
+.back-button {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #6a5acd, #8a2be2); /* bluish purple */
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.back-button:hover {
+  background: linear-gradient(135deg, #7b68ee, #9370db);
+}

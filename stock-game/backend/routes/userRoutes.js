@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User'); // ✅ Import User model
+const userController = require('../controllers/userController');
 const mongoose = require('mongoose'); // ✅ Required for ObjectId conversion
 
 
@@ -9,6 +10,7 @@ router.get('/', (req, res) => {
     res.json({ message: "Users route is working!" });
 });
 
+router.post('/:userId/sync-balance', userController.syncUserBalance);
 
 // 📌 GET User Balance (by ObjectId)
 router.get('/:userId/balance', async (req, res) => {
