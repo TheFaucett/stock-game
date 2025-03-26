@@ -1,13 +1,16 @@
 const { applyImpactToStocks } = require("../controllers/newsImpactController");
 const Stock = require("../models/Stock");
 const { applyGaussian } = require("../utils/applyGaussian.js");
-
+const { processFirms } = require("./firmController");
 async function updateMarket() {
     try {
         console.log("🔄 Updating market state...");
 
         applyGaussian();
         await applyImpactToStocks();
+        const firmTradeImpact = await processFirms(); //'firm trading' means to mimic how other investors affect the price of a stock
+
+
 
         const stocks = await Stock.find();
 
@@ -28,11 +31,18 @@ async function updateMarket() {
 
             const currentVolatility = stock.volatility ?? 0.03;
 
-            // 🔥 Volatility affects price movement
+
             const baseFluctuation = (Math.random() - 0.5) * 2; // -1 to 1
             const adjustedFluctuation = baseFluctuation * currentVolatility * 100;
             const newPrice = Math.max(stock.price * (1 + adjustedFluctuation / 100), 0.01);
+       
 
+            const tradesForThisStock = firmTradeImpact[stock.ticker] || 0;
+            if (tradesForThisStock > 0) {
+                const tradeEffect = 0.0005 * tradesForThisStock; // 🛠️ Tunable multiplier
+                newPrice *= (1 + tradeEffect);
+                console.log("I worked! 🤩");
+            }
             const updatedHistory = [...stock.history.slice(-29), newPrice];
             const newChange = parseFloat(
                 ((newPrice - prevPrice) / prevPrice * 100).toFixed(2)
