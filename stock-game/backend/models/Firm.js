@@ -2,15 +2,19 @@ const mongoose = require('mongoose');
 
 const firmSchema = new mongoose.Schema({
     name: String,
-    strategy: String, // e.g., 'momentum', 'meanReversion', 'value'
-    riskTolerance: Number, // 0.0 - 1.0
-    tradingFrequency: Number, // e.g., trades every N cycles
+    strategy: String,
+    riskTolerance: Number,
+    tradingFrequency: Number,
     balance: Number,
-    portfolio: {
-        type: Map,
-        of: Number // ticker -> shares
+    ownedShares: {
+        type: Object,
+        default: {}
     },
-    lastTradeCycle: Number // helps throttle trading
+    transactions: {
+        type: Array,
+        default: []
+    },
+    lastTradeCycle: Number
 });
 
 module.exports = mongoose.model('Firm', firmSchema);
