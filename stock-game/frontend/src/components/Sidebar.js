@@ -14,7 +14,7 @@ const Sidebar = () => {
         queryFn: fetchPortfolio
     });
 
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <div className={`sidebar-container ${isOpen ? 'open' : 'closed'}`}>

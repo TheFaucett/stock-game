@@ -8,7 +8,7 @@ import Topbar from "./components/Topbar";
 import Heatmap from "./components/Heatmap";
 import SectorHeatmap from "./components/SectorHeatmap";
 import StockDetail from "./components/StockDetail"; 
-
+import FeaturedStocks from "./components/FeaturedStocks";
 import "./styles/global.css";
 
 const queryClient = new QueryClient();
@@ -37,6 +37,7 @@ function App() {
             <div className="container">
                 <Topbar />
                 <Sidebar />
+                <FeaturedStocks />
                 <Routes>
                     <Route path="/" element={<HeatmapContainer />} />
                     <Route path="/stock/:ticker" element={<StockDetail />} />

@@ -34,7 +34,7 @@ const Topbar = () => {
         refetchInterval: 30000 // ✅ Refreshes every 30 seconds
     });
 
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <div className={`topbar-container ${isOpen ? 'open' : 'closed'}`}>

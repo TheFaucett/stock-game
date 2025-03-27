@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Stock = require('../models/Stock'); // Ensure correct model import
-
+const getFeaturedStocks = require('../utils/selectFeaturedStocks'); 
 // GET all stocks with rounded values
 router.get('/', async (req, res) => {
     try {
@@ -59,6 +59,17 @@ const getSectorData = async () => {
         return [];
     }
 };
+
+
+router.get('/featured', async (req, res) => {
+    try {
+        const featuredStocks = await getFeaturedStocks();
+        res.json(featuredStocks);
+    } catch (err) {
+        console.error('Error fetching featured stocks:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 router.get("/heatmap", async (req, res) => {
     try {
