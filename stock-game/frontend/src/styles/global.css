@@ -10,3 +10,25 @@ body {
     color: #f0f0f0;
     min-height: 100vh;
 }
+.back-button {
+
+
+    background-color: #222;              /* dark background to match the theme */
+    color: #fff;                         /* white text */
+    border: 1px solid #555;              /* subtle border */
+    padding: 8px 14px;
+    margin: 10px 0;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+
+}
+
+
+.back-button:hover {
+    background-color: #333;
+    border-color: #888;
+    transform: translateX(-2px);
+}

@@ -11,6 +11,12 @@ const StockSchema = new mongoose.Schema({
     dividendYield: { type: Number },
     history: { type: [Number], default: [] },
     volatility: { type: Number, default: 0.02 },
+    liquidity: {
+        type: Number,
+        default: 0, // You’ll override this during seeding
+        min: -1,
+        max: 1,
+    },
 }, { timestamps: true, versionKey: false }); // ✅ Disables __v versioning
 
 module.exports = mongoose.model('Stock', StockSchema);

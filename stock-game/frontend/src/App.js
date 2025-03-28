@@ -20,7 +20,7 @@ const HeatmapContainer = () => {
         <div>
             {selectedSector ? (
                 <>
-                    <button onClick={() => setSelectedSector(null)}>⬅ Back to Sectors</button>
+                    <button className="back-button"onClick={() => setSelectedSector(null)}>⬅ Back to Sectors</button>
                     <Heatmap sector={selectedSector} />
                 </>
             ) : (
@@ -33,20 +33,27 @@ const HeatmapContainer = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-        <Router>
-            <div className="container">
-                <Topbar />
-                <Sidebar />
-                <FeaturedStocks />
-                <Routes>
-                    <Route path="/" element={<HeatmapContainer />} />
-                    <Route path="/stock/:ticker" element={<StockDetail />} />
-                </Routes>
-
-            </div>
-        </Router>
+      <Router>
+        <div className="container">
+          <Topbar />
+          <Sidebar />
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <>
+                  <FeaturedStocks />
+                  <HeatmapContainer />
+                </>
+              }
+            />
+            <Route path="/stock/:ticker" element={<StockDetail />} />
+          </Routes>
+        </div>
+      </Router>
     </QueryClientProvider>
   );
 }
+
 
 export default App;

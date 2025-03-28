@@ -184,8 +184,13 @@ const processFirms = async () => {
                 if (trade) allTrades.push(trade);
             }
         }
+        const aggregated = allTrades.reduce((acc, trade) => {
+            acc[trade.ticker] = (acc[trade.ticker] || 0) + trade.shares;
+            return acc;
+        }, {});
 
-        return allTrades;
+
+        return aggregated;
     } catch (err) {
         console.error("Error processing firms:", err);
         return [];

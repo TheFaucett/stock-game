@@ -2,18 +2,16 @@ const { applyImpactToStocks } = require("../controllers/newsImpactController");
 const Stock = require("../models/Stock");
 const { applyGaussian } = require("../utils/applyGaussian.js");
 const { processFirms } = require("./firmController");
+
 async function updateMarket() {
     try {
         console.log("🔄 Updating market state...");
 
         applyGaussian();
         await applyImpactToStocks();
-        const firmTradeImpact = await processFirms(); //'firm trading' means to mimic how other investors affect the price of a stock
-
-
+        const firmTradeImpact = await processFirms();
 
         const stocks = await Stock.find();
-
         if (!stocks || stocks.length === 0) {
             console.error("⚠️ No stocks found in the database!");
             return;
@@ -29,34 +27,33 @@ async function updateMarket() {
                 ? stock.history[stock.history.length - 1]
                 : stock.price;
 
-            const currentVolatility = stock.volatility ?? 0.03;
+            const volatility = stock.volatility ?? 0.03;
 
+            // 🎲 Step 1: Apply random Gaussian-like base fluctuation
+            const baseFluctuation = (Math.random() - 0.5) * 2; // range: -1 to 1
+            let newPrice = Math.max(stock.price * (1 + (baseFluctuation * volatility)), 0.01);
 
-            const baseFluctuation = (Math.random() - 0.5) * 2; // -1 to 1
-            const adjustedFluctuation = baseFluctuation * currentVolatility * 100;
-            const newPrice = Math.max(stock.price * (1 + adjustedFluctuation / 100), 0.01);
-       
-
-            const tradesForThisStock = firmTradeImpact[stock.ticker] || 0;
-            if (tradesForThisStock > 0) {
-                const tradeEffect = 0.0005 * tradesForThisStock; // 🛠️ Tunable multiplier
-                newPrice *= (1 + tradeEffect);
-                console.log("I worked! 🤩");
+            // 📉 Step 2: Apply firm trading effect (with liquidity adjustment)
+            const trades = firmTradeImpact[stock.ticker] || 0;
+            const liquidity = stock.liquidity ?? 0; // range: -1 (illiquid) to 1 (high liquidity)
+            if (trades > 0) {
+                const liquidityMultiplier = 1 - liquidity;
+                const tradeImpact = 0.0001 * trades * liquidityMultiplier;
+                newPrice *= (1 + tradeImpact);
+                console.log(`${stock.ticker} adjusted by trading: ${stock.price} → ${newPrice} | liquidity: ${liquidity}`);
             }
-            const updatedHistory = [...stock.history.slice(-29), newPrice];
-            const newChange = parseFloat(
-                ((newPrice - prevPrice) / prevPrice * 100).toFixed(2)
-            );
 
-            // 🔁 Smooth volatility update
-            const changeMagnitude = Math.abs(newChange / 100);
+            // 🧠 Step 3: Calculate percent change & volatility smoothing
+            const percentChange = parseFloat(((newPrice - prevPrice) / prevPrice * 100).toFixed(2));
+            const changeMagnitude = Math.abs(percentChange / 100);
             const shock = Math.random() < 0.05 ? 1 + Math.random() * 0.5 : 1;
             const adjustedChange = changeMagnitude * shock;
 
-            let newVolatility = 0.9 * currentVolatility + 0.1 * adjustedChange;
+            let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
+            updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
 
-            // Clamp volatility between min and max
-            newVolatility = Math.max(0.01, Math.min(newVolatility, 0.5));
+            // 🗂️ Step 4: Update price history
+            const updatedHistory = [...stock.history.slice(-29), newPrice];
 
             return {
                 updateOne: {
@@ -64,9 +61,9 @@ async function updateMarket() {
                     update: {
                         $set: {
                             price: newPrice,
-                            change: newChange,
+                            change: percentChange,
                             history: updatedHistory,
-                            volatility: parseFloat(newVolatility.toFixed(4))
+                            volatility: parseFloat(updatedVolatility.toFixed(4))
                         }
                     }
                 }
@@ -77,6 +74,7 @@ async function updateMarket() {
             await Stock.bulkWrite(bulkUpdates);
             console.log(`✅ Market update complete. ${bulkUpdates.length} stocks updated.`);
         }
+
     } catch (error) {
         console.error("⚠️ Error updating stock prices:", error);
     }
