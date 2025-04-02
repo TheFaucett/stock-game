@@ -10,6 +10,7 @@ const sectorNewsRoutes = require('./routes/sectorNewsRoutes');
 const stockNewsRoutes = require('./routes/stockNewsRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const userRoutes = require('./routes/userRoutes');
+const marketData = require('./routes/marketData');
 //CONTROLLERS
 const { updateMarket } = require('./controllers/marketController');
 
@@ -34,6 +35,7 @@ setInterval(async () => {
 }, tradeWindow);
 
 // 📌 Use Routes
+app.use('/api/market-data', marketData);
 app.use('/api/users', userRoutes)
 app.use('/api/stocks', stockRoutes);
 app.use('/api/news/global', globalNewsRoutes);

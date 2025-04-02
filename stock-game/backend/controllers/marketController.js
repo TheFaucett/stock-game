@@ -2,6 +2,8 @@ const { applyImpactToStocks } = require("../controllers/newsImpactController");
 const Stock = require("../models/Stock");
 const { applyGaussian } = require("../utils/applyGaussian.js");
 const { processFirms } = require("./firmController");
+const getMarketMood = require("../utils/getMarketMood.js");
+
 
 async function updateMarket() {
     try {
@@ -49,6 +51,15 @@ async function updateMarket() {
             const shock = Math.random() < 0.05 ? 1 + Math.random() * 0.5 : 1;
             const adjustedChange = changeMagnitude * shock;
 
+            //Step 4: Adjust price with market mood
+            const marketMood = getMarketMood(stocks);
+            if (marketMood === "slightly bullish") {
+                newPrice *= 1.01;
+            } else if (marketMood === "slightly bearish") {
+                newPrice *= 0.99;
+            }
+
+
             let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
             updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
 
@@ -80,4 +91,11 @@ async function updateMarket() {
     }
 }
 
-module.exports = { updateMarket };
+const getMarketMoodController = async (req, res) => {
+    const stocks = await Stock.find();
+    const mood = getMarketMood(stocks);
+    res.json({ mood });
+};
+
+
+module.exports = { updateMarket, getMarketMoodController };
