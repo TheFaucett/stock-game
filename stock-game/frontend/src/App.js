@@ -9,6 +9,7 @@ import Heatmap from "./components/Heatmap";
 import SectorHeatmap from "./components/SectorHeatmap";
 import StockDetail from "./components/StockDetail"; 
 import FeaturedStocks from "./components/FeaturedStocks";
+import MoodGraph from "./components/MoodGraph";
 import "./styles/global.css";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ function App() {
                 <>
                   <FeaturedStocks />
                   <HeatmapContainer />
+                    <MoodGraph />
                 </>
               }
             />
