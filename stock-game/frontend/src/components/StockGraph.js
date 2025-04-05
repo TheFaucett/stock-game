@@ -1,40 +1,69 @@
-import React, { useEffect, useState } from "react";
+import React from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { Line } from "react-chartjs-2";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-function StockGraph({ ticker, history }) {
-    const chartData = history.map((price, index) => ({
-        day: `Day ${index + 1}`,
-        price: parseFloat(price),
-    }));
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement
+} from "chart.js";
 
-    return (
-        console.log("IM HERE!"),
-        <LineChart
-            width={600}
-            height={300}
-            data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-            <CartesianGrid strokeDasharray="3 3" stroke="#4a4a4a" />
-            <XAxis dataKey="day" tick={{ fill: '#ffffff' }} />
-            <YAxis tick={{ fill: '#ffffff' }} />
-            <Tooltip contentStyle={{ backgroundColor: '#333', color: '#fff' }} />
-            <Legend />
-            <Line
-                type="monotone"
-                dataKey="price"
-                stroke="#4da6ff"
-                activeDot={{ r: 6 }}
-            />
-        </LineChart>
-    );
-}
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+
+const fetchStockData = async (ticker) => {
+  const res = await fetch(`http://localhost:5000/api/stocks/${ticker}`);
+  if (!res.ok) throw new Error("Stock data fetch failed");
+  return res.json();
+};
+
+const StockGraph = ({ ticker }) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["stock", ticker],
+    queryFn: () => fetchStockData(ticker),
+    enabled: !!ticker
+  });
+
+  if (isLoading) return <p>Loading chart...</p>;
+  if (error) return <p>Chart error.</p>;
+  if (!data || !Array.isArray(data.history) || data.history.length < 2) return null;
+
+  const history = data.history.slice(-30); // recent prices
+  const labels = history.map((_, i) => i + 1);
+
+  const firstPrice = history[0];
+  const lastPrice = history[history.length - 1];
+  const lineColor = lastPrice < firstPrice ? "#f44336" : "#4caf50"; // red if price dropped
+
+  const chartData = {
+    labels,
+    datasets: [{
+      label: `${ticker} (30 updates)`,
+      data: history,
+      borderColor: lineColor,
+      tension: 0.3,
+      pointRadius: 0,
+    }]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: false,
+        ticks: {
+          callback: (val) => `$${val.toFixed(2)}`
+        }
+      }
+    }
+  };
+
+  return (
+    <div style={{ height: "150px", width: "100%" }}>
+      <Line data={chartData} options={options} />
+    </div>
+  );
+};
+
 export default StockGraph;

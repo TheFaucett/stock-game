@@ -3,11 +3,15 @@ const Stock = require("../models/Stock");
 const { applyGaussian } = require("../utils/applyGaussian.js");
 const { processFirms } = require("./firmController");
 const { recordMarketMood, getMoodHistory } = require("../utils/getMarketMood.js");
-
+const { maybeApplyShock, getEconomicFactors } = require("../utils/economicEnvironment.js");
 
 async function updateMarket() {
   try {
     console.log("🔄 Updating market state...");
+    maybeApplyShock(); //shake it up a lil
+    const { inflationRate, currencyStrength } = getEconomicFactors();
+
+
 
     applyGaussian();
     await applyImpactToStocks();
@@ -53,6 +57,8 @@ async function updateMarket() {
       // ✅ Mood effect now uses the recorded mood
       if (marketMood === "slightly bullish") newPrice *= 1.01;
       else if (marketMood === "slightly bearish") newPrice *= 0.99;
+      newPrice *= (1 + inflationRate);
+      newPrice /= currencyStrength;
 
       let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
       updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
