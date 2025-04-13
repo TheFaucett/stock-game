@@ -4,6 +4,8 @@ const { applyGaussian } = require("../utils/applyGaussian.js");
 const { processFirms } = require("./firmController");
 const { recordMarketMood, getMoodHistory } = require("../utils/getMarketMood.js");
 const { maybeApplyShock, getEconomicFactors } = require("../utils/economicEnvironment.js");
+const { recordMarketIndexHistory } = require("../utils/marketIndex.js");
+
 
 async function updateMarket() {
   try {
@@ -15,16 +17,18 @@ async function updateMarket() {
 
     applyGaussian();
     await applyImpactToStocks();
-    const firmTradeImpact = await processFirms();
 
     const stocks = await Stock.find();
+    recordMarketIndexHistory(stocks); // ✅ Record market index history
+    const marketMood = recordMarketMood(stocks);
+    const firmTradeImpact = await processFirms(marketMood);
     if (!stocks || stocks.length === 0) {
       console.error("⚠️ No stocks found in the database!");
       return;
     }
 
     // ✅ Record market mood once per update
-    const marketMood = recordMarketMood(stocks);
+
     console.log("📈 Recorded market mood:", marketMood);
 
     const bulkUpdates = stocks.map((stock) => {
@@ -37,7 +41,7 @@ async function updateMarket() {
         ? stock.history[stock.history.length - 1]
         : stock.price;
 
-      const volatility = stock.volatility ?? 0.03;
+      const volatility = stock.volatility ?? 0.05;
       const baseFluctuation = (Math.random() - 0.5) * 2;
       let newPrice = Math.max(stock.price * (1 + baseFluctuation * volatility), 0.01);
 
@@ -55,13 +59,13 @@ async function updateMarket() {
       const adjustedChange = changeMagnitude * shock;
 
       // ✅ Mood effect now uses the recorded mood
-      if (marketMood === "slightly bullish") newPrice *= 1.01;
-      else if (marketMood === "slightly bearish") newPrice *= 0.99;
+
       newPrice *= (1 + inflationRate);
       newPrice /= currencyStrength;
 
       let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
       updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
+
 
       const updatedHistory = [...stock.history.slice(-29), newPrice];
 

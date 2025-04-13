@@ -32,7 +32,7 @@ const FeaturedStocks = () => {
                 {stocks.map((stock) => (
                     <li key={stock._id} style={{ marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
                         <strong>{stock.ticker}</strong> — ${stock.price.toFixed(2)} <br />
-                        Change: {stock.change}% | EPS: {stock.eps} | Volatility: {stock.volatility}
+                        Change: {stock.change.toFixed(2)}% | EPS: {stock.eps} | Volatility: {stock.volatility}
                     </li>
                 ))}
             </ul>

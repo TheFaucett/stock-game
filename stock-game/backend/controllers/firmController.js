@@ -1,119 +1,86 @@
 const Stock = require("../models/Stock");
 const Firm = require("../models/Firm");
 
-// Utility: Pick a random element
+// Mood influence multipliers
+function getMoodBias(mood) {
+    return {
+        buyBias: 0.4 + mood,     // Buy more as mood → 1
+        sellBias: 0.6 - mood,    // Sell less as mood → 1
+    };
+}
+
 const randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const strategies = {
-    momentum: async (firm) => {
-        const topStocks = await Stock.find().sort({ change: -1 }).limit(5);
-        const bottomStocks = await Stock.find().sort({ change: 1 }).limit(5);
+    momentum: async (firm, mood) => {
+        const { buyBias, sellBias } = getMoodBias(mood);
+        const top = await Stock.find().sort({ change: -1 }).limit(5);
+        const bottom = await Stock.find().sort({ change: 1 }).limit(5);
+        const buy = randomElement(top);
+        const sell = randomElement(bottom.filter(s => firm.ownedShares?.[s.ticker] > 0));
 
-        const buyCandidate = randomElement(topStocks);
-        const sellCandidate = randomElement(
-            bottomStocks.filter(s => firm.ownedShares?.[s.ticker] > 0)
-        );
-
-        if (Math.random() < 0.5 && buyCandidate) {
-            console.log(`📈 ${firm.name} [Momentum] buying ${buyCandidate.ticker}`);
-            return await executeFirmTrade(firm, buyCandidate, 'buy');
-        }
-
-        if (sellCandidate) {
-            console.log(`📉 ${firm.name} [Momentum] selling ${sellCandidate.ticker}`);
-            return await executeFirmTrade(firm, sellCandidate, 'sell');
-        }
-
+        if (Math.random() < buyBias && buy) return executeFirmTrade(firm, buy, 'buy');
+        if (Math.random() < sellBias && sell) return executeFirmTrade(firm, sell, 'sell');
         return null;
     },
 
-    contrarian: async (firm) => {
-        const bottomStocks = await Stock.find().sort({ change: 1 }).limit(5);
-        const buyCandidate = randomElement(bottomStocks);
+    contrarian: async (firm, mood) => {
+        const { buyBias, sellBias } = getMoodBias(mood);
+        const bottom = await Stock.find().sort({ change: 1 }).limit(5);
+        const buy = randomElement(bottom);
 
         const tickers = Object.keys(firm.ownedShares || {});
         const sellTicker = randomElement(tickers);
-        const sellCandidate = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
+        const sell = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
 
-        if (Math.random() < 0.5 && buyCandidate) {
-            console.log(`📈 ${firm.name} [Contrarian] buying ${buyCandidate.ticker}`);
-            return await executeFirmTrade(firm, buyCandidate, 'buy');
-        }
-
-        if (sellCandidate) {
-            console.log(`📉 ${firm.name} [Contrarian] selling ${sellCandidate.ticker}`);
-            return await executeFirmTrade(firm, sellCandidate, 'sell');
-        }
-
+        if (Math.random() < buyBias && buy) return executeFirmTrade(firm, buy, 'buy');
+        if (Math.random() < sellBias && sell) return executeFirmTrade(firm, sell, 'sell');
         return null;
     },
 
-    growth: async (firm) => {
-        const growthStocks = await Stock.find().sort({ eps: -1 }).limit(5);
-        const buyCandidate = randomElement(growthStocks);
+    growth: async (firm, mood) => {
+        const { buyBias, sellBias } = getMoodBias(mood);
+        const growth = await Stock.find().sort({ eps: -1 }).limit(5);
+        const buy = randomElement(growth);
 
         const tickers = Object.keys(firm.ownedShares || {});
         const sellTicker = randomElement(tickers);
-        const sellCandidate = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
+        const sell = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
 
-        if (Math.random() < 0.6 && buyCandidate) {
-            console.log(`📈 ${firm.name} [Growth] buying ${buyCandidate.ticker}`);
-            return await executeFirmTrade(firm, buyCandidate, 'buy');
-        }
-
-        if (sellCandidate) {
-            console.log(`📉 ${firm.name} [Growth] selling ${sellCandidate.ticker}`);
-            return await executeFirmTrade(firm, sellCandidate, 'sell');
-        }
-
+        if (Math.random() < buyBias && buy) return executeFirmTrade(firm, buy, 'buy');
+        if (Math.random() < sellBias && sell) return executeFirmTrade(firm, sell, 'sell');
         return null;
     },
 
-    volatility: async (firm) => {
-        const volatileStocks = await Stock.find().sort({ volatility: -1 }).limit(5);
-        const buyCandidate = randomElement(volatileStocks);
+    volatility: async (firm, mood) => {
+        const { buyBias, sellBias } = getMoodBias(mood);
+        const volatile = await Stock.find().sort({ volatility: -1 }).limit(5);
+        const buy = randomElement(volatile);
 
         const tickers = Object.keys(firm.ownedShares || {});
         const sellTicker = randomElement(tickers);
-        const sellCandidate = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
+        const sell = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
 
-        if (Math.random() < 0.5 && buyCandidate) {
-            console.log(`📈 ${firm.name} [Volatility] buying ${buyCandidate.ticker}`);
-            return await executeFirmTrade(firm, buyCandidate, 'buy');
-        }
-
-        if (sellCandidate) {
-            console.log(`📉 ${firm.name} [Volatility] selling ${sellCandidate.ticker}`);
-            return await executeFirmTrade(firm, sellCandidate, 'sell');
-        }
-
+        if (Math.random() < buyBias && buy) return executeFirmTrade(firm, buy, 'buy');
+        if (Math.random() < sellBias && sell) return executeFirmTrade(firm, sell, 'sell');
         return null;
     },
 
-    balanced: async (firm) => {
-        const [buyCandidate] = await Stock.aggregate([{ $sample: { size: 1 } }]);
-
+    balanced: async (firm, mood) => {
+        const { buyBias, sellBias } = getMoodBias(mood);
+        const [buy] = await Stock.aggregate([{ $sample: { size: 1 } }]);
         const tickers = Object.keys(firm.ownedShares || {});
         const sellTicker = randomElement(tickers);
-        const sellCandidate = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
+        const sell = sellTicker ? await Stock.findOne({ ticker: sellTicker }) : null;
 
-        if (Math.random() < 0.5 && buyCandidate) {
-            console.log(`📈 ${firm.name} [Balanced] buying ${buyCandidate.ticker}`);
-            return await executeFirmTrade(firm, buyCandidate, 'buy');
-        }
-
-        if (sellCandidate) {
-            console.log(`📉 ${firm.name} [Balanced] selling ${sellCandidate.ticker}`);
-            return await executeFirmTrade(firm, sellCandidate, 'sell');
-        }
-
+        if (Math.random() < buyBias && buy) return executeFirmTrade(firm, buy, 'buy');
+        if (Math.random() < sellBias && sell) return executeFirmTrade(firm, sell, 'sell');
         return null;
     }
 };
 
 const executeFirmTrade = async (firm, stock, action) => {
     if (!stock) return null;
-
     firm.ownedShares = firm.ownedShares || {};
     firm.transactions = firm.transactions || [];
 
@@ -122,57 +89,26 @@ const executeFirmTrade = async (firm, stock, action) => {
     if (action === 'buy') {
         const shares = Math.floor((firm.balance * firm.riskTolerance) / stock.price);
         if (shares <= 0) return null;
-
-        firm.ownedShares[stock.ticker] = currentShares + shares;
         firm.balance -= shares * stock.price;
-
-        firm.transactions.push({
-            type: 'buy',
-            ticker: stock.ticker,
-            shares,
-            price: stock.price,
-            total: shares * stock.price,
-            date: new Date()
-        });
-
-        console.log(`🏢 ${firm.name} bought ${shares} shares of ${stock.ticker}`);
-    }
-
-    if (action === 'sell') {
+        firm.ownedShares[stock.ticker] = currentShares + shares;
+        firm.transactions.push({ type: 'buy', ticker: stock.ticker, shares, price: stock.price, total: shares * stock.price, date: new Date() });
+    } else {
         if (currentShares <= 0) return null;
-
         const sharesToSell = Math.ceil(currentShares * firm.riskTolerance);
         const proceeds = sharesToSell * stock.price;
-
         firm.balance += proceeds;
         const remaining = currentShares - sharesToSell;
-
-        if (remaining > 0) {
-            firm.ownedShares[stock.ticker] = remaining;
-        } else {
-            delete firm.ownedShares[stock.ticker];
-        }
-
-        firm.transactions.push({
-            type: 'sell',
-            ticker: stock.ticker,
-            shares: sharesToSell,
-            price: stock.price,
-            total: proceeds,
-            date: new Date()
-        });
-
-        console.log(`🏢 ${firm.name} sold ${sharesToSell} shares of ${stock.ticker}`);
+        if (remaining > 0) firm.ownedShares[stock.ticker] = remaining;
+        else delete firm.ownedShares[stock.ticker];
+        firm.transactions.push({ type: 'sell', ticker: stock.ticker, shares: sharesToSell, price: stock.price, total: proceeds, date: new Date() });
     }
 
-    firm.markModified('ownedShares'); // ✅ Ensures Mongoose tracks the nested object update
+    firm.markModified('ownedShares');
     await firm.save();
-    console.log(`${firm.name} portfolio after trade:`, firm.ownedShares);
-
     return { ticker: stock.ticker, shares: 1 };
 };
 
-const processFirms = async () => {
+const processFirms = async (marketMood) => {
     try {
         const firms = await Firm.find();
         const allTrades = [];
@@ -180,20 +116,18 @@ const processFirms = async () => {
         for (const firm of firms) {
             const strategyFn = strategies[firm.strategy];
             if (strategyFn) {
-                const trade = await strategyFn(firm);
+                const trade = await strategyFn(firm, marketMood); // 👈 pass mood in
                 if (trade) allTrades.push(trade);
             }
         }
-        const aggregated = allTrades.reduce((acc, trade) => {
-            acc[trade.ticker] = (acc[trade.ticker] || 0) + trade.shares;
+
+        return allTrades.reduce((acc, t) => {
+            acc[t.ticker] = (acc[t.ticker] || 0) + t.shares;
             return acc;
         }, {});
-
-
-        return aggregated;
     } catch (err) {
         console.error("Error processing firms:", err);
-        return [];
+        return {};
     }
 };
 

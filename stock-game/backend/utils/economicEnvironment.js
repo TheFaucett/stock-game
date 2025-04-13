@@ -14,7 +14,7 @@ function simulateEconomyShock() {
 }
 
 function maybeApplyShock() {
-  const shockChance = 0.05; // 5% chance per market update
+  const shockChance = 0.025; // 5% chance per market update
   if (Math.random() < shockChance) {
     simulateEconomyShock();
   }

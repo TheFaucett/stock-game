@@ -7,19 +7,12 @@ import {
   CategoryScale,
   LinearScale,
   PointElement,
+  Tooltip,
 } from "chart.js";
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
 
-// This stays for Y-axis labeling
-const moodLabels = {
-  "-2": "bearish",
-  "-1": "slightly bearish",
-  0: "neutral",
-  1: "slightly bullish",
-  2: "bullish",
-};
-
+// Fetch mood history from backend
 const fetchMoodHistory = async () => {
   const res = await fetch("http://localhost:5000/api/market-data/mood");
   const data = await res.json();
@@ -35,39 +28,58 @@ const MoodGraph = () => {
 
   if (isLoading) return <p>Loading market mood...</p>;
   if (error) return <p>Error loading market mood.</p>;
-  if (!Array.isArray(moodHistory) || moodHistory.length === 0) return <p>No mood history yet.</p>;
+  if (!Array.isArray(moodHistory) || moodHistory.length === 0)
+    return <p>No mood history yet.</p>;
 
-  const values = moodHistory.map(entry => entry.value);
-  const labels = moodHistory.map((_, index) => index + 1); // Stable 1–30
+  const values = moodHistory.map((entry) => entry.value);
+  const labels = moodHistory.map((_, index) => `T-${30 - index}`); // e.g., T-30 to T-1
 
   const data = {
     labels,
     datasets: [
       {
-        label: "Market Mood Trend",
+        label: "Market Mood (0 = bearish, 1 = bullish)",
         data: values,
         borderColor: "#4caf50",
+        backgroundColor: "rgba(76, 175, 80, 0.2)",
         pointRadius: 3,
         tension: 0.3,
+        fill: true,
       },
     ],
   };
-  console.log(data);
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       y: {
-        min: -2,
-        max: 2,
+        min: 0,
+        max: 1,
         ticks: {
-          stepSize: 1,
-          callback: (value) => moodLabels[value] || "",
+          stepSize: 0.1,
+          callback: (value) => `${(value * 100).toFixed(0)}%`,
+        },
+        title: {
+          display: true,
+          text: "Bullishness %",
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: "Market Updates (Recent → Left)",
+        },
+      },
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `Sentiment: ${(ctx.parsed.y * 100).toFixed(1)}% bullish`,
         },
       },
     },
   };
-  console.log("📊 Chart data:", data);
 
   return (
     <div style={{ height: "250px", width: "100%", marginBottom: "1rem" }}>

@@ -31,9 +31,10 @@ const StockGraph = ({ ticker }) => {
   const history = data.history.slice(-30); // recent prices
   const labels = history.map((_, i) => i + 1);
 
-  const firstPrice = history[0];
-  const lastPrice = history[history.length - 1];
-  const lineColor = lastPrice < firstPrice ? "#f44336" : "#4caf50"; // red if price dropped
+
+  const change = data.change; // This is your backend % change value
+  const lineColor = change < 0 ? "#f44336" : change > 0 ? "#4caf50" : "#999"; // red, green, gray
+
 
   const chartData = {
     labels,

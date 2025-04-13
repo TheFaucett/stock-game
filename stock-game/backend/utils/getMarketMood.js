@@ -1,13 +1,15 @@
 let moodHistory = [];
 
-const moodToValue = {
-  bearish: -2,
-  "slightly bearish": -1,
-  neutral: 0,
-  "slightly bullish": 1,
-  bullish: 2,
-};
+// Optional: If you still want to show a label, we can derive it from the score
+function labelFromPercent(percentUp) {
+  if (percentUp > 0.65) return "bullish";
+  if (percentUp > 0.5) return "slightly bullish";
+  if (percentUp < 0.35) return "bearish";
+  if (percentUp < 0.5) return "slightly bearish";
+  return "neutral";
+}
 
+// Calculate a numeric market sentiment from 0 to 1
 function calculateMood(stocks) {
   let up = 0, down = 0;
   for (const stock of stocks) {
@@ -16,29 +18,25 @@ function calculateMood(stocks) {
   }
 
   const total = up + down;
-  const percentUp = total === 0 ? 0 : up / total;
-
-  if (percentUp > 0.65) return "bullish";
-  if (percentUp > 0.5) return "slightly bullish";
-  if (percentUp < 0.35) return "bearish";
-  if (percentUp < 0.5) return "slightly bearish";
-  return "neutral";
+  const percentUp = total === 0 ? 0.5 : up / total; // neutral fallback
+  return parseFloat(percentUp.toFixed(3)); // optional: trim to 3 decimals
 }
 
 function recordMarketMood(stocks) {
-  const mood = calculateMood(stocks);
+  const numericMood = calculateMood(stocks);
+  const label = labelFromPercent(numericMood); // optional
 
   moodHistory.push({
-    mood,
-    value: moodToValue[mood],
+    mood: label,
+    value: numericMood,         // 👈 Now the value is 0.0–1.0
     timestamp: Date.now(),
   });
 
   if (moodHistory.length > 30) {
-    moodHistory = moodHistory.slice(-30); // keep last 30
+    moodHistory = moodHistory.slice(-30);
   }
 
-  return mood;
+  return numericMood; // returns the numeric value
 }
 
 function getMoodHistory() {
