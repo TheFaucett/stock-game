@@ -11,7 +11,6 @@ import StockDetail from "./components/StockDetail";
 import FeaturedStocks from "./components/FeaturedStocks";
 import MoodGraph from "./components/MoodGraph";
 import MarketIndexGraph from "./components/MarketIndexGraph";
-
 import "./styles/global.css";
 
 const queryClient = new QueryClient();

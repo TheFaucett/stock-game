@@ -12,7 +12,7 @@ import {
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
 const fetchMarketIndex = async () => {
-  const res = await fetch("http://localhost:5000/api/market-index");
+  const res = await fetch("http://localhost:5000/api/market-data/index");
   if (!res.ok) throw new Error("Failed to fetch market index");
   return res.json();
 };
@@ -27,8 +27,13 @@ const MarketIndexGraph = () => {
   if (isLoading) return <p>Loading Market Index...</p>;
   if (error) return <p>Error loading Market Index</p>;
 
-  const labels = data.map((_, i) => i + 1);
+  const labels = data.map((_, i) => `T-${30 - i}`);
   const prices = data.map(entry => entry.price);
+
+  // ✅ Calculate min/max for focused Y-axis
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const rangePadding = (maxPrice - minPrice) * 0.1 || 1;
 
   const chartData = {
     labels,
@@ -39,7 +44,7 @@ const MarketIndexGraph = () => {
         borderColor: "#3f51b5",
         backgroundColor: "rgba(63, 81, 181, 0.1)",
         tension: 0.3,
-        pointRadius: 0,
+        pointRadius: 0
       }
     ]
   };
@@ -49,9 +54,10 @@ const MarketIndexGraph = () => {
     maintainAspectRatio: false,
     scales: {
       y: {
-        beginAtZero: false,
+        min: minPrice - rangePadding,
+        max: maxPrice + rangePadding,
         ticks: {
-          callback: val => `$${Number(val).toExponential(2)}`
+          callback: val => `$${Number(val).toFixed(2)}`
         }
       }
     }
