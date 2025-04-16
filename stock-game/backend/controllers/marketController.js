@@ -16,7 +16,7 @@ async function updateMarket() {
 
     const { inflationRate, currencyStrength } = getEconomicFactors();
     count++;
-
+    console.log(`⏱️ Tick #${count} complete`);
     applyGaussian();
     await applyImpactToStocks();
 
@@ -51,7 +51,7 @@ async function updateMarket() {
       // Nonlinear mean reversion (Approach 3)
       const targetPrice = stock.basePrice ?? 100;
       const delta = (targetPrice - newPrice) / targetPrice;
-      const reversionEffect = Math.tanh(delta) * 0.03;
+      const reversionEffect = Math.tanh(delta) * 0.08;
       newPrice *= (1 + reversionEffect);
 
       const trades = firmTradeImpact[stock.ticker] || 0;
@@ -66,9 +66,14 @@ async function updateMarket() {
       const changeMagnitude = Math.abs(percentChange / 100);
       const shock = Math.random() < 0.05 ? 1 + Math.random() * 0.5 : 1;
       const adjustedChange = changeMagnitude * shock;
+      const macroGrowthRate = 0.0001; // ~2.5% annual if 1 tick = 1 day
+      const macroMultiplier = Math.pow(1 + macroGrowthRate, count);
+      newPrice *= macroMultiplier;
+
+
 
       newPrice *= 1 + 0;//Math.min(inflationRate, 0.0000794);
-      newPrice /= currencyStrength;
+     // newPrice /= currencyStrength;
 
       let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
       updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
