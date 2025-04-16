@@ -30,60 +30,50 @@ async function updateMarket() {
     const marketMood = recordMarketMood(stocks);
     const firmTradeImpact = await processFirms(marketMood);
 
-    // 🌍 Calculate total market value
     const currentTotalValue = stocks.reduce((acc, stock) => acc + stock.price, 0);
 
     if (count === 1) {
       initialMarketCap = currentTotalValue;
       console.log(`🟢 Initial market cap set to $${initialMarketCap.toFixed(2)}`);
-    } else if (initialMarketCap) {
+    } else {
       const changePercent = ((currentTotalValue - initialMarketCap) / initialMarketCap) * 100;
       console.log(`📊 Market cap since update 1: ${changePercent.toFixed(2)}%`);
     }
 
     const bulkUpdates = stocks.map((stock) => {
-      if (!stock || !stock.ticker) {
-        console.error("❌ Invalid stock found:", stock);
-        return null;
-      }
+      if (!stock || !stock.ticker) return null;
 
-      const prevPrice =
-        stock.history.length > 1 ? stock.history[stock.history.length - 1] : stock.price;
-
+      const prevPrice = stock.history.at(-1) ?? stock.price;
       const volatility = stock.volatility ?? 0.05;
-      const baseFluctuation = (Math.random() - 0.5) * 2;
+      const baseFluctuation = (Math.random() - 0.5) * 1.0;
       let newPrice = Math.max(stock.price * (1 + baseFluctuation * volatility), 0.01);
+
+      // Nonlinear mean reversion (Approach 3)
+      const targetPrice = stock.basePrice ?? 100;
+      const delta = (targetPrice - newPrice) / targetPrice;
+      const reversionEffect = Math.tanh(delta) * 0.03;
+      newPrice *= (1 + reversionEffect);
 
       const trades = firmTradeImpact[stock.ticker] || 0;
       const liquidity = stock.liquidity ?? 0;
       if (trades > 0) {
         const liquidityMultiplier = 1 - liquidity;
         const tradeImpact = 0.0001 * trades * liquidityMultiplier;
-        console.log("tradeImpact:", tradeImpact);
         newPrice *= 1 + tradeImpact;
       }
 
-      const percentChange = parseFloat(
-        ((newPrice - prevPrice) / prevPrice * 100).toFixed(2)
-      );
+      const percentChange = parseFloat(((newPrice - prevPrice) / prevPrice * 100).toFixed(2));
       const changeMagnitude = Math.abs(percentChange / 100);
       const shock = Math.random() < 0.05 ? 1 + Math.random() * 0.5 : 1;
       const adjustedChange = changeMagnitude * shock;
 
-      newPrice *= 1 + Math.min(inflationRate, 0.0000794);
+      newPrice *= 1 + 0;//Math.min(inflationRate, 0.0000794);
       newPrice /= currencyStrength;
 
       let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
       updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
 
       const updatedHistory = [...stock.history.slice(-29), newPrice];
-
-      console.log("baseFluct:", baseFluctuation * volatility);
-
-      console.log("inflationRate:", inflationRate);
-
-
-
 
       return {
         updateOne: {

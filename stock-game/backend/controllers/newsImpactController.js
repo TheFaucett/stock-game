@@ -24,16 +24,16 @@ async function applyImpactToStocks() {
                 let sentimentImpact = (marketSentiment / 100) * stock.price;
 
                 // ✅ Scale the news impact more reasonably
-                let maxNewsImpact = stock.price * 0.03; // ✅ Max 3% drop per news event
+                let maxNewsImpact = stock.price * 0.04; // ✅ Max n% drop per news event
                 let adjustedWeight = weight / 2; // ✅ Reduce weight influence slightly
                 let newsImpact = Math.max(
                     (newsItem.sentimentScore * adjustedWeight / 100) * stock.price,
-                    -maxNewsImpact
+                    -100000 //temp shift, seeing if this works 
                 );
 
                 // ✅ Cap max total drop per update to 5%
                 let maxTotalDrop = stock.price * 0.05;
-                let totalImpact = Math.max(newsImpact + sentimentImpact, -maxTotalDrop);
+                let totalImpact = Math.max(newsImpact + sentimentImpact, 100000);
 
                 const newPrice = parseFloat((stock.price + totalImpact).toFixed(2));
                 stock.price = newPrice;
