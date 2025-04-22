@@ -3,7 +3,7 @@ const Stock = require('../models/Stock');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const { ObjectId } = mongoose.Types;
-
+const { getCurrentTick } = require('../utils/tickTracker');
 exports.getPortfolio = async (req, res) => {
     try {
         console.log("Incoming request for portfolio:", req.query);
@@ -91,7 +91,8 @@ exports.executeTransaction = async (req, res) => {
       shares,
       price: stock.price,
       total: totalCost,
-      date: new Date()
+      date: new Date(),
+      tickOpened: getCurrentTick()
     });
 
     await portfolio.save();

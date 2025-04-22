@@ -20,7 +20,6 @@ async function updateMarket() {
     console.log(`⏱️ Tick #${tick} complete`);
 
     const earlyMarket = tick <= 100;
-
     const inflationEffective = earlyMarket ? inflationRate * 0.25 : inflationRate;
     const productivityGrowth = earlyMarket ? 0.005 : 0.015;
     const baseGrowthRate = earlyMarket ? 0.02 / 365 : 0.11 / 365;
@@ -36,8 +35,11 @@ async function updateMarket() {
     applyGaussian();
     await applyImpactToStocks();
 
-    // ✅ Auto-cover shorts based on tick lifetime
-    await autoCoverShorts();
+    // ✅ Auto-cover shorts every 12 ticks
+    if (tick % 12 === 0) {
+      console.log("🧾 Performing scheduled auto-cover for shorts");
+      await autoCoverShorts();
+    }
 
     const stocks = await Stock.find();
     if (!stocks || stocks.length === 0) {
