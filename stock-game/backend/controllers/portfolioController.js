@@ -27,71 +27,87 @@ exports.getPortfolio = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-
 exports.executeTransaction = async (req, res) => {
-    try {
-        const { userId, type, ticker, shares } = req.body;
+  try {
+    const { userId, type, ticker, shares } = req.body;
 
-        if (!userId || !ticker || shares <= 0) {
-            return res.status(400).json({ error: 'Invalid transaction data.' });
-        }
-
-        const stock = await Stock.findOne({ ticker: ticker.toUpperCase() });
-        if (!stock) return res.status(404).json({ error: 'Stock not found' });
-
-        const portfolio = await Portfolio.findOneAndUpdate(
-            { userId: new mongoose.Types.ObjectId(userId) },
-            { $setOnInsert: { balance: 10000, ownedShares: new Map(), transactions: [] } },
-            { new: true, upsert: true }
-        );
-
-        const totalCost = shares * stock.price;
-
-        if (type === 'buy' && portfolio.balance < totalCost) {
-            return res.status(400).json({ error: 'Insufficient balance' });
-        }
-        if (type === 'sell' && (!portfolio.ownedShares.get(ticker) || portfolio.ownedShares.get(ticker) < shares)) {
-            return res.status(400).json({ error: 'Not enough shares to sell' });
-        }
-
-        const balanceChange = type === 'buy' ? -totalCost : totalCost;
-        const shareChange = type === 'buy' ? shares : -shares;
-
-        // ✅ Atomic update
-        portfolio.balance += balanceChange;
-        portfolio.ownedShares.set(ticker, (portfolio.ownedShares.get(ticker) || 0) + shareChange);
-
-        if (portfolio.ownedShares.get(ticker) === 0) {
-            portfolio.ownedShares.delete(ticker);
-        }
-
-        portfolio.transactions.push({
-            type,
-            ticker,
-            shares,
-            price: stock.price,
-            total: totalCost,
-            date: new Date()
-        });
-
-        await portfolio.save();
-
-
-
-        await User.updateOne(
-            { _id: new ObjectId(userId) },
-            { $set: { balance: portfolio.balance } }
-        );
-
-
-        res.json({ message: `Transaction successful`, portfolio });
-
-    } catch (error) {
-        console.error('Transaction error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    if (!userId || !ticker || shares <= 0 || !['buy', 'sell', 'short', 'cover'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid transaction data.' });
     }
-};
 
+    const stock = await Stock.findOne({ ticker: ticker.toUpperCase() });
+    if (!stock) return res.status(404).json({ error: 'Stock not found' });
+
+    const portfolio = await Portfolio.findOneAndUpdate(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      { $setOnInsert: { balance: 10000, ownedShares: new Map(), borrowedShares: new Map(), transactions: [] } },
+      { new: true, upsert: true }
+    );
+
+    const totalCost = shares * stock.price;
+
+    // 🟢 Handle each transaction type
+    switch (type) {
+      case 'buy':
+        if (portfolio.balance < totalCost) {
+          return res.status(400).json({ error: 'Insufficient balance' });
+        }
+        portfolio.balance -= totalCost;
+        portfolio.ownedShares.set(ticker, (portfolio.ownedShares.get(ticker) || 0) + shares);
+        break;
+
+      case 'sell':
+        if (!portfolio.ownedShares.get(ticker) || portfolio.ownedShares.get(ticker) < shares) {
+          return res.status(400).json({ error: 'Not enough shares to sell' });
+        }
+        portfolio.balance += totalCost;
+        portfolio.ownedShares.set(ticker, portfolio.ownedShares.get(ticker) - shares);
+        if (portfolio.ownedShares.get(ticker) === 0) portfolio.ownedShares.delete(ticker);
+        break;
+
+      case 'short':
+        // Borrow shares and sell them for current price
+        portfolio.balance += totalCost;
+        portfolio.borrowedShares.set(ticker, (portfolio.borrowedShares.get(ticker) || 0) + shares);
+        break;
+
+      case 'cover':
+        if (!portfolio.borrowedShares.get(ticker) || portfolio.borrowedShares.get(ticker) < shares) {
+          return res.status(400).json({ error: 'Not enough shorted shares to cover' });
+        }
+        if (portfolio.balance < totalCost) {
+          return res.status(400).json({ error: 'Insufficient balance to cover shorts' });
+        }
+        portfolio.balance -= totalCost;
+        portfolio.borrowedShares.set(ticker, portfolio.borrowedShares.get(ticker) - shares);
+        if (portfolio.borrowedShares.get(ticker) === 0) portfolio.borrowedShares.delete(ticker);
+        break;
+    }
+
+    // Log transaction
+    portfolio.transactions.push({
+      type,
+      ticker,
+      shares,
+      price: stock.price,
+      total: totalCost,
+      date: new Date()
+    });
+
+    await portfolio.save();
+
+    await User.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { balance: portfolio.balance } }
+    );
+
+    res.json({ message: `Transaction successful`, portfolio });
+
+  } catch (error) {
+    console.error('Transaction error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 // 🟢 Sync Shares (Updates Portfolio with Provided Owned Shares)
 exports.syncShares = async (req, res) => {
     try {

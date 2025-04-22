@@ -9,8 +9,8 @@ function recordMarketIndexHistory(stocks) {
     timestamp: Date.now(),
   });
 
-  if (indexHistory.length > 30) {
-    indexHistory = indexHistory.slice(-30);
+  if (indexHistory.length > 1825) {
+    indexHistory = indexHistory.slice(-1825); //last five years 
   }
 
   return rounded;

@@ -30,7 +30,7 @@ async function getSingleStockNews(ticker) {
             return null;
         }
 
-        console.log(`📢 Raw stock news document:`, JSON.stringify(stockNewsDoc, null, 2));
+      //  console.log(`📢 Raw stock news document:`, JSON.stringify(stockNewsDoc, null, 2));
 
         let newsItem = null;
 
@@ -38,7 +38,7 @@ async function getSingleStockNews(ticker) {
             console.log(`📂 Checking sector: ${sector}, News Count: ${newsArray.length}`);
 
             if (Array.isArray(newsArray)) {
-                console.log(`📊 Sector News Data:`, JSON.stringify(newsArray, null, 2));
+                //console.log(`📊 Sector News Data:`, JSON.stringify(newsArray, null, 2));
 
                 // ✅ Pick the first news item (instead of filtering by ticker)
                 if (newsArray.length > 0) {

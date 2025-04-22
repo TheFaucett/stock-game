@@ -5,8 +5,9 @@ const { processFirms } = require("./firmController");
 const { recordMarketMood, getMoodHistory } = require("../utils/getMarketMood.js");
 const { maybeApplyShock, getEconomicFactors } = require("../utils/economicEnvironment.js");
 const { recordMarketIndexHistory } = require("../utils/marketIndex.js");
+const { autoCoverShorts } = require("../utils/autoCoverShorts.js");
+const { incrementTick, getCurrentTick } = require("../utils/tickTracker.js");
 
-let count = 0;
 let initialMarketCap = null;
 
 async function updateMarket() {
@@ -15,10 +16,28 @@ async function updateMarket() {
     maybeApplyShock();
 
     const { inflationRate, currencyStrength } = getEconomicFactors();
-    count++;
-    console.log(`⏱️ Tick #${count} complete`);
+    const tick = incrementTick(); // ⏱️ Advance and retrieve current tick
+    console.log(`⏱️ Tick #${tick} complete`);
+
+    const earlyMarket = tick <= 100;
+
+    const inflationEffective = earlyMarket ? inflationRate * 0.25 : inflationRate;
+    const productivityGrowth = earlyMarket ? 0.005 : 0.015;
+    const baseGrowthRate = earlyMarket ? 0.02 / 365 : 0.11 / 365;
+
+    const inflationTickMultiplier = Math.pow(1 + inflationEffective, 1 / 365);
+    const currencyTickMultiplier = Math.pow(currencyStrength, 1 / 365);
+    const productivityMultiplier = Math.pow(1 + productivityGrowth, 1 / 365);
+
+    if (tick === 101) {
+      console.log("🚀 Market has exited early phase. Full macro factors are now in play.");
+    }
+
     applyGaussian();
     await applyImpactToStocks();
+
+    // ✅ Auto-cover shorts based on tick lifetime
+    await autoCoverShorts();
 
     const stocks = await Stock.find();
     if (!stocks || stocks.length === 0) {
@@ -31,8 +50,7 @@ async function updateMarket() {
     const firmTradeImpact = await processFirms(marketMood);
 
     const currentTotalValue = stocks.reduce((acc, stock) => acc + stock.price, 0);
-
-    if (count === 1) {
+    if (tick === 1) {
       initialMarketCap = currentTotalValue;
       console.log(`🟢 Initial market cap set to $${initialMarketCap.toFixed(2)}`);
     } else {
@@ -43,22 +61,27 @@ async function updateMarket() {
     const bulkUpdates = stocks.map((stock) => {
       if (!stock || !stock.ticker) return null;
 
+      const updatedBasePrice = stock.basePrice
+        ? stock.basePrice * (1 + baseGrowthRate)
+        : 100;
+
       const prevPrice = stock.history.at(-1) ?? stock.price;
       const volatility = stock.volatility ?? 0.05;
-      const baseFluctuation = (Math.random() - 0.5) * 1.0;
+      const baseFluctuation = (Math.random() - 0.45) * 1.0;
       let newPrice = Math.max(stock.price * (1 + baseFluctuation * volatility), 0.01);
 
-      // Nonlinear mean reversion (Approach 3)
       const targetPrice = stock.basePrice ?? 100;
       const delta = (targetPrice - newPrice) / targetPrice;
-      const reversionEffect = Math.tanh(delta) * 0.08;
+      const reversionEffect = Math.tanh(delta * 1.5) * 0.03;
       newPrice *= (1 + reversionEffect);
+
+      newPrice *= productivityMultiplier;
 
       const trades = firmTradeImpact[stock.ticker] || 0;
       const liquidity = stock.liquidity ?? 0;
       if (trades > 0) {
         const liquidityMultiplier = 1 - liquidity;
-        const tradeImpact = 0.0001 * trades * liquidityMultiplier;
+        const tradeImpact = 0.0002 * trades * liquidityMultiplier;
         newPrice *= 1 + tradeImpact;
       }
 
@@ -66,18 +89,12 @@ async function updateMarket() {
       const changeMagnitude = Math.abs(percentChange / 100);
       const shock = Math.random() < 0.05 ? 1 + Math.random() * 0.5 : 1;
       const adjustedChange = changeMagnitude * shock;
-      const macroGrowthRate = 0.0001; // ~2.5% annual if 1 tick = 1 day
-      const macroMultiplier = Math.pow(1 + macroGrowthRate, count);
-      newPrice *= macroMultiplier;
 
-
-
-      newPrice *= 1 + 0;//Math.min(inflationRate, 0.0000794);
-     // newPrice /= currencyStrength;
+      newPrice *= inflationTickMultiplier;
+      // newPrice /= currencyTickMultiplier;
 
       let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
       updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
-
       const updatedHistory = [...stock.history.slice(-29), newPrice];
 
       return {
@@ -89,6 +106,7 @@ async function updateMarket() {
               change: percentChange,
               history: updatedHistory,
               volatility: parseFloat(updatedVolatility.toFixed(4)),
+              basePrice: updatedBasePrice,
             },
           },
         },
@@ -99,7 +117,6 @@ async function updateMarket() {
       await Stock.bulkWrite(bulkUpdates);
       console.log(`✅ Market update complete. ${bulkUpdates.length} stocks updated.`);
     }
-
   } catch (error) {
     console.error("⚠️ Error updating stock prices:", error);
   }

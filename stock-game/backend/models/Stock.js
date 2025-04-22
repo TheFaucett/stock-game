@@ -17,6 +17,7 @@ const StockSchema = new mongoose.Schema({
         min: -1,
         max: 1,
     },
+    basePrice: { type: Number, default: 100 }, // Default base price for mean reversion
 }, { timestamps: true, versionKey: false }); // ✅ Disables __v versioning
 
 module.exports = mongoose.model('Stock', StockSchema);

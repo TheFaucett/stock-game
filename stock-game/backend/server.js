@@ -28,7 +28,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB Connected'))
 .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-const tradeWindow = 1000 * 1 //30 seconds
+const tradeWindow = 1000 //30 seconds
 setInterval(async () => {
     console.log("⏳ Running market update...");
     await updateMarket();

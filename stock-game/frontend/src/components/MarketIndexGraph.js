@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import {
@@ -8,6 +8,7 @@ import {
   LinearScale,
   PointElement
 } from "chart.js";
+import "../styles/marketIndexGraph.css";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
@@ -17,7 +18,20 @@ const fetchMarketIndex = async () => {
   return res.json();
 };
 
+const INTERVAL_OPTIONS = [
+  { label: "1D", value: 1 },
+  { label: "5D", value: 5 },
+  { label: "1M", value: 21 },
+  { label: "6M", value: 126 },
+  { label: "YTD", value: "ytd" },
+  { label: "1Y", value: 252 },
+  { label: "5Y", value: 1260 },
+  { label: "All", value: "all" }
+];
+
 const MarketIndexGraph = () => {
+  const [interval, setInterval] = useState("30");
+
   const { data = [], isLoading, error } = useQuery({
     queryKey: ["marketIndex"],
     queryFn: fetchMarketIndex,
@@ -27,10 +41,22 @@ const MarketIndexGraph = () => {
   if (isLoading) return <p>Loading Market Index...</p>;
   if (error) return <p>Error loading Market Index</p>;
 
-  const labels = data.map((_, i) => `T-${30 - i}`);
-  const prices = data.map(entry => entry.price);
+  const filteredData = (() => {
+    if (interval === "all") return data;
+    if (interval === "ytd") {
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1).getTime();
+      return data.filter(entry => entry.timestamp >= startOfYear);
+    }
+    const count = parseInt(interval);
+    return data.slice(-count);
+  })();
 
-  // ✅ Calculate min/max for focused Y-axis
+  const labels = filteredData.map(entry => {
+    const date = new Date(entry.timestamp);
+    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+  });
+
+  const prices = filteredData.map(entry => entry.price);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
   const rangePadding = (maxPrice - minPrice) * 0.1 || 1;
@@ -66,6 +92,19 @@ const MarketIndexGraph = () => {
   return (
     <div style={{ height: "250px", width: "100%", marginBottom: "1rem" }}>
       <h3>📊 Overall Market Price Index</h3>
+
+      <div className="interval-buttons">
+        {INTERVAL_OPTIONS.map(({ label, value }) => (
+          <button
+            key={label}
+            className={`interval-button ${interval === value ? "active" : ""}`}
+            onClick={() => setInterval(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <Line data={chartData} options={options} />
     </div>
   );
