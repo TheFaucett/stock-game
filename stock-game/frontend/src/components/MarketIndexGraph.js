@@ -6,11 +6,12 @@ import {
   LineElement,
   CategoryScale,
   LinearScale,
-  PointElement
+  PointElement,
+  Tooltip
 } from "chart.js";
 import "../styles/marketIndexGraph.css";
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
 
 const fetchMarketIndex = async () => {
   const res = await fetch("http://localhost:5000/api/market-data/index");
@@ -70,7 +71,8 @@ const MarketIndexGraph = () => {
         borderColor: "#3f51b5",
         backgroundColor: "rgba(63, 81, 181, 0.1)",
         tension: 0.3,
-        pointRadius: 0
+        pointRadius: 0,
+        pointHoverRadius: 6
       }
     ]
   };
@@ -78,6 +80,25 @@ const MarketIndexGraph = () => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    plugins: {
+      tooltip: {
+        enabled: true,
+        backgroundColor: "#fff",
+        titleColor: "#000",
+        bodyColor: "#000",
+        borderColor: "#3f51b5",
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: context => `Index: $${context.raw.toFixed(2)}`
+        }
+      },
+      legend: { display: false }
+    },
     scales: {
       y: {
         min: minPrice - rangePadding,

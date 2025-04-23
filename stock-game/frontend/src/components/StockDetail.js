@@ -7,56 +7,50 @@ export default function StockDetail() {
   const { ticker } = useParams();
   const [stock, setStock] = useState(null);
   const [history, setHistory] = useState([]);
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [shareAmount, setShareAmount] = useState("");
 
   useEffect(() => {
     const fetchStock = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/api/stocks`);
-        const stocks = await response.json();
-        const selected = stocks.find(s => s.ticker === ticker);
-        if (selected) setStock(selected);
-      } catch (error) {
-        console.error('Error fetching stock:', error);
-      }
+      const response = await fetch(`http://localhost:5000/api/stocks`);
+      const stocks = await response.json();
+      const selected = stocks.find(s => s.ticker === ticker);
+      if (selected) setStock(selected);
     };
 
     const fetchHistory = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`);
-        const data = await response.json();
-        if (data.history) setHistory(data.history);
-      } catch (error) {
-        console.error('Error fetching history:', error);
-      }
+      const response = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`);
+      const data = await response.json();
+      if (data.history) setHistory(data.history);
     };
 
     fetchStock();
     fetchHistory();
   }, [ticker]);
 
-  const performTransaction = async (type, amount) => {
+  const performTransaction = async () => {
     const userId = "67af822e5609849ac14d7942";
+    const type = selectedAction;
+    const shares = parseInt(shareAmount);
+
+    if (!type || isNaN(shares) || shares <= 0) return;
 
     try {
       const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, ticker, shares: amount, type })
+        body: JSON.stringify({ userId, ticker, shares, type })
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         alert(`Transaction failed: ${data.error}`);
       } else {
-        const verbMap = {
-          buy: 'Bought',
-          sell: 'Sold',
-          short: 'Shorted',
-          cover: 'Covered'
-        };
-        alert(`${verbMap[type] || 'Completed'} ${amount} shares of ${ticker}`);
+        alert(`${type.charAt(0).toUpperCase() + type.slice(1)}ed ${shares} shares of ${ticker}`);
       }
+
+      setSelectedAction(null);
+      setShareAmount("");
     } catch (err) {
       console.error("Error in transaction:", err);
       alert("Something went wrong");
@@ -82,35 +76,41 @@ export default function StockDetail() {
       <p>Market Cap: ${(stock.price * stock.outstandingShares / 1e9).toFixed(2)}B</p>
 
       <div className="stock-actions">
-        <button
-          className="stock-btn"
-          onClick={() => {
-            const amt = parseInt(prompt("How many shares would you like to BUY?"));
-            if (!isNaN(amt) && amt > 0) performTransaction('buy', amt);
-          }}
-        >
-          Buy
-        </button>
+        {['buy', 'sell', 'short'].map(action => (
+          <React.Fragment key={action}>
+            <button
+              className={`stock-btn ${action}`}
+              onClick={() => {
+              if (selectedAction === action) {
+                  setSelectedAction(null);
+                  setShareAmount("");
+              } else {
+                  setSelectedAction(action);
+                  setShareAmount("");
+              }
+              }}
 
-        <button
-          className="stock-btn sell"
-          onClick={() => {
-            const amt = parseInt(prompt("How many shares would you like to SELL?"));
-            if (!isNaN(amt) && amt > 0) performTransaction('sell', amt);
-          }}
-        >
-          Sell
-        </button>
+            >
+              {action.charAt(0).toUpperCase() + action.slice(1)}
+            </button>
 
-        <button
-          className="stock-btn short"
-          onClick={() => {
-            const amt = parseInt(prompt("How many shares would you like to SHORT?"));
-            if (!isNaN(amt) && amt > 0) performTransaction('short', amt);
-          }}
-        >
-          Short
-        </button>
+            {selectedAction === action && (
+              <>
+                <input
+                  type="number"
+                  min="1"
+                  value={shareAmount}
+                  onChange={(e) => setShareAmount(e.target.value)}
+                  className="share-input inline"
+                  placeholder="Shares"
+                />
+                <button className="confirm-btn inline" onClick={performTransaction}>
+                  Confirm
+                </button>
+              </>
+            )}
+          </React.Fragment>
+        ))}
       </div>
 
       {history.length > 0 && (

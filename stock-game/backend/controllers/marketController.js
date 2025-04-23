@@ -16,7 +16,7 @@ async function updateMarket() {
     maybeApplyShock();
 
     const { inflationRate, currencyStrength } = getEconomicFactors();
-    const tick = incrementTick(); // ⏱️ Advance and retrieve current tick
+    const tick = incrementTick();
     console.log(`⏱️ Tick #${tick} complete`);
 
     const earlyMarket = tick <= 100;
@@ -35,7 +35,6 @@ async function updateMarket() {
     applyGaussian();
     await applyImpactToStocks();
 
-    // ✅ Auto-cover shorts every 12 ticks
     if (tick % 12 === 0) {
       console.log("🧾 Performing scheduled auto-cover for shorts");
       await autoCoverShorts();
@@ -69,16 +68,21 @@ async function updateMarket() {
 
       const prevPrice = stock.history.at(-1) ?? stock.price;
       const volatility = stock.volatility ?? 0.05;
+
+      // 📉 Random base fluctuation
       const baseFluctuation = (Math.random() - 0.45) * 1.0;
       let newPrice = Math.max(stock.price * (1 + baseFluctuation * volatility), 0.01);
 
+      // 📉 Nonlinear mean reversion
       const targetPrice = stock.basePrice ?? 100;
       const delta = (targetPrice - newPrice) / targetPrice;
       const reversionEffect = Math.tanh(delta * 1.5) * 0.03;
       newPrice *= (1 + reversionEffect);
 
+      // 📈 Productivity growth
       newPrice *= productivityMultiplier;
 
+      // 🏭 Firm trade impact
       const trades = firmTradeImpact[stock.ticker] || 0;
       const liquidity = stock.liquidity ?? 0;
       if (trades > 0) {
@@ -87,16 +91,20 @@ async function updateMarket() {
         newPrice *= 1 + tradeImpact;
       }
 
-      const percentChange = parseFloat(((newPrice - prevPrice) / prevPrice * 100).toFixed(2));
-      const changeMagnitude = Math.abs(percentChange / 100);
+      // 💥 Calculate price movement
+      const rawChange = (newPrice - prevPrice) / prevPrice;
       const shock = Math.random() < 0.05 ? 1 + Math.random() * 0.5 : 1;
-      const adjustedChange = changeMagnitude * shock;
+      const adjustedChange = Math.abs(rawChange) * shock;
 
+      // 💵 Macroeconomic effects
       newPrice *= inflationTickMultiplier;
-      // newPrice /= currencyTickMultiplier;
+      // newPrice /= currencyTickMultiplier; // Disabled for now
 
-      let updatedVolatility = 0.9 * volatility + 0.1 * adjustedChange;
+      // 🔄 Volatility tracking — truly reactive
+      let updatedVolatility = 0.85 * volatility + 0.15 * adjustedChange;
       updatedVolatility = Math.max(0.01, Math.min(updatedVolatility, 0.5));
+
+      const percentChange = parseFloat((rawChange * 100).toFixed(2));
       const updatedHistory = [...stock.history.slice(-29), newPrice];
 
       return {

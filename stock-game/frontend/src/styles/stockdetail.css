@@ -1,5 +1,9 @@
 .stock-actions {
   margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .stock-btn {
@@ -10,7 +14,6 @@
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
-  margin-right: 10px;
   transition: background-color 0.2s ease;
 }
 
@@ -25,11 +28,12 @@
 .stock-btn.sell:hover {
   background-color: #7b2cbf;
 }
+
 .back-button {
   display: inline-block;
   margin-top: 20px;
   padding: 10px 18px;
-  background: linear-gradient(135deg, #6a5acd, #8a2be2); /* bluish purple */
+  background: linear-gradient(135deg, #6a5acd, #8a2be2);
   color: white;
   font-weight: bold;
   text-decoration: none;
@@ -39,4 +43,42 @@
 
 .back-button:hover {
   background: linear-gradient(135deg, #7b68ee, #9370db);
+}
+
+.share-input {
+  padding: 5px;
+  width: 80px;
+  margin-left: -5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: #111;
+  color: white;
+}
+
+.confirm-btn {
+  padding: 5px 10px;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: -5px;
+}
+
+.confirm-btn:hover {
+  background-color: #45a049;
+}
+
+/* Inline styling to keep inputs on same row */
+.share-input.inline,
+.confirm-btn.inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Hide spinner buttons in number input fields */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
