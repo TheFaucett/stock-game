@@ -1,17 +1,10 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip
-} from "chart.js";
+import "chartjs-adapter-date-fns";
 import "../styles/marketIndexGraph.css";
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
+
 
 const fetchMarketIndex = async () => {
   const res = await fetch("http://localhost:5000/api/market-data/index");

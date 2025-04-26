@@ -1,16 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-} from "chart.js";
-
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
+import "chartjs-adapter-date-fns";
 
 // Fetch mood history from backend
 const fetchMoodHistory = async () => {

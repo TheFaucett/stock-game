@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import axios from 'axios';
 import StockGraph from './StockGraph';
+import PortfolioBalanceGraph from './PortfolioBalanceGraph';
 import "../styles/sidebar.css";
 
 const fetchPortfolio = async () => {
@@ -85,7 +86,8 @@ const Sidebar = () => {
             </ul>
           </div>
         )}
-
+        <h3>Portfolio History</h3>
+        <PortfolioBalanceGraph />
         <h3>Most Valuable Stock</h3>
         {portfolio?.ownedShares && Object.keys(portfolio.ownedShares).length > 0 ? (
           <div className="card">

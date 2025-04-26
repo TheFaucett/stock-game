@@ -45,9 +45,10 @@ export default function StockDetail() {
       const data = await res.json();
       if (!res.ok) {
         alert(`Transaction failed: ${data.error}`);
-      } else {
-        alert(`${type.charAt(0).toUpperCase() + type.slice(1)}ed ${shares} shares of ${ticker}`);
       }
+        else {
+            alert(`Transaction successful: ${data.message}`);
+        }
 
       setSelectedAction(null);
       setShareAmount("");
