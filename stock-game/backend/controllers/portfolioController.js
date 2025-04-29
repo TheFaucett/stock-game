@@ -82,6 +82,43 @@ exports.executeTransaction = async (req, res) => {
         portfolio.borrowedShares.set(ticker, portfolio.borrowedShares.get(ticker) - shares);
         if (portfolio.borrowedShares.get(ticker) === 0) portfolio.borrowedShares.delete(ticker);
         break;
+
+        case "call":
+        case "put": {
+        // 1. basic parameter check
+        if (!strike || !expiryTick) {
+            return res
+            .status(400)
+            .json({ error: "strike and expiryTick required for options" });
+        }
+
+        // 2. locate matching option contract
+        const variant   = tradeType === "call" ? "CALL" : "PUT";
+        const optionDoc = await getOption(ticker, variant, strike, expiryTick);
+        if (!optionDoc) {
+            return res.status(404).json({ error: "Option contract not found" });
+        }
+
+        // 3. debit premium & log transaction
+        try {
+            recordOptionPurchase({
+            portfolio,
+            optionDoc,
+            contracts: shares, // “shares” field = # contracts
+            tickNow
+            });
+        } catch (err) {
+            return res.status(400).json({ error: err.message });
+        }
+
+        break;        // <-- keep this inside the case block
+        }
+
+
+
+
+
+
     }
 
     // Log transaction

@@ -7,7 +7,7 @@ const portfolioSchema = new mongoose.Schema({
   borrowedShares: { type: Map, of: Number, default: {} },
   transactions: [
     {
-      type: { type: String, enum: ['buy', 'sell', 'short', 'cover'], required: true },
+      type: { type: String, enum: ['buy', 'sell', 'short', 'cover', 'call', 'pull'], required: true },
       ticker: { type: String, required: true },
       shares: { type: Number, required: true },
       price: { type: Number, required: true },
