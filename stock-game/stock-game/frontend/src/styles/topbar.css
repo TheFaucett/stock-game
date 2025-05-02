@@ -1,0 +1,42 @@
+/* Topbar container - fixed above heatmap */
+.topbar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #1e1e1e;
+    padding: 10px 20px;
+    transition: transform 0.3s ease-in-out;
+    z-index: 1001; /* Above heatmap but below sidebar */
+}
+
+/* Hidden topbar */
+.topbar-container.closed {
+    transform: translateY(-100%);
+}
+
+/* 🔹 Topbar Toggle Button - Always Visible */
+.toggle-btn-top {
+    position: fixed;
+    top: 335px;
+    right: 20px;
+    background: #333;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 1003; /* Ensures it's always clickable */
+    transition: top 0.3s ease-in-out;
+}
+
+/* Keeps button in view when topbar is hidden */
+.topbar-container.closed .toggle-btn-top {
+    top: 360px;
+    right: 40px;
+}
+
+/* Hover effect */
+.toggle-btn-top:hover {
+    background: #555;
+}

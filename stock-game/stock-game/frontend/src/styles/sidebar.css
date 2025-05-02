@@ -1,0 +1,41 @@
+.sidebar-container {
+    position: relative;
+    display: flex;
+}
+
+.sidebar {
+    width: 15%;
+    background: #1e1e1e;
+    padding: 20px;
+    height: 100vh;
+    transition: transform 0.3s ease-in-out;
+}
+
+.closed .sidebar {
+    transform: translateX(-100%);
+}
+
+.open .sidebar {
+    transform: translateX(0);
+}
+
+.toggle-btn {
+    position: absolute;
+    left: calc(17.75% + 5px);
+    top: 20px;
+
+    transition: left 0.3s ease-in-out;
+    background: #333;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.toggle-btn:hover {
+    background: #555;
+}
+.sidebar-container.closed .toggle-btn {
+    left: 5px;
+}

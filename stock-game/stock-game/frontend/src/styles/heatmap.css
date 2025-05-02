@@ -1,0 +1,14 @@
+.heatmap-container {
+    width: 100%;
+    background: #1e1e1e;
+    padding: 20px;
+    color: white;
+
+}
+
+.tooltip {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px;
+    color: white;
+    border-radius: 5px;
+}
