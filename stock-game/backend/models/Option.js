@@ -1,14 +1,12 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-/* one row per option contract (strike / expiry) */
 const optionSchema = new mongoose.Schema({
-  underlying:  { type: String, required: true },            // e.g. "ASTC"
-  type:        { type: String, enum: ["CALL", "PUT"], required: true },
-  strike:      { type: Number, required: true },
-  expiryTick:  { type: Number, required: true },
-  premium:     { type: Number, required: true },            // $ per contract
-  iv:          { type: Number, default: 0.35 },
-  multiplier:  { type: Number, default: 100 }               // contracts × 100 shares
-});
+  underlying : { type: String, required: true }, // e.g. "ASTC"
+  variant    : { type: String, enum: ['CALL', 'PUT'], required: true },
+  strike     : { type: Number, required: true },
+  expiryTick : { type: Number, required: true },
+  premium    : { type: Number, required: true }, // price per contract
+  createdAt  : { type: Date,   default: Date.now }
+}, { indexes: [{ unique: true, fields: { underlying:1, variant:1, strike:1, expiryTick:1 } }] });
 
-module.exports = mongoose.model("Option", optionSchema);
+module.exports = mongoose.model('Option', optionSchema);

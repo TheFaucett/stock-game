@@ -4,6 +4,10 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const { ObjectId } = mongoose.Types;
 const { getCurrentTick } = require('../utils/tickTracker');
+const { getOption, recordOptionPurchase } = require('../utils/optionUtils');
+
+
+
 exports.getPortfolio = async (req, res) => {
     try {
         console.log("Incoming request for portfolio:", req.query);
@@ -27,125 +31,172 @@ exports.getPortfolio = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
+
+
+/* ------------------------------------------------------------------ */
+/* POST /api/portfolio/:id/transactions                               */
+/* Body: { userId, type, ticker, shares, strike?, expiryTick? }       */
+/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------
+   POST /api/portfolio/:id/transactions
+   Body: { userId, type, ticker, shares, strike?, expiryTick? }
+------------------------------------------------------------------*/
 exports.executeTransaction = async (req, res) => {
   try {
-    const { userId, type, ticker, shares } = req.body;
+    /* ---- destructure body ---- */
+    const {
+      userId,
+      type:  tradeType,           // buy | sell | short | cover | call | put
+      ticker,
+      shares,
+      strike,
+      expiryTick
+    } = req.body;
 
-    if (!userId || !ticker || shares <= 0 || !['buy', 'sell', 'short', 'cover'].includes(type)) {
+    const ALLOWED = ['buy', 'sell', 'short', 'cover', 'call', 'put'];
+    console.log('RAW BODY →', req.body);
+
+    if (!userId || !ticker || +shares <= 0 || !ALLOWED.includes(tradeType)) {
       return res.status(400).json({ error: 'Invalid transaction data.' });
     }
 
-    const stock = await Stock.findOne({ ticker: ticker.toUpperCase() });
-    if (!stock) return res.status(404).json({ error: 'Stock not found' });
-
+    /* ---- fetch or create portfolio ---- */
     const portfolio = await Portfolio.findOneAndUpdate(
       { userId: new mongoose.Types.ObjectId(userId) },
-      { $setOnInsert: { balance: 10000, ownedShares: new Map(), borrowedShares: new Map(), transactions: [] } },
+      {
+        $setOnInsert: {
+          balance: 10000,
+          ownedShares: new Map(),
+          borrowedShares: new Map(),
+          transactions: []
+        }
+      },
       { new: true, upsert: true }
     );
 
-    const totalCost = shares * stock.price;
+    const tickNow = getCurrentTick();
 
-    // 🟢 Handle each transaction type
-    switch (type) {
+
+    switch (tradeType) {
+      /* ===== STOCK BUY / SELL =================================== */
       case 'buy':
-        if (portfolio.balance < totalCost) {
-          return res.status(400).json({ error: 'Insufficient balance' });
-        }
-        portfolio.balance -= totalCost;
-        portfolio.ownedShares.set(ticker, (portfolio.ownedShares.get(ticker) || 0) + shares);
-        break;
+      case 'sell': {
+        const stock = await Stock.findOne({ ticker: ticker.toUpperCase() });
+        if (!stock) return res.status(404).json({ error: 'Stock not found' });
 
-      case 'sell':
-        if (!portfolio.ownedShares.get(ticker) || portfolio.ownedShares.get(ticker) < shares) {
-          return res.status(400).json({ error: 'Not enough shares to sell' });
-        }
-        portfolio.balance += totalCost;
-        portfolio.ownedShares.set(ticker, portfolio.ownedShares.get(ticker) - shares);
-        if (portfolio.ownedShares.get(ticker) === 0) portfolio.ownedShares.delete(ticker);
-        break;
+        const cash = shares * stock.price;
 
+        if (tradeType === 'buy') {
+          if (portfolio.balance < cash)
+            return res.status(400).json({ error: 'Insufficient balance' });
+
+          portfolio.balance -= cash;
+          portfolio.ownedShares.set(
+            ticker,
+            (portfolio.ownedShares.get(ticker) || 0) + shares
+          );
+        } else {
+          const owned = portfolio.ownedShares.get(ticker) || 0;
+          if (owned < shares)
+            return res.status(400).json({ error: 'Not enough shares to sell' });
+
+          portfolio.balance += cash;
+          portfolio.ownedShares.set(ticker, owned - shares);
+          if (portfolio.ownedShares.get(ticker) === 0)
+            portfolio.ownedShares.delete(ticker);
+        }
+
+        portfolio.transactions.push({
+          type: tradeType,
+          ticker,
+          shares,
+          price: stock.price,
+          total: cash,
+          date: new Date(),
+          tickOpened: tickNow
+        });
+        break;
+      }
+
+      /* ===== SHORT / COVER ====================================== */
       case 'short':
-        // Borrow shares and sell them for current price
-        portfolio.balance += totalCost;
-        portfolio.borrowedShares.set(ticker, (portfolio.borrowedShares.get(ticker) || 0) + shares);
+      case 'cover': {
+        const stock = await Stock.findOne({ ticker: ticker.toUpperCase() });
+        if (!stock) return res.status(404).json({ error: 'Stock not found' });
+
+        const cash = shares * stock.price;
+
+        if (tradeType === 'short') {
+          portfolio.balance += cash; // receive proceeds now
+          portfolio.borrowedShares.set(
+            ticker,
+            (portfolio.borrowedShares.get(ticker) || 0) + shares
+          );
+        } else {                     // cover
+          const owed = portfolio.borrowedShares.get(ticker) || 0;
+          if (owed < shares)
+            return res.status(400).json({ error: 'Not enough shorted shares to cover' });
+          if (portfolio.balance < cash)
+            return res.status(400).json({ error: 'Insufficient balance to cover' });
+
+          portfolio.balance -= cash;
+          portfolio.borrowedShares.set(ticker, owed - shares);
+          if (portfolio.borrowedShares.get(ticker) === 0)
+            portfolio.borrowedShares.delete(ticker);
+        }
+
+        portfolio.transactions.push({
+          type: tradeType,
+          ticker,
+          shares,
+          price: stock.price,
+          total: cash,
+          date: new Date(),
+          tickOpened: tickNow
+        });
         break;
+      }
 
-      case 'cover':
-        if (!portfolio.borrowedShares.get(ticker) || portfolio.borrowedShares.get(ticker) < shares) {
-          return res.status(400).json({ error: 'Not enough shorted shares to cover' });
-        }
-        if (portfolio.balance < totalCost) {
-          return res.status(400).json({ error: 'Insufficient balance to cover shorts' });
-        }
-        portfolio.balance -= totalCost;
-        portfolio.borrowedShares.set(ticker, portfolio.borrowedShares.get(ticker) - shares);
-        if (portfolio.borrowedShares.get(ticker) === 0) portfolio.borrowedShares.delete(ticker);
-        break;
+      /* ===== CALL / PUT ========================================= */
+        case 'call':
+        case 'put': {
+            if (!strike || !expiryTick) {
+            return res.status(400).json({ error: 'strike and expiryTick required for options' });
+            }
 
-        case "call":
-        case "put": {
-        // 1. basic parameter check
-        if (!strike || !expiryTick) {
-            return res
-            .status(400)
-            .json({ error: "strike and expiryTick required for options" });
-        }
+            const variant   = tradeType.toUpperCase(); // "CALL" or "PUT"
+            const optionDoc = await getOption(ticker, variant, strike, expiryTick);
+            if (!optionDoc) {
+            return res.status(404).json({ error: 'Option contract not found' });
+            }
 
-        // 2. locate matching option contract
-        const variant   = tradeType === "call" ? "CALL" : "PUT";
-        const optionDoc = await getOption(ticker, variant, strike, expiryTick);
-        if (!optionDoc) {
-            return res.status(404).json({ error: "Option contract not found" });
-        }
-
-        // 3. debit premium & log transaction
-        try {
+            try {
             recordOptionPurchase({
-            portfolio,
-            optionDoc,
-            contracts: shares, // “shares” field = # contracts
-            tickNow
+                portfolio,
+                optionDoc,
+                contracts: shares,
+                tickNow,
+                tradeType    // pass the string so recordOptionPurchase can set `type`
             });
-        } catch (err) {
-            return res.status(400).json({ error: err.message });
+            } catch (e) {
+            return res.status(400).json({ error: e.message });
+            }
+            break;
         }
+    } // end switch
 
-        break;        // <-- keep this inside the case block
-        }
-
-
-
-
-
-
-    }
-
-    // Log transaction
-    portfolio.transactions.push({
-      type,
-      ticker,
-      shares,
-      price: stock.price,
-      total: totalCost,
-      date: new Date(),
-      tickOpened: getCurrentTick()
-    });
-
+    /* ---- save and respond ---- */
     await portfolio.save();
+    res.json({ balance: portfolio.balance, message: 'Transaction recorded' });
 
-    await User.updateOne(
-      { _id: new ObjectId(userId) },
-      { $set: { balance: portfolio.balance } }
-    );
-
-    res.json({ message: `Transaction successful`, portfolio });
-
-  } catch (error) {
-    console.error('Transaction error:', error);
+  } catch (err) {
+    console.error('Transaction error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 // 🟢 Sync Shares (Updates Portfolio with Provided Owned Shares)
 exports.syncShares = async (req, res) => {
     try {
