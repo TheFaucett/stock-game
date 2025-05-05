@@ -1,0 +1,99 @@
+/* src/styles/transactionModal.css */
+.modal-overlay {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-container {
+  background: #1e1e2f;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header,
+.modal-footer {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header {
+  border-bottom: 1px solid #444;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+.action-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1 1 30%;
+  padding: 8px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #ccc;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.action-btn.active {
+  background: #5e60ce;
+  border-color: #7c3aed;
+  color: #fff;
+}
+
+.input-group {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modal-input {
+  flex: 1 1 48%;
+  padding: 8px;
+  background: #2b2b3f;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+}
+
+.confirm-btn {
+  padding: 8px 16px;
+  background: #4caf50;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.confirm-btn:hover {
+  background: #43a047;
+}

@@ -6,7 +6,10 @@
   flex-wrap: wrap;
 }
 
-.stock-btn {
+/* Base button styles (Buy, Call, Put) */
+.stock-btn,
+.stock-btn.call,
+.stock-btn.put {
   background-color: #5e60ce;
   color: white;
   padding: 10px 20px;
@@ -17,10 +20,13 @@
   transition: background-color 0.2s ease;
 }
 
-.stock-btn:hover {
+.stock-btn:hover,
+.stock-btn.call:hover,
+.stock-btn.put:hover {
   background-color: #4ea8de;
 }
 
+/* Sell button variant */
 .stock-btn.sell {
   background-color: #6930c3;
 }
@@ -29,6 +35,61 @@
   background-color: #7b2cbf;
 }
 
+/* Inputs: Shares, Contracts, Strike, Expiry */
+.share-input,
+.strike-input,
+.expiry-input {
+  padding: 5px 10px;
+  width: 80px;
+  margin-left: -5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: #111;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s ease;
+}
+
+.share-input:focus,
+.strike-input:focus,
+.expiry-input:focus {
+  outline: none;
+  background: #222;
+}
+
+/* Confirm button */
+.confirm-btn {
+  padding: 5px 10px;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: -5px;
+  transition: background-color 0.2s ease;
+}
+
+.confirm-btn:hover {
+  background-color: #45a049;
+}
+
+/* Keep everything inline */
+.share-input.inline,
+.strike-input.inline,
+.expiry-input.inline,
+.confirm-btn.inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Hide spinner on number inputs */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Back button */
 .back-button {
   display: inline-block;
   margin-top: 20px;
@@ -43,42 +104,4 @@
 
 .back-button:hover {
   background: linear-gradient(135deg, #7b68ee, #9370db);
-}
-
-.share-input {
-  padding: 5px;
-  width: 80px;
-  margin-left: -5px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background: #111;
-  color: white;
-}
-
-.confirm-btn {
-  padding: 5px 10px;
-  border: none;
-  background-color: #4caf50;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-left: -5px;
-}
-
-.confirm-btn:hover {
-  background-color: #45a049;
-}
-
-/* Inline styling to keep inputs on same row */
-.share-input.inline,
-.confirm-btn.inline {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* Hide spinner buttons in number input fields */
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
