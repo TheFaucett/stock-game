@@ -3,7 +3,7 @@ import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
-
+import "../styles/portfoliobalancegraph.css";
 const USER_ID = "67af822e5609849ac14d7942";
 
 /* ---------- fetch portfolio ---------- */
@@ -113,27 +113,19 @@ export default function PortfolioBalanceGraph() {
   };
 
   return (
-    <div style={{ width: "100%", height: 150 }}>
-      {/* buttons */}
-      <div style={{ marginBottom: 6 }}>
-        {["W","M","ALL"].map(id => (
+    <div className="portfolio-graph" style={{ width: "100%", height: 150 }}>
+      <div className="range-buttons">
+      {["W","M","ALL"].map(id => (
           <button
-            key={id}
-            onClick={() => setRange(id)}
-            style={{
-              marginRight: 6,
-              padding   : "2px 10px",
-              border     : "none",
-              cursor     : "pointer",
-              background : id === range ? "#444" : "#222",
-              color      : "#fff",
-              fontSize   : 12
-            }}
+          key={id}
+          onClick={() => setRange(id)}
+          className={`range-button ${id === range ? "active" : ""}`}
           >
-            {id === "W" ? "Week" : id === "M" ? "Month" : "All"}
+          {id === "W" ? "Week" : id === "M" ? "Month" : "All"}
           </button>
-        ))}
+      ))}
       </div>
+
 
       <Line
         id={`portfolio-balance-${USER_ID}`}

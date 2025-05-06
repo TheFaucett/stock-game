@@ -1,99 +1,137 @@
-/* src/styles/transactionModal.css */
+/* Overlay that blurs and darkens the rest of the page */
 .modal-overlay {
   position: fixed;
   top: 0; right: 0; bottom: 0; left: 0;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
 }
 
+/* Main modal container */
 .modal-container {
   background: #1e1e2f;
-  width: 90%;
-  max-width: 500px;
+  width: 90vw;
+  max-width: 900px;
+  height: 70vh;
+  padding: 0;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.7);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
+/* Header and footer sections */
 .modal-header,
 .modal-footer {
   padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
-.modal-header {
-  border-bottom: 1px solid #444;
+/* Scrollable body */
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
 .modal-close {
   background: none;
   border: none;
   color: #aaa;
-  font-size: 1.4rem;
+  font-size: 2rem;             /* ↑ bigger “X” */
+  line-height: 1;
+  padding: 8px;                /* ↑ more clickable area */
   cursor: pointer;
+  transition: color 0.2s ease, transform 0.1s ease;
 }
 
-.modal-body {
-  padding: 16px;
+.modal-close:hover {
+  color: #fff;
+  transform: translateY(-2px) scale(1.1);
 }
 
+
+/* Action buttons (buy/sell/short/call/put) */
 .action-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-
 .action-btn {
   flex: 1 1 30%;
-  padding: 8px;
+  padding: 12px;
   background: #333;
   border: 1px solid #444;
   border-radius: 4px;
   color: #ccc;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
-
+.action-btn:hover {
+  background: #444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
 .action-btn.active {
   background: #5e60ce;
   border-color: #7c3aed;
   color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
+/* Input groups (shares, strike, expiry) */
 .input-group {
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-
 .modal-input {
   flex: 1 1 48%;
-  padding: 8px;
+  padding: 10px;
   background: #2b2b3f;
   border: 1px solid #444;
   border-radius: 4px;
   color: #fff;
 }
 
+/* Confirm button */
 .confirm-btn {
-  padding: 8px 16px;
-  background: #4caf50;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  cursor: pointer;
+  padding: 16px 0;
+  min-height: 50px;
   width: 100%;
-  transition: background 0.2s;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
-
 .confirm-btn:hover {
   background: #43a047;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.confirm-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76,175,80,0.6);
+}
+.confirm-btn:disabled {
+  background: #777;
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
 }

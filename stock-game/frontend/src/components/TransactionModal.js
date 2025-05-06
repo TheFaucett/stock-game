@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
-import '../styles/transactionModal.css';
+import React, { useState } from 'react'
+import ReactDOM from 'react-dom'
+import '../styles/transactionModal.css'
 
 export default function TransactionModal({ show, onClose, ticker, onConfirm }) {
   const [action, setAction] = useState('')
   const [qty, setQty]       = useState('')
   const [strike, setStrike] = useState('')
   const [expiry, setExpiry] = useState('')
-  console.log("I RUN ");
+
   if (!show) return null
 
-  // We render the modal into document.body so it isn’t constrained
   return ReactDOM.createPortal(
     <div className="modal-overlay">
       <div className="modal-container">
@@ -25,7 +24,12 @@ export default function TransactionModal({ show, onClose, ticker, onConfirm }) {
               <button
                 key={a}
                 className={`action-btn ${action===a?'active':''}`}
-                onClick={()=>{ setAction(a); setQty(''); setStrike(''); setExpiry('') }}
+                onClick={() => {
+                  setAction(a)
+                  setQty('')
+                  setStrike('')
+                  setExpiry('')
+                }}
               >
                 {a.toUpperCase()}
               </button>
@@ -35,24 +39,38 @@ export default function TransactionModal({ show, onClose, ticker, onConfirm }) {
           {action && (
             <div className="input-group">
               <input
-                type="number" min="1" placeholder={action.match(/call|put/) ? 'Contracts' : 'Shares'}
-                value={qty} onChange={e=>setQty(e.target.value)} className="modal-input"
+                type="number" min="1"
+                placeholder={action.match(/call|put/) ? 'Contracts' : 'Shares'}
+                value={qty}
+                onChange={e => setQty(e.target.value)}
+                className="modal-input"
               />
+
               {action==='short' && (
                 <input
-                  type="number" min="1" placeholder="Expiry Tick"
-                  value={expiry} onChange={e=>setExpiry(e.target.value)} className="modal-input"
+                  type="number" min="1"
+                  placeholder="Expiry Tick"
+                  value={expiry}
+                  onChange={e => setExpiry(e.target.value)}
+                  className="modal-input"
                 />
               )}
-              {action.match(/call|put/) && (
+
+              {(action==='call' || action==='put') && (
                 <>
                   <input
-                    type="number" min="0" step="0.01" placeholder="Strike $"
-                    value={strike} onChange={e=>setStrike(e.target.value)} className="modal-input"
+                    type="number" min="0" step="0.01"
+                    placeholder="Strike $"
+                    value={strike}
+                    onChange={e => setStrike(e.target.value)}
+                    className="modal-input"
                   />
                   <input
-                    type="number" min="1" placeholder="Expiry Tick"
-                    value={expiry} onChange={e=>setExpiry(e.target.value)} className="modal-input"
+                    type="number" min="1"
+                    placeholder="Expiry Tick"
+                    value={expiry}
+                    onChange={e => setExpiry(e.target.value)}
+                    className="modal-input"
                   />
                 </>
               )}
@@ -62,19 +80,22 @@ export default function TransactionModal({ show, onClose, ticker, onConfirm }) {
 
         <footer className="modal-footer">
           <button className="confirm-btn" onClick={async () => {
-            const nQty = parseInt(qty,10)
-            if (!action || isNaN(nQty)||nQty<=0) {
-              return alert('Select action + valid qty')
+            const nQty = parseInt(qty, 10)
+            if (!action || isNaN(nQty) || nQty <= 0) {
+              return alert('Select an action and enter a valid quantity.')
             }
-            if (action.match(/call|put/)) {
+
+            if (action==='call' || action==='put') {
               const fStrike = parseFloat(strike)
-              const iExp    = parseInt(expiry,10)
-              if (isNaN(fStrike)||isNaN(iExp)||fStrike<=0||iExp<=0)
-                return alert('Valid strike & expiry required')
-              await onConfirm(action,nQty,fStrike,iExp)
+              const iExp    = parseInt(expiry, 10)
+              if (isNaN(fStrike)||isNaN(iExp)||fStrike<=0||iExp<=0) {
+                return alert('Enter valid strike price and expiry tick.')
+              }
+              await onConfirm(action, nQty, fStrike, iExp)
             } else {
-              await onConfirm(action,nQty)
+              await onConfirm(action, nQty)
             }
+
             onClose()
           }}>
             Confirm
