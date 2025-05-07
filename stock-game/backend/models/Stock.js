@@ -10,7 +10,7 @@ const StockSchema = new mongoose.Schema({
     peRatio: { type: Number },
     dividendYield: { type: Number },
     history: { type: [Number], default: [] },
-    volatility: { type: Number, default: 0.02 },
+    volatility: { type: Number, default: 0.01 }, 
     liquidity: {
         type: Number,
         default: 0, // You’ll override this during seeding
