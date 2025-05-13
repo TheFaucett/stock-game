@@ -38,28 +38,43 @@ async function getOption(underlying, variant, strike, expiryTick) {
  * @param {string}   params.tradeType   "call" or "put"
  */
 function recordOptionPurchase({ portfolio, optionDoc, contracts, tickNow, tradeType }) {
+  console.log('  ↪️  recordOptionPurchase args:', {
+    portfolioId: portfolio._id,
+    optionId: optionDoc._id,
+    contracts,
+    premium: optionDoc.premium,
+    multiplier: optionDoc.multiplier
+  });
+
   const multiplier = optionDoc.multiplier ?? DEFAULT_MULTIPLIER;
-  const cost       = contracts * optionDoc.premium * multiplier;
+  const cost = contracts * optionDoc.premium * multiplier;
+  console.log('  💸 Cost for this purchase:', cost);
 
   if (portfolio.balance < cost) {
+    console.warn('  ⚠️ Insufficient balance for options', { balance: portfolio.balance, cost });
     throw new Error('Insufficient balance for option purchase');
   }
 
-  // 1) Debit cash
   portfolio.balance -= cost;
+  console.log('  ➖ Debited cost, new balance:', portfolio.balance);
 
-  // 2) Log transaction — **must** include `type`
   portfolio.transactions.push({
-    type       : tradeType,                // ← "call" or "put"
+    type       : tradeType,           // "call" or "put"
     ticker     : optionDoc.underlying,
-    shares     : contracts,                // still uses `shares`
+    shares     : contracts,           // <— this satisfies your schema’s required `shares`
+    contracts  : contracts,           // optional, for clarity
+    multiplier : multiplier,          // optional
+    optionId   : optionDoc._id,
+    strike     : optionDoc.strike,
+    expiryTick : optionDoc.expiryTick,
     price      : optionDoc.premium,
     total      : cost,
     date       : new Date(),
     tickOpened : tickNow
-    // extra fields (optionId, strike, expiryTick, multiplier) will be ignored by your schema
   });
+  console.log('  📝 Logged option transaction at index', portfolio.transactions.length - 1);
 }
+
 
 module.exports = {
   getOption,

@@ -162,29 +162,39 @@ exports.executeTransaction = async (req, res) => {
       /* ===== CALL / PUT ========================================= */
         case 'call':
         case 'put': {
-            if (!strike || !expiryTick) {
+        console.log('⏳ Entering options branch:', { tradeType, ticker, shares, strike, expiryTick });
+        
+        if (typeof strike === 'undefined' || typeof expiryTick === 'undefined') {
+            console.warn('❌ Missing strike or expiryTick', { strike, expiryTick });
             return res.status(400).json({ error: 'strike and expiryTick required for options' });
-            }
-
-            const variant   = tradeType.toUpperCase(); // "CALL" or "PUT"
-            const optionDoc = await getOption(ticker, variant, strike, expiryTick);
-            if (!optionDoc) {
-            return res.status(404).json({ error: 'Option contract not found' });
-            }
-
-            try {
-            recordOptionPurchase({
-                portfolio,
-                optionDoc,
-                contracts: shares,
-                tickNow,
-                tradeType    // pass the string so recordOptionPurchase can set `type`
-            });
-            } catch (e) {
-            return res.status(400).json({ error: e.message });
-            }
-            break;
         }
+
+        console.log('🔎 Looking up option:', { underlying: ticker.toUpperCase(), variant: tradeType.toUpperCase(), strike, expiryTick });
+        const optionDoc = await getOption(ticker, tradeType.toUpperCase(), strike, expiryTick);
+        console.log('📄 getOption returned:', optionDoc);
+
+        if (!optionDoc) {
+            console.error('❌ Option contract not found');
+            return res.status(404).json({ error: 'Option contract not found' });
+        }
+
+        console.log('💰 Portfolio balance before purchase:', portfolio.balance);
+        try {
+            recordOptionPurchase({
+            portfolio,
+            optionDoc,
+            contracts: shares,
+            tickNow,
+            tradeType
+            });
+            console.log('✅ recordOptionPurchase succeeded, new balance:', portfolio.balance);
+        } catch (err) {
+            console.error('❌ recordOptionPurchase threw:', err.message);
+            return res.status(400).json({ error: err.message });
+        }
+        break;
+        }
+
     } // end switch
 
     /* ---- save and respond ---- */
