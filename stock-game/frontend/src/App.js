@@ -11,6 +11,7 @@ import StockDetail from "./components/StockDetail";
 import FeaturedStocks from "./components/FeaturedStocks";
 import MoodGraph from "./components/MoodGraph";
 import MarketIndexGraph from "./components/MarketIndexGraph";
+import Bank from "./components/Bank";
 import "./styles/global.css";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ function App() {
               }
             />
             <Route path="/stock/:ticker" element={<StockDetail />} />
+            <Route path="/bank" element={<Bank />} />
           </Routes>
         </div>
       </Router>

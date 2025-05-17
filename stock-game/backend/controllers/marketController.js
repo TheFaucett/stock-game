@@ -8,7 +8,7 @@ const { recordMarketIndexHistory }   = require("../utils/marketIndex.js");
 const { autoCoverShorts }            = require("../utils/autoCoverShorts.js");
 const { incrementTick }              = require("../utils/tickTracker.js");
 const { sweepOptionExpiries }        = require("../utils/sweepOptions.js");
-
+const { sweepLoanPayments }          = require("../utils/sweepLoans.js");
 let initialMarketCap = null;
 
 async function updateMarket() {
@@ -33,7 +33,7 @@ async function updateMarket() {
     }
 
     await sweepOptionExpiries(tick);
-
+    await sweepLoanPayments(tick);
     const stocks = await Stock.find();
     if (!stocks?.length) {
       console.error("⚠️ No stocks found in DB!");

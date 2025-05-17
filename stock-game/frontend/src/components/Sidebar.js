@@ -26,16 +26,12 @@ export default function Sidebar() {
   const recentPositions = useMemo(() => {
     if (!portfolio?.transactions) return []
 
-    // pick last 4 trades of interest
     const txs = [...portfolio.transactions]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .filter(tx =>
-        ['short', 'cover', 'call', 'put'].includes(tx.type)
-      )
+      .filter(tx => ['short', 'cover', 'call', 'put'].includes(tx.type))
       .slice(0, 4)
 
     return txs.map(tx => {
-      // short / cover: compute P/L
       if (tx.type === 'short' || tx.type === 'cover') {
         let counterpart
         if (tx.type === 'short') {
@@ -55,11 +51,9 @@ export default function Sidebar() {
         const isOpen = tx.type === 'short' && !counterpart
         let profit = null
         if (counterpart) {
-          if (tx.type === 'short') {
-            profit = (tx.price - counterpart.price) * tx.shares
-          } else {
-            profit = (counterpart.price - tx.price) * counterpart.shares
-          }
+          profit = tx.type === 'short'
+            ? (tx.price - counterpart.price) * tx.shares
+            : (counterpart.price - tx.price) * counterpart.shares
         }
 
         return {
@@ -70,7 +64,7 @@ export default function Sidebar() {
         }
       }
 
-      // call / put: find corresponding expire record (if any)
+      // calls / puts
       const isOpen = !tx.expired
       let profit = null
       if (tx.expired) {
@@ -80,15 +74,12 @@ export default function Sidebar() {
           e.expiryTick === tx.expiryTick &&
           new Date(e.date) > new Date(tx.date)
         )
-        if (expireTx) {
-          // expireTx.total is payoff, tx.total is premium paid
-          profit = expireTx.total - tx.total
-        }
+        if (expireTx) profit = expireTx.total - tx.total
       }
 
       return {
         ...tx,
-        displayType: tx.type.toUpperCase(), // "CALL" or "PUT"
+        displayType: tx.type.toUpperCase(),
         isOpen,
         profit
       }
@@ -99,7 +90,7 @@ export default function Sidebar() {
     <div className={`sidebar-container ${isOpen ? 'open' : 'closed'}`}>
       <button
         className="toggle-btn"
-        onClick={() => setIsOpen(open => !open)}
+        onClick={() => setIsOpen(o => !o)}
       >
         {isOpen ? '◀' : '▶'}
       </button>
@@ -114,11 +105,7 @@ export default function Sidebar() {
             <p><strong>Stocks Owned:</strong></p>
             <ul>
               {Object.entries(portfolio.ownedShares).map(
-                ([ticker, shares]) => (
-                  <li key={ticker}>
-                    {ticker}: {shares} shares
-                  </li>
-                )
+                ([tkr, sh]) => <li key={tkr}>{tkr}: {sh} shares</li>
               )}
             </ul>
           </div>
@@ -129,20 +116,16 @@ export default function Sidebar() {
 
         <h3>Most Valuable Stock</h3>
         {portfolio?.ownedShares &&
-        Object.keys(portfolio.ownedShares).length > 0 ? (
+          Object.keys(portfolio.ownedShares).length > 0 ? (
           <div className="card">
             {(() => {
-              const mostValuable = Object.entries(
+              const [bestTicker, bestShares] = Object.entries(
                 portfolio.ownedShares
-              ).reduce(
-                (max, s) => (s[1] > max[1] ? s : max),
-                ['', 0]
-              )
-              const [ticker, shares] = mostValuable
+              ).reduce((max, s) => s[1] > max[1] ? s : max, ['', 0])
               return (
                 <>
-                  <p>{ticker}: {shares} shares</p>
-                  <StockGraph ticker={ticker} />
+                  <p>{bestTicker}: {bestShares} shares</p>
+                  <StockGraph ticker={bestTicker} />
                 </>
               )
             })()}
@@ -165,25 +148,28 @@ export default function Sidebar() {
                     ? `${pos.shares} shares @ $${pos.price.toFixed(2)}`
                     : `${pos.contracts} contracts @ $${pos.price.toFixed(2)} premium`}
                   <br />
+
+                  {/* color based on status & profit */}
                   {['Short','Cover'].includes(pos.displayType) ? (
                     pos.isOpen ? (
                       <span style={{ color: 'orange' }}>Open</span>
                     ) : (
-                      <span style={{
-                        color: pos.profit >= 0 ? 'lightgreen' : 'salmon'
-                      }}>
+                      <span style={{ color: pos.profit >= 0 ? 'lime' : 'red' }}>
                         {pos.profit >= 0
                           ? `Profit: $${pos.profit.toFixed(2)}`
                           : `Loss: $${Math.abs(pos.profit).toFixed(2)}`}
                       </span>
                     )
                   ) : (
-                    <span style={{ color: pos.isOpen ? 'orange' : '#aaa' }}>
-                      {pos.isOpen ? 'Unexercised' : 'Expired'}
-                      {pos.profit != null && !pos.isOpen
-                        ? ` (P/L: $${pos.profit.toFixed(2)})`
-                        : ''}
-                    </span>
+                    pos.isOpen ? (
+                      <span style={{ color: 'orange' }}>Unexercised</span>
+                    ) : pos.profit != null ? (
+                      <span style={{ color: pos.profit >= 0 ? 'lime' : 'red' }}>
+                        Expired (P/L: $${pos.profit.toFixed(2)})
+                      </span>
+                    ) : (
+                      <span style={{ color: '#aaa' }}>Expired</span>
+                    )
                   )}
                 </li>
               ))}
@@ -194,3 +180,4 @@ export default function Sidebar() {
     </div>
   )
 }
+
