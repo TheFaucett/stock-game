@@ -1,103 +1,83 @@
 /* src/styles/bank.css */
 
-/* Container around the whole page */
 .bank-container {
-  max-width: 800px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   padding: 20px;
-  font-family: sans-serif;
 }
 
-/* Each card section (Deposit, Loan, Withdraw, History) */
+/* Card wrapper */
 .bank-card {
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #1e1e2f;
   padding: 20px;
-  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
+/* Headings */
 .bank-card h2 {
-  margin-top: 0;
-  font-size: 1.25rem;
-  color: #333;
+  color: #fff;
+  margin-bottom: 12px;
+  font-size: 1.2rem;
 }
 
-/* Form layout inside each card */
+/* Form layout */
 .bank-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-/* Each label+input group */
-.bank-form-group {
-  flex: 1 1 200px;
-  display: flex;
-  flex-direction: column;
-}
-
-.bank-form-group label {
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #555;
-}
-
-/* Text inputs & number inputs */
+/* Inputs */
 .bank-input {
   padding: 8px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #444;
   border-radius: 4px;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s;
+  background: #111;
+  color: #fff;
+  transition: background 0.2s ease;
+  font-size: 0.95rem;
 }
 .bank-input:focus {
-  border-color: #5e60ce;
+  outline: none;
+  background: #222;
 }
 
-/* Action buttons (Deposit, Take Loan, Withdraw) */
+/* Buttons */
 .bank-button {
+  background-color: #5e60ce;
+  color: white;
   padding: 10px 16px;
-  background: #5e60ce;
-  color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s, transform 0.1s;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
 }
 .bank-button:hover {
-  background: #4ea8de;
-  transform: translateY(-1px);
-}
-.bank-button:active {
-  transform: translateY(0);
+  background-color: #4ea8de;
 }
 
-/* Section titles */
-.bank-section {
-  margin-bottom: 32px;
-}
-
-/* List of existing loans/deposits */
+/* Lists */
 .bank-list {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  color: #ccc;
 }
 .bank-list-item {
+  padding: 8px 0;
+  border-top: 1px solid #333;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #eee;
+  font-size: 0.95rem;
 }
-.bank-list-item:last-child {
-  border-bottom: none;
+.bank-list-item:first-child {
+  border-top: none;
 }
 .bank-list-item span {
-  font-size: 0.95rem;
-  color: #444;
+  color: #fff;
 }
