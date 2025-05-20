@@ -1,5 +1,6 @@
 /* src/styles/bank.css */
 
+/* Container holds both cards vertically */
 .bank-container {
   display: flex;
   flex-direction: column;
@@ -7,7 +8,7 @@
   padding: 20px;
 }
 
-/* Card wrapper */
+/* ─── Card wrapper ───────────────────────────────────── */
 .bank-card {
   background: #1e1e2f;
   padding: 20px;
@@ -15,14 +16,14 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
-/* Headings */
+/* ─── Headings ────────────────────────────────────────── */
 .bank-card h2 {
   color: #fff;
   margin-bottom: 12px;
   font-size: 1.2rem;
 }
 
-/* Form layout */
+/* ─── Form layout ────────────────────────────────────── */
 .bank-form {
   display: flex;
   flex-wrap: wrap;
@@ -31,7 +32,7 @@
   margin-bottom: 16px;
 }
 
-/* Inputs */
+/* ─── Inputs ─────────────────────────────────────────── */
 .bank-input {
   padding: 8px 12px;
   border: 1px solid #444;
@@ -44,24 +45,26 @@
 .bank-input:focus {
   outline: none;
   background: #222;
+  border-color: #5e60ce;
 }
 
-/* Buttons */
+/* ─── Buttons ────────────────────────────────────────── */
 .bank-button {
   background-color: #5e60ce;
-  color: white;
+  color: #fff;
   padding: 10px 16px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 .bank-button:hover {
   background-color: #4ea8de;
+  transform: translateY(-1px);
 }
 
-/* Lists */
+/* ─── Lists ──────────────────────────────────────────── */
 .bank-list {
   list-style: none;
   margin: 0;

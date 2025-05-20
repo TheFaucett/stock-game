@@ -11,7 +11,7 @@ router.get('/:userId', bankController.getBankForPortfolio);
 // Body: { amount: Number, rate?: Number }
 router.post('/:userId/deposit', bankController.deposit);
 
-router.post('/:userId/withdraw', bankController.withdraw);
+router.post('/:userId/deposit/:depositId/withdraw', bankController.withdraw);
 
 // POST  /api/bank/:userId/loan
 // Body: { amount: Number, term: Number, rate?: Number }
