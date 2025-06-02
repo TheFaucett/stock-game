@@ -25,40 +25,61 @@ router.get('/', async (req, res) => {
 });
 
 
-const getSectorData = async () => {
-    try {
-        const sectors = await Stock.aggregate([
-            {
-                $group: {
-                    _id: "$sector",
-                    totalMarketCap: { $sum: { $multiply: ["$price", "$outstandingShares"] } },
-                    stocks: {
-                        $push: {
-                            ticker: "$ticker",
-                            price: "$price",
-                            change: "$change",
-                            marketCap: { $multiply: ["$price", "$outstandingShares"] }
-                        }
-                    }
-                }
-            },
-            { $sort: { totalMarketCap: -1 } } // Sort by highest market cap
-        ]);
 
-        return sectors.map(sector => ({
-            name: sector._id,
-            value: sector.totalMarketCap,
-            children: sector.stocks.map(stock => ({
-                name: stock.ticker,
-                value: stock.marketCap,
-                change: stock.change
-            }))
-        }));
-    } catch (error) {
-        console.error("Error fetching heatmap data:", error);
-        return [];
-    }
-};
+async function getSectorDataForHeatmap() {
+  try {
+    const pipeline = [
+      // 1) compute marketCap on each document
+      {
+        $project: {
+          ticker: 1,
+          sector: 1,
+          price: 1,
+          change: 1,
+          outstandingShares: 1,
+          marketCap: { $multiply: ["$price", "$outstandingShares"] }
+        }
+      },
+      // 2) sort descending by marketCap
+      { $sort: { marketCap: -1 } },
+      // 3) take only the top 150
+      { $limit: 150 },
+      // 4) group the remaining 150 by sector
+      {
+        $group: {
+          _id: "$sector",
+          totalMarketCap: { $sum: "$marketCap" },
+          stocks: {
+            $push: {
+              ticker:    "$ticker",
+              price:     "$price",
+              change:    "$change",
+              marketCap: "$marketCap"
+            }
+          }
+        }
+      },
+      // 5) sort sectors by their total marketCap (so the biggest‐sectors come first)
+      { $sort: { totalMarketCap: -1 } }
+    ]
+
+    const sectors = await Stock.aggregate(pipeline)
+
+    // Finally, re‐shape into exactly what the frontend’s Treemap expects:
+    return sectors.map((sector) => ({
+      name: sector._id,
+      value: sector.totalMarketCap,
+      children: sector.stocks.map((s) => ({
+        name:   s.ticker,
+        value:  s.marketCap,
+        change: s.change
+      }))
+    }))
+  } catch (error) {
+    console.error("Error fetching heatmap data:", error)
+    return []
+  }
+}
 
 
 router.get('/featured', async (req, res) => {
@@ -73,7 +94,7 @@ router.get('/featured', async (req, res) => {
 
 router.get("/heatmap", async (req, res) => {
     try {
-        const heatmapData = await getSectorData();
+        const heatmapData = await getSectorDataForHeatmap();
         res.json({ success: true, heatmapData });
     } catch (error) {
         res.status(500).json({ success: false, message: "Error fetching heatmap" });
