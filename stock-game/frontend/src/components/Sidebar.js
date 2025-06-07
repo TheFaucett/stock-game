@@ -23,6 +23,57 @@ export default function Sidebar() {
   })
   const [isOpen, setIsOpen] = useState(false)
 
+  // Best & Worst Performer
+  const { bestPerformer, worstPerformer } = useMemo(() => {
+    if (!portfolio?.transactions || !portfolio?.ownedShares) return {}
+
+    const ownedTickers = Object.keys(portfolio.ownedShares)
+
+    const performance = ownedTickers.map(ticker => {
+      const txs = portfolio.transactions.filter(
+        tx =>
+          tx.ticker === ticker &&
+          (tx.type === 'buy' || tx.type === 'sell')
+      )
+
+      const totalShares = txs
+        .filter(tx => tx.type === 'buy')
+        .reduce((sum, tx) => sum + tx.shares, 0) -
+        txs
+          .filter(tx => tx.type === 'sell')
+          .reduce((sum, tx) => sum + tx.shares, 0)
+
+      if (totalShares <= 0) return null
+
+      const totalCost = txs
+        .filter(tx => tx.type === 'buy')
+        .reduce((sum, tx) => sum + tx.price * tx.shares, 0)
+
+      const avgCost = totalCost / (totalShares || 1)
+
+      const currentPrice =
+        portfolio.currentPrices?.[ticker] ?? avgCost // fallback
+
+      const pctChange = ((currentPrice - avgCost) / avgCost) * 100
+
+      return { ticker, pctChange, currentPrice }
+    }).filter(Boolean)
+
+    const bestPerformer = performance.reduce(
+      (best, stock) =>
+        best == null || stock.pctChange > best.pctChange ? stock : best,
+      null
+    )
+    const worstPerformer = performance.reduce(
+      (worst, stock) =>
+        worst == null || stock.pctChange < worst.pctChange ? stock : worst,
+      null
+    )
+
+    return { bestPerformer, worstPerformer }
+  }, [portfolio])
+
+  // Recent Positions
   const recentPositions = useMemo(() => {
     if (!portfolio?.transactions) return []
 
@@ -134,6 +185,26 @@ export default function Sidebar() {
           <p>No stocks owned yet.</p>
         )}
 
+        <h3>Best Performer</h3>
+        {bestPerformer ? (
+          <div className="card">
+            <p><strong>{bestPerformer.ticker}</strong></p>
+            <p style={{ color: bestPerformer.pctChange >= 0 ? 'lime' : 'red' }}>
+              {bestPerformer.pctChange.toFixed(2)}%
+            </p>
+          </div>
+        ) : <p>No stocks owned.</p>}
+
+        <h3>Biggest Loser</h3>
+        {worstPerformer ? (
+          <div className="card">
+            <p><strong>{worstPerformer.ticker}</strong></p>
+            <p style={{ color: worstPerformer.pctChange >= 0 ? 'lime' : 'red' }}>
+              {worstPerformer.pctChange.toFixed(2)}%
+            </p>
+          </div>
+        ) : <p>No stocks owned.</p>}
+
         <h3>Recent Positions</h3>
         <div className="card">
           {recentPositions.length === 0 ? (
@@ -148,8 +219,6 @@ export default function Sidebar() {
                     ? `${pos.shares} shares @ $${pos.price.toFixed(2)}`
                     : `${pos.contracts} contracts @ $${pos.price.toFixed(2)} premium`}
                   <br />
-
-                  {/* color based on status & profit */}
                   {['Short','Cover'].includes(pos.displayType) ? (
                     pos.isOpen ? (
                       <span style={{ color: 'orange' }}>Open</span>
@@ -180,4 +249,3 @@ export default function Sidebar() {
     </div>
   )
 }
-

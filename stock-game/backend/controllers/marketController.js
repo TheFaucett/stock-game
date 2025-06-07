@@ -9,7 +9,9 @@ const { autoCoverShorts }            = require("../utils/autoCoverShorts.js");
 const { incrementTick }              = require("../utils/tickTracker.js");
 const { sweepOptionExpiries }        = require("../utils/sweepOptions.js");
 const { sweepLoanPayments }          = require("../utils/sweepLoans.js");
+
 let initialMarketCap = null;
+const HISTORY_LIMIT = 30; // ✅ strict history length
 
 async function updateMarket() {
   try {
@@ -20,11 +22,12 @@ async function updateMarket() {
     const tick = incrementTick();
     console.log(`⏱️ Tick #${tick} complete`);
 
-    // macro drift: +0.031% per tick
-    const macroDriftRate = 0.00031;
-    const macroDriftMult = 1 + macroDriftRate;
+    // 3️⃣ Apply Gaussian only every 2 ticks
+    if (tick % 2 === 0) {
+      console.log("✨ Applying Gaussian noise");
+      applyGaussian();
+    }
 
-    applyGaussian();
     await applyImpactToStocks();
 
     if (tick % 12 === 0) {
@@ -34,7 +37,17 @@ async function updateMarket() {
 
     await sweepOptionExpiries(tick);
     await sweepLoanPayments(tick);
-    const stocks = await Stock.find();
+
+    // 1️⃣ Use .lean() + projection
+    const stocks = await Stock.find({}, {
+      ticker: 1,
+      price: 1,
+      volatility: 1,
+      basePrice: 1,
+      liquidity: 1,
+      history: 1
+    }).lean();
+
     if (!stocks?.length) {
       console.error("⚠️ No stocks found in DB!");
       return;
@@ -64,44 +77,45 @@ async function updateMarket() {
         const prevPrice  = stock.history.at(-1) ?? stock.price;
         const volatility = stock.volatility ?? 0.05;
 
-        // 1) tiny random wiggle
-        const wiggleTerm = (Math.random() - 0.5) * 0.25;
-        const randomImpact = wiggleTerm * volatility;
-        let   newPrice     = Math.max(prevPrice * (1 + randomImpact), 0.01);
-        totRandom        += randomImpact;
+        // 1) tiny random wiggle — Gaussian * sqrt(volatility) * 2% base stddev
+        const gaussianTerm = (Math.random() + Math.random() + Math.random() - 1.5); // ~Gaussian [-1.5, 1.5]
+        const randomImpact = gaussianTerm * Math.sqrt(volatility) * 0.02;
+        let newPrice = Math.max(prevPrice * (1 + randomImpact), 0.01);
+        totRandom += randomImpact;
 
         // 2) anchor basePrice toward prevPrice
         const anchorRate = 0.05;
-        let   basePrice  = stock.basePrice
+        let basePrice = stock.basePrice
           ? stock.basePrice + (prevPrice - stock.basePrice) * anchorRate
           : prevPrice;
         if (basePrice / prevPrice > 10 || prevPrice / basePrice > 10) {
           basePrice = prevPrice;
         }
-        stock.basePrice = basePrice;
 
         // 3) mean‑reversion
-        const delta       = (basePrice - newPrice) / basePrice;
+        const delta = (basePrice - newPrice) / basePrice;
         const cappedDelta = Math.max(Math.min(delta, 0.4), -0.4);
-        const revertMult  = Math.tanh(cappedDelta) * 0.03;
-        newPrice         *= 1 + revertMult;
-        totRevert        += revertMult;
+        const revertMult = Math.tanh(cappedDelta) * 0.03 + 0.0015;
+
+        newPrice *= 1 + revertMult;
+        totRevert += revertMult;
 
         // 4) firm‑trade micro impact
-        const trades    = firmTradeImpact[stock.ticker] || 0;
+        const trades = firmTradeImpact[stock.ticker] || 0;
         const illiqMult = 1 - (stock.liquidity ?? 0);
         const tradeMult = trades ? 0.0001 * trades * illiqMult : 0;
-        newPrice       *= 1 + tradeMult;
-        totTrade       += tradeMult;
+        newPrice *= 1 + tradeMult;
+        totTrade += tradeMult;
 
         // 5) macro drift
+        const macroDriftRate = 0.0006;
+        const macroDriftMult = 1 + macroDriftRate;
         newPrice *= macroDriftMult;
 
-        // 6) rare 1% small shock
-        const shock = Math.random() < 0.001
-                    ? 1 + Math.random() * 0.10
-                    : 1;
-        newPrice   *= shock;
+        // 6) rare jump term — 0.1% chance of ±5% move
+        const jumpProb = 0.001;
+        const jumpMagnitude = (Math.random() < jumpProb) ? (Math.random() * 0.1 - 0.05) : 0;
+        newPrice *= 1 + jumpMagnitude;
 
         // Compute percent move
         const pctMove = ((newPrice - prevPrice) / prevPrice) * 100;
@@ -112,29 +126,32 @@ async function updateMarket() {
         if (Math.abs(pctMove) >= DEBUG_THRESHOLD) {
           console.group(`🐛 [${stock.ticker}] tick=${tick} pctMove=${pctMove.toFixed(2)}%`);
           console.log("  prevPrice     :", prevPrice.toFixed(4));
-          console.log("  randomImpact  :", (randomImpact*100).toFixed(3) + "%");
+          console.log("  randomImpact  :", (randomImpact * 100).toFixed(3) + "%");
           console.log("  cappedDelta   :", cappedDelta.toFixed(4));
-          console.log("  revertMult    :", (revertMult*100).toFixed(3) + "%");
-          console.log("  tradeMult     :", (tradeMult*100).toFixed(3) + "%");
-          console.log("  macroDrift    :", ((macroDriftMult-1)*100).toFixed(3) + "%");
-          console.log("  shockMult     :", shock.toFixed(4));
+          console.log("  revertMult    :", (revertMult * 100).toFixed(3) + "%");
+          console.log("  tradeMult     :", (tradeMult * 100).toFixed(3) + "%");
+          console.log("  macroDrift    :", ((macroDriftMult - 1) * 100).toFixed(3) + "%");
+          console.log("  jumpMagnitude :", (jumpMagnitude * 100).toFixed(3) + "%");
           console.log("  finalPrice    :", newPrice.toFixed(4));
           console.groupEnd();
         }
 
         // 7) update volatility & history
-        const absPct   = Math.abs(pctMove)/100;
-        let   newVol   = Math.min(Math.max(0.9 * volatility + 0.1 * absPct, 0.01), 0.5);
-        const newHist  = [...stock.history.slice(-29), newPrice];
+        const absPct = Math.abs(pctMove) / 100;
+        const learningRate = 0.02;
+        let newVol = (1 - learningRate) * volatility + learningRate * absPct;
+        newVol = Math.min(Math.max(newVol, 0.01), 0.2); // cap volatility
+
+        const newHist = [...stock.history.slice(-HISTORY_LIMIT + 1), newPrice];
 
         return {
           updateOne: {
             filter: { _id: stock._id },
             update: {
               $set: {
-                price     : newPrice,
-                change    : +pctMove.toFixed(2),
-                history   : newHist,
+                price: newPrice,
+                change: +pctMove.toFixed(2),
+                history: newHist,
                 volatility: +newVol.toFixed(4),
                 basePrice
               }
@@ -150,16 +167,22 @@ async function updateMarket() {
     }
 
     // per‑tick diagnostics
-    const n    = stocks.length;
+    const n = stocks.length;
     const avgR = (totRandom / n * 100).toFixed(3);
     const avgV = (totRevert / n * 100).toFixed(3);
-    const avgT = (totTrade  / n * 100).toFixed(3);
+    const avgT = (totTrade / n * 100).toFixed(3);
     movers.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
-    const top5 = movers.slice(0,5).map(m=>`${m.t}:${m.pct.toFixed(1)}%`).join(", ");
+    const top5 = movers.slice(0, 5).map(m => `${m.t}:${m.pct.toFixed(1)}%`).join(", ");
     console.log(`📈 wiggle=${avgR}% | reversion=${avgV}% | trade=${avgT}%`);
     console.log(`🚩 top movers: ${top5}`);
-  }
-  catch (err) {
+
+    // 7️⃣ Memory usage log every 50 ticks
+    if (tick % 50 === 0) {
+      const mem = process.memoryUsage();
+      console.log(`🧠 Memory MB used: Heap ${(mem.heapUsed / 1024 / 1024).toFixed(2)} MB`);
+    }
+
+  } catch (err) {
     console.error("⚠️ Market update error:", err);
   }
 }

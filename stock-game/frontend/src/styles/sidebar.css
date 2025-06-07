@@ -18,9 +18,16 @@
     height: 100%;
     background: #1e1e1e;
     padding: 20px;
+    box-sizing: border-box;
     transform: translateX(0);
     transition: transform 0.3s ease-in-out;
     pointer-events: all; /* Enable interaction */
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* ✅ Enable scrolling */
+    scrollbar-width: none; /* Firefox */
+    scrollbar-color: #555 #1e1e1e; /* Firefox */
 }
 
 .sidebar-container.closed .sidebar {
@@ -51,4 +58,22 @@
 
 .sidebar-container.closed .toggle-btn {
     left: 10px;
+}
+
+/* ✅ Polished custom scrollbar for WebKit (Chrome, Edge, Safari) */
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #777;
 }
