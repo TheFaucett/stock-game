@@ -11,6 +11,10 @@ import StockDetail from "./components/StockDetail";
 import FeaturedStocks from "./components/FeaturedStocks";
 import MoodGraph from "./components/MoodGraph";
 import MarketIndexGraph from "./components/MarketIndexGraph";
+import TopStocksPage from "./components/TopStocks";
+import TopVolatility from "./components/TopVolatility";
+import TopMarketCapStocks from "./components/TopMarketCap";
+import TopDividends from "./components/TopDividends"; // Assuming you have a TopDividends component
 import Bank from "./components/Bank";
 import "./styles/global.css";
 
@@ -54,6 +58,11 @@ function App() {
             />
             <Route path="/stock/:ticker" element={<StockDetail />} />
             <Route path="/bank" element={<Bank />} />
+            <Route path="/top-movers" element={<TopStocksPage endpoint="movers" title="🚀 Top Movers" formatValue= {(s) => `${s.change.toFixed(2)}%`}/>} />
+
+            <Route path="/top-volatility" element={<TopVolatility endpoint="volatility" title="🎢 Most Volatile" formatValue={(s) => `${(s.volatility * 100).toFixed(2)}%`} />} />
+            <Route path="/top-dividends" element={<TopDividends endpoint="dividends" title="💸 Top Dividend Yield" formatValue={(s) => `${(s.dividendYield * 100).toFixed(2)}%`} />} />
+            <Route path="/top-marketcap" element={<TopMarketCapStocks endpoint="marketcap" title="🏦 Top Market Cap" formatValue={(s) => `$${(s.marketCap / 1e9).toFixed(2)} B`} />} />
           </Routes>
         </div>
       </Router>

@@ -1,0 +1,24 @@
+/* src/styles/TopMarketCapStocks.css */
+.marketcap-stocks-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.marketcap-stock-card {
+  background-color: #1e1e1e;
+  color: white;
+  border-radius: 8px;
+  padding: 16px;
+  width: 300px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.marketcap-stock-card:hover {
+  transform: scale(1.05);
+  background-color: #272727;
+}

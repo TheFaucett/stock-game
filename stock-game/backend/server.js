@@ -12,6 +12,7 @@ const portfolioRoutes = require('./routes/portfolioRoutes');
 const userRoutes = require('./routes/userRoutes');
 const marketData = require('./routes/marketData');
 const bankRoutes = require('./routes/bankRoutes');
+const featuredStockRoutes = require('./routes/featuredStockRoutes');
 //CONTROLLERS
 const { updateMarket } = require('./controllers/marketController');
 
@@ -44,6 +45,7 @@ app.use('/api/news/sector', sectorNewsRoutes);
 app.use('/api/news/stock', stockNewsRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/bank', bankRoutes);
+app.use('/api/featured-stocks', featuredStockRoutes);
 // 📌 Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -1,0 +1,45 @@
+/* src/styles/FeaturedStocks.css */
+
+.featured-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+.featured-card {
+  border: none;
+  border-radius: 15px;
+  padding: 30px 20px;
+  color: white;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s, box-shadow 0.3s, filter 0.3s;
+  cursor: pointer;
+  text-align: center;
+  font-size: 1em;
+  outline: none;
+}
+
+.featured-card h2 {
+  font-size: 1.6em;
+  margin-bottom: 12px;
+}
+
+.featured-card p {
+  font-size: 1em;
+  opacity: 0.9;
+}
+
+/* immersive hover */
+.featured-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  filter: brightness(1.1);
+}
+
+.featured-card:active {
+  transform: translateY(-2px) scale(0.98);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

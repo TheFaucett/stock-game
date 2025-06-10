@@ -1,0 +1,14 @@
+.dividends-stock-card {
+  background: #2b2b2b;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.dividends-stock-card:hover {
+  transform: translateY(-5px);
+  background: #333;
+}
