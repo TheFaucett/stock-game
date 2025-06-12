@@ -9,7 +9,7 @@ const { autoCoverShorts }            = require("../utils/autoCoverShorts.js");
 const { incrementTick }              = require("../utils/tickTracker.js");
 const { sweepOptionExpiries }        = require("../utils/sweepOptions.js");
 const { sweepLoanPayments }          = require("../utils/sweepLoans.js");
-
+const { payDividends }               = require("../utils/payDividends.js");    
 let initialMarketCap = null;
 const HISTORY_LIMIT = 30; // ✅ strict history length
 
@@ -17,6 +17,8 @@ async function updateMarket() {
   try {
     console.log("🔄 Updating market state…");
     maybeApplyShock();
+
+
 
     const { inflationRate, currencyStrength } = getEconomicFactors();
     const tick = incrementTick();
@@ -34,6 +36,12 @@ async function updateMarket() {
       console.log("🧾 Auto-covering shorts");
       await autoCoverShorts();
     }
+
+    if (tick % 2 === 0) {
+        console.log("💰 Paying dividends");
+        await payDividends();
+    }
+
 
     await sweepOptionExpiries(tick);
     await sweepLoanPayments(tick);
@@ -181,6 +189,78 @@ async function updateMarket() {
       const mem = process.memoryUsage();
       console.log(`🧠 Memory MB used: Heap ${(mem.heapUsed / 1024 / 1024).toFixed(2)} MB`);
     }
+
+
+    // 8️⃣ Market move attribution DEBUG
+    let totalPctMove = 0;
+    let totalPctRandom = 0;
+    let totalPctRevert = 0;
+    let totalPctTrade  = 0;
+    let totalPctMacro  = 0;
+    let totalPctJump   = 0;
+
+    movers.forEach(({ pct }) => {
+    totalPctMove += pct;
+    });
+
+    // Recompute contribution for each stock
+    stocks.forEach(stock => {
+    const prevPrice  = stock.history.at(-1) ?? stock.price;
+    const volatility = stock.volatility ?? 0.05;
+
+    const gaussianTerm = (Math.random() + Math.random() + Math.random() - 1.5);
+    const randomImpact = gaussianTerm * Math.sqrt(volatility) * 0.02;
+    const impactRandom = 1 + randomImpact;
+
+    const anchorRate = 0.05;
+    let basePrice = stock.basePrice
+        ? stock.basePrice + (prevPrice - stock.basePrice) * anchorRate
+        : prevPrice;
+    if (basePrice / prevPrice > 10 || prevPrice / basePrice > 10) {
+        basePrice = prevPrice;
+    }
+
+    const delta = (basePrice - prevPrice * impactRandom) / basePrice;
+    const cappedDelta = Math.max(Math.min(delta, 0.4), -0.4);
+    const revertMult = Math.tanh(cappedDelta) * 0.03 + 0.001;//0.0015
+    const impactRevert = 1 + revertMult;
+
+    const trades = firmTradeImpact[stock.ticker] || 0;
+    const illiqMult = 1 - (stock.liquidity ?? 0);
+    const tradeMult = trades ? 0.0001 * trades * illiqMult : 0;
+    const impactTrade = 1 + tradeMult;
+
+    const macroDriftRate = 0.0006;
+    const macroDriftMult = 1 + macroDriftRate;
+    const impactMacro = macroDriftMult;
+
+    const jumpProb = 0.001;
+    const jumpMagnitude = (Math.random() < jumpProb) ? (Math.random() * 0.1 - 0.05) : 0;
+    const impactJump = 1 + jumpMagnitude;
+
+    const totalImpact = impactRandom * impactRevert * impactTrade * impactMacro * impactJump;
+    const pctMoveOverall = (totalImpact - 1) * 100;
+
+    // Proportional attribution
+    if (pctMoveOverall !== 0) {
+        totalPctRandom += ((impactRandom - 1) / (totalImpact - 1)) * pctMoveOverall;
+        totalPctRevert += ((impactRevert - 1) / (totalImpact - 1)) * pctMoveOverall;
+        totalPctTrade  += ((impactTrade  - 1) / (totalImpact - 1)) * pctMoveOverall;
+        totalPctMacro  += ((impactMacro  - 1) / (totalImpact - 1)) * pctMoveOverall;
+        totalPctJump   += ((impactJump   - 1) / (totalImpact - 1)) * pctMoveOverall;
+    }
+    });
+
+    // Final log
+    console.log(`🧮 Market move attribution (avg per stock):`);
+    console.log(`  🎲 Random wiggle : ${(totalPctRandom / n).toFixed(3)} %`);
+    console.log(`  ↩️  Mean reversion: ${(totalPctRevert / n).toFixed(3)} %`);
+    console.log(`  🏦 Firm trades   : ${(totalPctTrade / n).toFixed(3)} %`);
+    console.log(`  🌍 Macro drift   : ${(totalPctMacro / n).toFixed(3)} %`);
+    console.log(`  ⚡ Jumps         : ${(totalPctJump / n).toFixed(3)} %`);
+    console.log(`  📊 TOTAL         : ${(totalPctMove / n).toFixed(3)} %`);
+
+
 
   } catch (err) {
     console.error("⚠️ Market update error:", err);

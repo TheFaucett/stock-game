@@ -13,7 +13,7 @@ const portfolioSchema = new mongoose.Schema({
         enum    : [
           'buy','sell','short','cover',
           'call','put','call_expire','put_expire', 'loan', 'loan_payment', 'loan_close', 'deposit', 
-          'withdrawal'
+          'withdrawal', 'dividend'
         ],
         required: true
       },
