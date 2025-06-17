@@ -48,12 +48,15 @@ export default function Bank() {
     const term = parseInt(loanTerm, 10)
     if (isNaN(amt) || amt <= 0 || isNaN(term) || term <= 0)
       return alert('Enter valid loan amount and term')
-    await axios.post(`http://localhost:5000/api/bank/${USER_ID}/loan`, { amount: amt, term })
-    setLoanAmt('')
-    setLoanTerm('')
-    refetch()
+    try {
+      await axios.post(`http://localhost:5000/api/bank/${USER_ID}/loan`, { amount: amt, term })
+      setLoanAmt('')
+      setLoanTerm('')
+      refetch()
+    } catch (e) {
+      alert(e.response?.data?.error || 'Loan failed')
+    }
   }
-
   async function handleWithdraw(depositId) {
     const raw = withdrawAmt[depositId]
     const amt = parseFloat(raw)
