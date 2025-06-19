@@ -48,7 +48,7 @@ git clone https://github.com/your-username/stock-market-game.git
 cd stock-market-game
 ```
 ### 2. Install Deps. 
-
+##NOTE: you must have mongodb installed, a local version can be downloaded safely from [https://www.mongodb.com/docs/manual/installation/](url)
 ```bash
 cd backend
 npm install
@@ -61,15 +61,18 @@ npm install
    Create a .env file and define your MONGO_URI
 
 ```env
-MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
+MONGO_URI=mongodb://localhost:27017/stock-game
 PORT=5000
 ```
 
 4. Run the app
+
+
 Simply node server and npm start
 
 ```bash
 cd backend
+node utils/seed.js
 node server.js
 ```
 and 
