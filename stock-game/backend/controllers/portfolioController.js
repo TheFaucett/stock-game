@@ -5,7 +5,7 @@ const User = require('../models/User');
 const { ObjectId } = mongoose.Types;
 const { getCurrentTick } = require('../utils/tickTracker');
 const { getOption, recordOptionPurchase } = require('../utils/optionUtils');
-
+const { findOrCreatePortfolio } = require('../middleware/findOrCreatePortfolio');
 
 
 exports.getPortfolio = async (req, res) => {

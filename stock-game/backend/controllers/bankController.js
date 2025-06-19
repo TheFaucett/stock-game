@@ -1,28 +1,7 @@
-// controllers/bankController.js
-
 const Bank      = require('../models/Bank');
-const Portfolio = require('../models/Portfolio');
+const findOrCreatePortfolio = require('../utils/findOrCreatePortfolio'); // adjust path if needed
 const { getCurrentTick } = require('../utils/tickTracker');
 
-
-async function getPortfolioValue(portfolio) {
-  // Portfolio must include current stock ownedShares.
-  // Example assumes portfolio.ownedShares = [{ ticker, shares }]
-  // and you track shares per ticker.
-  // If your schema differs, adjust accordingly!
-  let stocksValue = 0;
-  if (portfolio.ownedShares && Array.isArray(portfolio.ownedShares) && portfolio.ownedShares.length > 0) {
-    const tickers = portfolio.ownedShares.map(h => h.ticker);
-    const stocks = await Stock.find({ ticker: { $in: tickers } }, { ticker: 1, price: 1 });
-    stocksValue = stocks.reduce((sum, stock) => {
-      const holding = portfolio.ownedShares.find(h => h.ticker === stock.ticker);
-      return sum + (holding ? holding.shares * stock.price : 0);
-    }, 0);
-  }
-  return (portfolio.balance || 0) + stocksValue;
-}
-
-// APR‑per‑tick defaults
 const DEFAULT_DEPOSIT_RATE = 0.02;
 const DEFAULT_LOAN_RATE    = 0.05;
 
@@ -43,16 +22,13 @@ exports.getBankForPortfolio = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // 1️⃣ find the portfolio record for this user
-    const portfolio = await Portfolio.findOne({ userId });
-    if (!portfolio) {
-      return res.status(404).json({ error: 'Portfolio not found' });
-    }
+    // 1️⃣ find or create the portfolio record for this user
+    const portfolio = await findOrCreatePortfolio(userId);
 
     // 2️⃣ load (or create) the single bank doc
     const bank = await getOrCreateBank();
 
-    // 3️⃣ now filter by portfolio._id
+    // 3️⃣ now filter by portfolio._id (always a string)
     const pid      = portfolio._id.toString();
     const loans    = bank.loans.filter(l => l.portfolioId.toString() === pid);
     const deposits = bank.deposits.filter(d => d.portfolioId.toString() === pid);
@@ -65,6 +41,7 @@ exports.getBankForPortfolio = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 /**
  * POST /api/bank/:userId/deposit
  * Body: { amount, rate? }
@@ -79,8 +56,7 @@ exports.deposit = async (req, res) => {
       return res.status(400).json({ error: 'Invalid userId or amount' });
     }
 
-    const portfolio = await Portfolio.findOne({ userId });
-    if (!portfolio) return res.status(404).json({ error: 'Portfolio not found' });
+    const portfolio = await findOrCreatePortfolio(userId);
     if (portfolio.balance < amount) {
       return res.status(400).json({ error: 'Insufficient balance' });
     }
@@ -92,7 +68,7 @@ exports.deposit = async (req, res) => {
 
     // 2️⃣ record the deposit
     bank.deposits.push({
-      portfolioId: portfolio._id,
+      portfolioId: portfolio._id, // always valid, even if userId is a string
       amount,
       rate:       rate ?? DEFAULT_DEPOSIT_RATE,
       startTick:  getCurrentTick(),
@@ -124,38 +100,17 @@ exports.takeLoan = async (req, res) => {
       typeof amount !== 'number' || amount <= 0 ||
       typeof term   !== 'number' || term   <= 0
     ) {
-      console.error(amount, term );
       return res.status(400).json({ error: 'Invalid userId, amount, or term' });
     }
 
-    const portfolio = await Portfolio.findOne({ userId });
-    if (!portfolio) return res.status(404).json({ error: 'Portfolio not found' });
+    const portfolio = await findOrCreatePortfolio(userId);
 
-    // Calculate player's current net worth
-    const portfolioValue = await getPortfolioValue(portfolio);
-
-    // Load the bank doc and find outstanding loans
     const bank = await getOrCreateBank();
-    const pid  = portfolio._id.toString();
-    const outstandingLoans = bank.loans.filter(
-      l => l.portfolioId.toString() === pid && !l.closed
-    );
-    const outstandingPrincipal = outstandingLoans.reduce((sum, loan) => sum + (loan.balance || 0), 0);
 
-    // Set max borrow cap (e.g. 50% of net worth)
-    const maxLoan = portfolioValue * 0.5;
-
-    // Will this loan exceed the cap?
-    if ((outstandingPrincipal + amount) > maxLoan) {
-      return res.status(400).json({
-        error: `Loan denied: max loan allowed is $${maxLoan.toFixed(2)} (50% of your net worth, including existing debt).`
-      });
-    }
-
-    // Credit the player’s cash
+    // 1️⃣ credit the player’s cash
     portfolio.balance += amount;
 
-    // Record the loan
+    // 2️⃣ record the loan
     bank.loans.push({
       portfolioId: portfolio._id,
       amount,            // original principal
@@ -191,10 +146,7 @@ exports.withdraw = async (req, res) => {
     }
 
     // 1️⃣ load portfolio
-    const portfolio = await Portfolio.findOne({ userId });
-    if (!portfolio) {
-      return res.status(404).json({ error: 'Portfolio not found' });
-    }
+    const portfolio = await findOrCreatePortfolio(userId);
 
     // 2️⃣ load bank + locate the deposit subdoc
     const bank    = await getOrCreateBank();

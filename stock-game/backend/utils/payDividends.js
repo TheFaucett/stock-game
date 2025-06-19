@@ -1,63 +1,62 @@
-const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 const Portfolio = require("../models/Portfolio");
 
-// Your testing Portfolio ObjectId
-const TEST_PORTFOLIO_ID = "67af822e5609849ac14d7942"; // change if needed
-
 async function payDividends() {
   try {
-    const portfolio = await Portfolio.findOne({
-      userId: TEST_PORTFOLIO_ID
-    });
-    if (!portfolio) {
-      console.error(`Portfolio ${TEST_PORTFOLIO_ID} not found!`);
+    // 1. Fetch all portfolios
+    const portfolios = await Portfolio.find();
+    if (!portfolios.length) {
+      console.log("No portfolios found—no dividends to pay.");
       return;
     }
 
-    console.log("✅ ownedShares:", portfolio.ownedShares);
+    // 2. Gather all tickers owned by anyone
+    const allOwnedTickers = new Set();
+    portfolios.forEach(portfolio => {
+      Object.keys(portfolio.ownedShares || {}).forEach(ticker => {
+        allOwnedTickers.add(ticker);
+      });
+    });
 
-    const ownedTickers = Array.from(portfolio.ownedShares.keys());
-
-    if (ownedTickers.length === 0) {
-      console.log("Portfolio owns no shares — no dividends to pay.");
+    if (!allOwnedTickers.size) {
+      console.log("No owned shares in any portfolio—no dividends to pay.");
       return;
     }
 
-    const stocks = await Stock.find({
-      ticker: { $in: ownedTickers }
+    // 3. Fetch all relevant stocks in a single query
+    const stocks = await Stock.find({ ticker: { $in: Array.from(allOwnedTickers) } });
+    const stockMap = {};
+    stocks.forEach(stock => {
+      stockMap[stock.ticker] = stock;
     });
 
-    let totalPaid = 0;
-    const now = new Date();
-    console.log(`✅ Stocks found for dividend: ${stocks.length}`, stocks.map(s => s.ticker));
+    // 4. Pay out dividends to each portfolio
+    let totalDividendsPaid = 0;
+    for (const portfolio of portfolios) {
+      let portfolioDividends = 0;
+      for (const [ticker, sharesOwned] of Object.entries(portfolio.ownedShares || {})) {
+        const stock = stockMap[ticker];
+        if (!stock || !sharesOwned || sharesOwned <= 0) continue;
+        const yieldPerYear = stock.dividendYield || 0;
+        const dividendPerShare = stock.price * yieldPerYear / 365;
+        const totalDividend = dividendPerShare * sharesOwned;
 
-    for (const stock of stocks) {
-      const sharesOwned = portfolio.ownedShares.get(stock.ticker);
-
-
-      if (!sharesOwned || sharesOwned <= 0) continue;
-
-      console.log(`🔎 ${stock.ticker} price=${stock.price}, yield=${stock.dividendYield}, shares=${sharesOwned}`);
-      const dividendPerShare = stock.price * stock.dividendYield/ 365;
-      const totalDividend = dividendPerShare * sharesOwned;
-
-      // Add to portfolio balance
-      portfolio.balance += totalDividend/365;
-      totalPaid += totalDividend;
-      console.log(`Checking ${stock.ticker}: dividendYield=${stock.dividendYield}, sharesOwned=${sharesOwned}`);
-      console.log(`➡️ dividendPerShare=${dividendPerShare}, totalDividend=${totalDividend}`);
-
-
+        portfolio.balance += totalDividend;
+        portfolioDividends += totalDividend;
+      }
+      if (portfolioDividends > 0) {
+        await portfolio.save();
+        totalDividendsPaid += portfolioDividends;
+        console.log(
+          `💸 Paid $${portfolioDividends.toFixed(2)} in dividends to portfolio ${portfolio._id} (userId=${portfolio.userId})`
+        );
+      }
     }
 
-    await portfolio.save();
-    console.log(`💸 Paid $${totalPaid.toFixed(2)} in dividends to test portfolio ${portfolio._id}`);
-  }
-  catch (err) {
+    console.log(`🎉 Total dividends paid to all portfolios: $${totalDividendsPaid.toFixed(2)}`);
+  } catch (err) {
     console.error("⚠️ Error paying dividends:", err);
   }
 }
-
 
 module.exports = { payDividends };

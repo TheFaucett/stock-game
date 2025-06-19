@@ -1,10 +1,10 @@
 // src/components/Bank.jsx
-import React, { useState } from 'react'
-import { useQuery }        from '@tanstack/react-query'
-import axios               from 'axios'
-import '../styles/bank.css'
-
-const USER_ID = '67af822e5609849ac14d7942'
+import React, { useState } from 'react';
+import { useQuery }        from '@tanstack/react-query';
+import axios               from 'axios';
+import '../styles/bank.css';
+import { getOrCreateUserId }  from '../userId';
+const USER_ID = getOrCreateUserId();
 
 async function fetchBank({ queryKey }) {
   const [, userId] = queryKey
