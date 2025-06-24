@@ -1,12 +1,12 @@
 // src/components/Sidebar.jsx
-import React, { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
-import StockGraph from './StockGraph'
-import PortfolioBalanceGraph from './PortfolioBalanceGraph'
-import '../styles/sidebar.css'
-
-const USER_ID = '67af822e5609849ac14d7942'
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import StockGraph from './StockGraph';
+import PortfolioBalanceGraph from './PortfolioBalanceGraph';
+import '../styles/sidebar.css';
+import { getOrCreateUserId } from '../userId';
+const USER_ID = getOrCreateUserId();
 
 const fetchPortfolio = async () => {
   const { data } = await axios.get(

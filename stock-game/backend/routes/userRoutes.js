@@ -18,8 +18,8 @@ router.get('/:userId/balance', async (req, res) => {
         const userId = req.params.userId;
 
         // ✅ Validate ObjectId format
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ error: 'Invalid user ID format' });
+        if (!userId) {
+            return res.status(400).json({ error: 'Invalid user ID' });
         }
 
         let user = await User.findById(userId);

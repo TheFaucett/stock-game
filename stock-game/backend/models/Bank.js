@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const loanSchema = new mongoose.Schema({
-  portfolioId: { type: mongoose.Schema.Types.ObjectId, ref: 'Portfolio', required: true },
+  portfolioId: { type: String, ref: 'Portfolio', required: true },
   amount:      { type: Number, required: true },  // principal at origination
   balance:     { type: Number, required: true },  // remaining principal
   term:        { type: Number, required: true },  // in ticks
@@ -20,7 +20,7 @@ const loanSchema = new mongoose.Schema({
 });
 
 const depositSchema = new mongoose.Schema({
-  portfolioId: { type: mongoose.Schema.Types.ObjectId, ref: 'Portfolio', required: true },
+  portfolioId: { type: String, ref: 'Portfolio', required: true },
   amount:      { type: Number, required: true },
   rate:        { type: Number, required: true },  // APR (as fraction per tick)
   startTick:   { type: Number, required: true },

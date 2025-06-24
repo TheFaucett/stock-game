@@ -1,5 +1,5 @@
 const Bank      = require('../models/Bank');
-const findOrCreatePortfolio = require('../utils/findOrCreatePortfolio'); // adjust path if needed
+const  findOrCreatePortfolio  = require('../middleware/findOrCreatePortfolio'); // adjust path if needed
 const { getCurrentTick } = require('../utils/tickTracker');
 
 const DEFAULT_DEPOSIT_RATE = 0.02;
@@ -21,7 +21,7 @@ async function getOrCreateBank() {
 exports.getBankForPortfolio = async (req, res) => {
   try {
     const { userId } = req.params;
-
+    console.log("REQ PARAMS: ", req.params);
     // 1️⃣ find or create the portfolio record for this user
     const portfolio = await findOrCreatePortfolio(userId);
 

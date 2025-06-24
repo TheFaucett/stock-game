@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 import "../styles/portfoliobalancegraph.css";
-const USER_ID = "67af822e5609849ac14d7942";
+import { getOrCreateUserId } from "../userId";
+const USER_ID = getOrCreateUserId();
 
 /* ---------- fetch portfolio ---------- */
 async function fetchPortfolio() {

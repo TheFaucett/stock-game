@@ -19,6 +19,7 @@ async function resetStockPrices() {
             history: Array(30).fill(DEFAULT_PRICE),
             change: 0,
             volatility: 0.01,
+            basePrice: DEFAULT_PRICE
           },
         },
       },

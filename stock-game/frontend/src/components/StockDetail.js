@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom'
 import StockGraph from './StockGraph'
 import TransactionModal from './TransactionModal'
 import '../styles/stockdetail.css'
-
+import { getOrCreateUserId } from '../userId'
 export default function StockDetail() {
   const { ticker } = useParams()
   const [stock, setStock]   = useState(null)
@@ -29,7 +29,7 @@ export default function StockDetail() {
 
   // lifts your old performTransaction into a callback the modal can call:
   const performTransaction = async (type, shares, strike, expiryTick) => {
-    const userId = '67af822e5609849ac14d7942'
+    const userId = getOrCreateUserId()
     const payload = { userId, type, ticker, shares }
     if (type==='short')       payload.expiryTick = expiryTick
     if (type==='call' || type==='put') {

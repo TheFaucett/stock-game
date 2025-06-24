@@ -16,7 +16,10 @@ import TopVolatility from "./components/TopVolatility";
 import TopMarketCapStocks from "./components/TopMarketCap";
 import TopDividends from "./components/TopDividends"; // Assuming you have a TopDividends component
 import Bank from "./components/Bank";
+import TransactionDashboard from "./components/TransactionDashboard";
 import "./styles/global.css";
+import { getOrCreateUserId } from "./userId";
+await getOrCreateUserId();
 
 const queryClient = new QueryClient();
 
@@ -53,11 +56,16 @@ function App() {
                   <HeatmapContainer />
                     <MoodGraph />
                     <MarketIndexGraph />
+                    <div style={{ marginTop: "5rem" }}>
+                        <TransactionDashboard userId={getOrCreateUserId()} />
+                    </div>
+
                 </>
               }
             />
             <Route path="/stock/:ticker" element={<StockDetail />} />
             <Route path="/bank" element={<Bank />} />
+            <Route path="/transactions" element={<TransactionDashboard userId={getOrCreateUserId()} />} />
             <Route path="/top-movers" element={<TopStocksPage endpoint="movers" title="🚀 Top Movers" formatValue= {(s) => `${s.change.toFixed(2)}%`}/>} />
 
             <Route path="/top-volatility" element={<TopVolatility endpoint="volatility" title="🎢 Most Volatile" formatValue={(s) => `${(s.volatility * 100).toFixed(2)}%`} />} />
