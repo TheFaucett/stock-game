@@ -103,6 +103,7 @@ const getTopDividendYieldStocks = async (N = 4) => {
       price: 1,
       dividendYield: 1,
       sector: 1,
+      change: 1,
       volatility: 1,
       outstandingShares: 1,
       marketCap: { $multiply: ["$price", "$outstandingShares"] }

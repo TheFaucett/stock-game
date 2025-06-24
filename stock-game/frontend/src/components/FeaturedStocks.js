@@ -39,7 +39,10 @@ export default function FeaturedStocks() {
         <div
           key={idx}
           className="featured-card"
-          style={{ backgroundColor: card.color }}
+          style={{
+            backgroundColor: card.color,
+            zIndex: 10 + idx, // ensure each next card is on top
+          }}
           onClick={() => navigate(card.route)}
         >
           <h2>{card.title}</h2>

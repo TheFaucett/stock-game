@@ -1,38 +1,45 @@
 // src/components/TopMarketCapStocks.jsx
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import '../styles/topMarketCap.css'; // you can create this later
+import '../styles/topStocks.css'; // Use your unified style
 
 export default function TopMarketCapStocks() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['topMarketCap'],
     queryFn: async () => {
       const res = await axios.get('http://localhost:5000/api/featured-stocks/marketcap');
-      console.log('MarketCap data:', res.data);
-      return res.data;
+      // Support both {topCap: [...]} and just [...]
+
+      return res.data.topCap || res.data.movers || [];
     },
-    refetchInterval: 10000 // optional, refresh every 10s
+    refetchOnWindowFocus: false,
+    refetchInterval: 10000
   });
 
-  if (isLoading) return <p>Loading top market cap stocks...</p>;
-  if (error) return <p>Error fetching market cap stocks.</p>;
-
   return (
-    <div className="marketcap-stocks-container">
+    <div className="top-stocks-page">
       <h2>🏦 Top Market Cap Stocks</h2>
-      {data?.topCap?.length > 0 ? (
-        data.topCap.map((stock, idx) => (
-          <div key={idx} className="marketcap-stock-card">
-            <h3>{stock.ticker}</h3>
-            <p>Market Cap: ${(stock.marketCap / 1e9).toFixed(2)} B</p>
-            <p>Price: ${stock.price.toFixed(2)}</p>
-            <p>Change: {stock.change.toFixed(2)}%</p>
+      {isLoading && <p>Loading top market cap stocks...</p>}
+      {error && <p>Error fetching market cap stocks.</p>}
+      {console.log(data)}
+      {Array.isArray(data) && data.length > 0 ? (
+        data.map((stock, idx) => (
+          <div key={stock._id || idx} className="top-stock-card">
+            <Link to={`/stock/${stock.ticker}`} className="top-stock-link">
+              <h3>{stock.ticker}</h3>
+              <p>
+                Market Cap: <b>${(stock.marketCap / 1e9).toFixed(2)} B</b>
+              </p>
+              <p>Price: ${stock.price?.toFixed(2)}</p>
+              <p>Change: {stock.change?.toFixed(2)}%</p>
+            </Link>
           </div>
         ))
-      ) : (
+      ) : !isLoading && !error ? (
         <p>No data available</p>
-      )}
+      ) : null}
     </div>
   );
 }

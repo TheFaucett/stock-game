@@ -1,77 +1,62 @@
-.featured-stocks {
+/* src/styles/featuredStocks.css */
+
+.featured-dashboard {
   display: flex;
-  justify-content: center;
+  flex-direction: row;
   align-items: flex-end;
-  gap: 0;
-  margin: 48px auto 0;
-  padding: 0 0 40px 0;
+  justify-content: center;
+  margin-top: 40px;
   position: relative;
-  min-height: 240px;
-  /* allows overflow for overlapping */
+  /* for extra styling, you can add a little perspective if you want */
 }
 
 .featured-card {
-  min-width: 220px;
-  max-width: 320px;
-  height: 180px;
-  margin-right: -60px;         /* negative margin for overlapping */
+  width: 230px;
+  height: 140px;
   border-radius: 18px;
-  border: none;
-  padding: 26px 24px;
   color: white;
-  box-shadow: 0 2px 18px rgba(0,0,0,0.24), 0 1.5px 8px rgba(0,0,0,0.11);
-  transition: 
-    transform 0.22s cubic-bezier(.23,1.08,.7,1.04),
-    box-shadow 0.22s,
-    filter 0.2s;
-  cursor: pointer;
-  text-align: left;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.24), 0 2px 8px rgba(0,0,0,0.12);
+  padding: 28px 16px 18px 24px;
   font-size: 1em;
-  outline: none;
-  z-index: 1;
-  background-blend-mode: multiply;
+  text-align: left;
   position: relative;
-  opacity: 0.96;
-  /* slight random rotation for "hand of cards" look, tweak below */
+  margin-left: -48px; /* Key: negative to create overlap */
+  cursor: pointer;
+  transition: 
+    transform 0.2s cubic-bezier(.28,.84,.42,1),
+    box-shadow 0.2s cubic-bezier(.28,.84,.42,1),
+    filter 0.2s;
+  outline: none;
+  border: 2px solid rgba(255,255,255,0.09);
+  /* Optional: tilt the cards for realism */
+  /* transform: rotate(-3deg); */
 }
-.featured-card:nth-child(1) { transform: rotate(-7deg); z-index: 2; }
-.featured-card:nth-child(2) { transform: rotate(-2deg); z-index: 3; }
-.featured-card:nth-child(3) { transform: rotate(2deg); z-index: 4; }
-.featured-card:nth-child(4) { transform: rotate(7deg); z-index: 5; }
-
-.featured-card:hover {
-  transform: scale(1.04) translateY(-12px) rotate(0deg);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.38);
-  filter: brightness(1.09);
-  z-index: 10;
-  opacity: 1;
+.featured-card:first-child {
+  margin-left: 0;
+}
+.featured-card:hover,
+.featured-card:focus {
+  transform: scale(1.05) translateY(-12px);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.12);
+  filter: brightness(1.08) saturate(1.07);
+  z-index: 99;
 }
 
 .featured-card h2 {
   font-size: 1.3em;
   margin-bottom: 8px;
+  font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .featured-card p {
-  font-size: 0.95em;
-  opacity: 0.91;
+  font-size: 1em;
+  opacity: 0.89;
+  font-weight: 400;
 }
 
-@media (max-width: 900px) {
-  .featured-stocks {
-    flex-direction: column;
-    align-items: center;
-    gap: 28px;
-    min-height: 0;
-  }
-  .featured-card {
-    margin-right: 0;
-    margin-bottom: 0;
-    transform: none !important;
-    width: 90vw;
-    max-width: 360px;
-    min-width: 0;
-    z-index: 1;
-  }
-}
+/* Optional: add a slight rotation to each card for a more "hand-fanned" effect */
+.featured-card:nth-child(1) { transform: rotate(-7deg); }
+.featured-card:nth-child(2) { transform: rotate(-2deg); }
+.featured-card:nth-child(3) { transform: rotate(3deg); }
+.featured-card:nth-child(4) { transform: rotate(7deg); }
