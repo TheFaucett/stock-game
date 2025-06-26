@@ -55,7 +55,7 @@ async function updateMarket() {
 
     // Only fetch fields in schema!
     const stocks = await Stock.find({}, {
-      ticker: 1, price: 1, volatility: 1, history: 1, sector: 1, liquidity: 1, basePrice: 1
+      ticker: 1, price: 1, volatility: 1, history: 1, sector: 1, liquidity: 1, basePrice: 1, change: 1, outstandingShares: 1, eps: 1, peRatio: 1, dividendYield: 1
     }).lean();
 
     if (!stocks.length) {
@@ -151,7 +151,7 @@ async function updateMarket() {
     }
 
     recordMarketIndexHistory(stocks);
-
+    recordMarketMood(stocks);
   } catch (err) {
     console.error("🔥 Market update error:", err);
   }

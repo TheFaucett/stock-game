@@ -19,6 +19,7 @@ const MoodGraph = () => {
 
   if (isLoading) return <p>Loading market mood...</p>;
   if (error) return <p>Error loading market mood.</p>;
+  
   if (!Array.isArray(moodHistory) || moodHistory.length === 0)
     return <p>No mood history yet.</p>;
 

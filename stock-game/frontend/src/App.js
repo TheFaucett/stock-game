@@ -17,6 +17,8 @@ import TopMarketCapStocks from "./components/TopMarketCap";
 import TopDividends from "./components/TopDividends"; // Assuming you have a TopDividends component
 import Bank from "./components/Bank";
 import TransactionDashboard from "./components/TransactionDashboard";
+import FirmsList from "./components/Firms";
+import FirmDetail from "./components/FirmDetail"; // Assuming you have a FirmDetail component
 import "./styles/global.css";
 import { getOrCreateUserId } from "./userId";
 await getOrCreateUserId();
@@ -67,10 +69,12 @@ function App() {
             <Route path="/bank" element={<Bank />} />
             <Route path="/transactions" element={<TransactionDashboard userId={getOrCreateUserId()} />} />
             <Route path="/top-movers" element={<TopStocksPage endpoint="movers" title="🚀 Top Movers" formatValue= {(s) => `${s.change.toFixed(2)}%`}/>} />
-
             <Route path="/top-volatility" element={<TopVolatility endpoint="volatility" title="🎢 Most Volatile" formatValue={(s) => `${(s.volatility * 100).toFixed(2)}%`} />} />
             <Route path="/top-dividends" element={<TopDividends endpoint="dividends" title="💸 Top Dividend Yield" formatValue={(s) => `${(s.dividendYield * 100).toFixed(2)}%`} />} />
             <Route path="/top-marketcap" element={<TopMarketCapStocks endpoint="marketcap" title="🏦 Top Market Cap" formatValue={(s) => `$${(s.marketCap / 1e9).toFixed(2)} B`} />} />
+            <Route path="/firms" element={<FirmsList />} />
+            <Route path="/firms/:name" element={<FirmDetail />} />
+
           </Routes>
         </div>
       </Router>

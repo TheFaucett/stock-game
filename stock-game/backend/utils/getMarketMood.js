@@ -17,12 +17,15 @@ function calculateMood(stocks) {
     else if (stock.change < 0) down++;
   }
 
+
   const total = up + down;
   const percentUp = total === 0 ? 0.5 : up / total; // neutral fallback
   return parseFloat(percentUp.toFixed(3)); // optional: trim to 3 decimals
 }
 
 function recordMarketMood(stocks) {
+
+
   const numericMood = calculateMood(stocks);
   const label = labelFromPercent(numericMood); // optional
 
