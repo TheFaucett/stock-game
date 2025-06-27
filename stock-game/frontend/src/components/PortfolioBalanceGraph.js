@@ -14,7 +14,7 @@ async function fetchPortfolio() {
   return res.json();
 }
 
-/* ---------- rebuild cash-balance series ---------- */
+/* ---------- rebuild cash-balance series per tick ---------- */
 function useBalanceSeries() {
   const { data, isLoading, error } = useQuery({
     queryKey : ["portfolio", USER_ID],
@@ -24,22 +24,40 @@ function useBalanceSeries() {
 
   const series = useMemo(() => {
     if (!data) return [];
+    const initialBalance = 10000; // <-- adjust if your starting balance differs!
+    const currentBalance = data.balance ?? initialBalance;
+    const txs = Array.isArray(data.transactions)
+      ? [...data.transactions].sort((a, b) => (a.tickOpened ?? 0) - (b.tickOpened ?? 0))
+      : [];
 
-    const today = data.balance ?? 0;
-    const raw   = Array.isArray(data.transactions) ? data.transactions : [];
+    // 1. Find tick range
+    const ticks = txs.map(tx => tx.tickOpened ?? 1);
+    const minTick = ticks.length ? Math.min(...ticks) : 1;
+    const maxTick = data.currentTick || (ticks.length ? Math.max(...ticks) : 1);
 
-    const txs = [...raw].sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
-
-    let delta = 0;
-    const arr = txs.map(tx => {
-      delta += ["buy", "short"].includes(tx.type) ? tx.total : -tx.total;
-      return today - delta;
+    // 2. Group transactions by tick
+    const txsByTick = {};
+    txs.forEach(tx => {
+      if (!tx.tickOpened) return;
+      txsByTick[tx.tickOpened] = txsByTick[tx.tickOpened] || [];
+      txsByTick[tx.tickOpened].push(tx);
     });
 
-    arr.push(today);               // include current balance
-    return arr;                    // numbers, oldest → newest
+    // 3. Build balances per tick
+    let balance = initialBalance;
+    const balances = [];
+    for (let tick = minTick; tick <= maxTick; tick++) {
+      // Apply transactions for this tick
+      (txsByTick[tick] || []).forEach(tx => {
+        if (["buy", "short"].includes(tx.type)) {
+          balance -= tx.total;
+        } else {
+          balance += tx.total;
+        }
+      });
+      balances.push(balance);
+    }
+    return balances;
   }, [data]);
 
   return { series, isLoading, error };
@@ -60,7 +78,7 @@ export default function PortfolioBalanceGraph() {
   const { series, isLoading, error } = useBalanceSeries();
   const [range, setRange] = useState("M");   // W | M | ALL
 
-  /* kill chart on unmount */
+  // Kill chart on unmount
   const chartRef = useRef(null);
   useEffect(() => () => {
     chartRef.current?.destroy();
@@ -116,18 +134,16 @@ export default function PortfolioBalanceGraph() {
   return (
     <div className="portfolio-graph" style={{ width: "100%", height: 150 }}>
       <div className="range-buttons">
-      {["W","M","ALL"].map(id => (
+        {["W","M","ALL"].map(id => (
           <button
-          key={id}
-          onClick={() => setRange(id)}
-          className={`range-button ${id === range ? "active" : ""}`}
+            key={id}
+            onClick={() => setRange(id)}
+            className={`range-button ${id === range ? "active" : ""}`}
           >
-          {id === "W" ? "Week" : id === "M" ? "Month" : "All"}
+            {id === "W" ? "Week" : id === "M" ? "Month" : "All"}
           </button>
-      ))}
+        ))}
       </div>
-
-
       <Line
         id={`portfolio-balance-${USER_ID}`}
         ref={el => (chartRef.current = el)}

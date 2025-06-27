@@ -52,22 +52,39 @@ exports.executeTransaction = async (req, res) => {
                 const cash = shares * stock.price;
                 const key = ticker.toUpperCase();
 
+                // Make sure ownedShares is a Map
+                if (!(portfolio.ownedShares instanceof Map)) {
+                    // Convert plain object to Map if necessary
+                    portfolio.ownedShares = new Map(Object.entries(portfolio.ownedShares || {}));
+                }
+
                 if (tradeType === 'buy') {
                     if (portfolio.balance < cash)
                         return res.status(400).json({ error: 'Insufficient balance' });
 
                     portfolio.balance -= cash;
-                    // Update shares
-                    portfolio.ownedShares[key] = (portfolio.ownedShares[key] || 0) + shares;
+
+                    // Update shares using Map methods
+                    const prev = portfolio.ownedShares.get(key) || 0;
+                    portfolio.ownedShares.set(key, prev + shares);
+                    portfolio.markModified('ownedShares');
+                    await portfolio.save();
+
                 } else {
-                    const owned = portfolio.ownedShares[key] || 0;
+                    const owned = portfolio.ownedShares.get(key) || 0;
+                    console.log("ownedShares", Array.from(portfolio.ownedShares.entries()));
+
+                    console.log("owned", owned, "shares", shares, "key", key);
                     if (owned < shares)
                         return res.status(400).json({ error: 'Not enough shares to sell' });
 
                     portfolio.balance += cash;
-                    portfolio.ownedShares[key] = owned - shares;
-                    if (portfolio.ownedShares[key] === 0) delete portfolio.ownedShares[key];
+                    portfolio.ownedShares.set(key, owned - shares);
+                    if (portfolio.ownedShares.get(key) === 0) portfolio.ownedShares.delete(key);
                 }
+
+                // Let Mongoose know the Map was changed!
+                portfolio.markModified('ownedShares');
 
                 portfolio.transactions.push({
                     type: tradeType,
@@ -80,6 +97,7 @@ exports.executeTransaction = async (req, res) => {
                 });
                 break;
             }
+
 
             // ===== SHORT / COVER =====
             case 'short':

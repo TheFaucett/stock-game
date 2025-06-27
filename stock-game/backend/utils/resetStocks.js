@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
+const Firm = require("../models/Firm");
 
 const MONGO_URI = "mongodb://localhost:27017/stock-game"; // Update if needed
 const DEFAULT_PRICE = 100.00;
@@ -24,6 +25,21 @@ async function resetStockPrices() {
         },
       },
     }));
+    console.log("reseting firms");
+    const firms = await Firm.find();
+    const firmBulkOps = firms.map(firm => ({
+      updateOne: {
+        filter: { _id: firm._id },
+        update: {
+          $set: {
+            ownedShares: {},
+            transactions: [],
+            balance: 100000
+          },
+        },
+      },
+    }));
+    bulkOps.push(...firmBulkOps);
 
     if (bulkOps.length > 0) {
       const result = await Stock.bulkWrite(bulkOps);
