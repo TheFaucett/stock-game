@@ -74,7 +74,7 @@ const fmt = v => {
 };
 
 /* ---------- main component ---------- */
-export default function PortfolioBalanceGraph() {
+export default function PortfolioBalanceGraph( { size = "small"}) {
   const { series, isLoading, error } = useBalanceSeries();
   const [range, setRange] = useState("M");   // W | M | ALL
 
@@ -130,9 +130,8 @@ export default function PortfolioBalanceGraph() {
       tooltip: { callbacks: { label: ctx => fmt(ctx.parsed.y) } }
     }
   };
-
   return (
-    <div className="portfolio-graph" style={{ width: "100%", height: 150 }}>
+    <div className={`portfolio-graph ${size}`}>
       <div className="range-buttons">
         {["W","M","ALL"].map(id => (
           <button

@@ -1,0 +1,92 @@
+.portfolio-page {
+  max-width: 900px;
+  margin: 36px auto 0 auto;
+  background: #181825;
+  color: #e0e0ff;
+  border-radius: 20px;
+  box-shadow: 0 4px 36px 0 #000c;
+  padding: 32px 24px 32px 24px;
+  min-height: 75vh;
+}
+
+.portfolio-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  border-bottom: 1px solid #34344e;
+  padding-bottom: 18px;
+}
+
+.portfolio-summary h1 {
+  font-size: 2.2rem;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.balance {
+  font-size: 1.25rem;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.holdings-table-wrapper {
+  margin-top: 22px;
+  margin-bottom: 28px;
+}
+.holdings-table {
+  width: 100%;
+  background: #20203a;
+  border-radius: 10px;
+  border-collapse: collapse;
+  overflow: hidden;
+  margin-bottom: 0;
+  font-size: 1rem;
+}
+.holdings-table th, .holdings-table td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid #292944;
+}
+.holdings-table th {
+  background: #252545;
+  color: #b8b8ff;
+  font-weight: 600;
+  font-size: 1.01rem;
+}
+.holdings-table tr:last-child td {
+  border-bottom: none;
+}
+.holdings-table td {
+  background: #20203a;
+}
+
+.portfolio-transactions {
+  margin-top: 30px;
+  background: #19193a;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px 0 #1112;
+}
+.portfolio-transactions h2 {
+  margin-bottom: 12px;
+  font-size: 1.12rem;
+  color: #ccc;
+}
+.portfolio-transactions ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 0.98rem;
+}
+.portfolio-transactions li {
+  padding: 5px 0;
+  border-bottom: 1px solid #242456;
+}
+.portfolio-transactions li:last-child {
+  border-bottom: none;
+}

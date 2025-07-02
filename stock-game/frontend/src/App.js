@@ -14,11 +14,12 @@ import MarketIndexGraph from "./components/MarketIndexGraph";
 import TopStocksPage from "./components/TopStocks";
 import TopVolatility from "./components/TopVolatility";
 import TopMarketCapStocks from "./components/TopMarketCap";
-import TopDividends from "./components/TopDividends"; // Assuming you have a TopDividends component
+import TopDividends from "./components/TopDividends";
 import Bank from "./components/Bank";
 import TransactionDashboard from "./components/TransactionDashboard";
 import FirmsList from "./components/Firms";
-import FirmDetail from "./components/FirmDetail"; // Assuming you have a FirmDetail component
+import FirmDetail from "./components/FirmDetail";
+import PortfolioPage from "./components/PortfolioPage";
 import "./styles/global.css";
 import { getOrCreateUserId } from "./userId";
 await getOrCreateUserId();
@@ -74,6 +75,7 @@ function App() {
             <Route path="/top-marketcap" element={<TopMarketCapStocks endpoint="marketcap" title="🏦 Top Market Cap" formatValue={(s) => `$${(s.marketCap / 1e9).toFixed(2)} B`} />} />
             <Route path="/firms" element={<FirmsList />} />
             <Route path="/firms/:name" element={<FirmDetail />} />
+            <Route path="/portfolio" element={<PortfolioPage />} />
 
           </Routes>
         </div>

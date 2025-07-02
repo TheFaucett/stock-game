@@ -163,7 +163,7 @@ export default function Sidebar() {
         )}
 
         <h3>Portfolio History</h3>
-        <PortfolioBalanceGraph />
+        <PortfolioBalanceGraph size="small"/>
 
         <h3>Most Valuable Stock</h3>
         {portfolio?.ownedShares &&
