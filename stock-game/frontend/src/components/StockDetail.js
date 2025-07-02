@@ -89,6 +89,8 @@ export default function StockDetail() {
           <StockGraph ticker={ticker} history={history}/>
         </>
       )}
+      <div style={{ height: "40px" }} />  {/* Spacer */}
+
 
       <Link to="/" className="back-button">← Back</Link>
     </div>

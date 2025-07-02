@@ -10,7 +10,7 @@ const { sweepOptionExpiries } = require("../utils/sweepOptions.js");
 const { sweepLoanPayments } = require("../utils/sweepLoans.js");
 const { payDividends } = require("../utils/payDividends.js");
 
-const HISTORY_LIMIT = 30;
+const HISTORY_LIMIT = 1200
 
 // Macro parameters
 const TRADING_DAYS = 365;               // trading days per year
@@ -55,7 +55,7 @@ async function updateMarket() {
 
     // Only fetch fields in schema!
     const stocks = await Stock.find({}, {
-      ticker: 1, price: 1, volatility: 1, history: 1, sector: 1, liquidity: 1, basePrice: 1, change: 1, outstandingShares: 1, eps: 1, peRatio: 1, dividendYield: 1
+      ticker: 1, price: 1, volatility: 1, history: 1, sector: 1, liquidity: 1, basePrice: 1, change: 1, outstandingShares: 1, eps: 1, peRatio: 1, dividendYield: 1,  // see this if you can't find something but its in mongo.
     }).lean();
 
     if (!stocks.length) {

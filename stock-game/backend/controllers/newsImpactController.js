@@ -1,16 +1,17 @@
 const Stock = require("../models/Stock");
 const { getLatestNewsData } = require("../controllers/newsController");
 
-/**
- * Returns a weight (0–100) for a news item based on its tier/importance.
- * If no tier, returns 20–80 randomly.
- */
+
 function getNewsWeight(newsItem) {
-    if (newsItem.tier === 'breaking')      return 90 + Math.random() * 10; // 90–100
-    if (newsItem.tier === 'major')         return 60 + Math.random() * 20; // 60–80
-    if (newsItem.tier === 'routine')       return 20 + Math.random() * 20; // 20–40
-    // fallback: random between 30–60
-    return 30 + Math.random() * 30;
+  const score = newsItem.sentimentScore ?? 0; 
+
+  const minWeight = 25; 
+  const maxWeight = 100; // max "breaking"
+
+  const absScore = Math.abs(score); // 0...10
+  const weight = minWeight + ((maxWeight - minWeight) * (absScore / 10));
+
+  return weight + Math.random() * 3.5;
 }
 
 /**
