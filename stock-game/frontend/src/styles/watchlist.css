@@ -1,0 +1,86 @@
+/* Container for all watchlist items */
+.watchlist-container {
+  margin: 24px 0;
+  padding: 20px;
+  background: #1b1b22;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px 0 rgba(0,0,0,0.18);
+  min-width: 340px;
+}
+
+/* Each stock "card" */
+.watchlist-stock {
+  padding: 18px 22px 16px 22px;
+  background: #222237;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 8px rgba(50, 50, 70, 0.09);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.watchlist-stock:last-child {
+  margin-bottom: 0;
+}
+
+.watchlist-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #dbeafe;
+  margin-bottom: 16px;
+}
+
+.watchlist-link {
+  color: #93c5fd;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-decoration: underline;
+  transition: color 0.16s;
+}
+
+.watchlist-link:hover {
+  color: #38bdf8;
+}
+
+.watchlist-stock .stock-price {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #fff;
+  margin-right: 16px;
+  display: inline-block;
+}
+
+.watchlist-stock .stock-change {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
+.watchlist-stock .stock-change.up {
+  color: #26e659;
+}
+
+.watchlist-stock .stock-change.down {
+  color: #ff3d65;
+}
+
+/* Style the chart container inside each watch item */
+.watchlist-chart-container {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 120px;
+  background: transparent;
+}
+
+/* Responsive: stack vertically on small screens */
+@media (max-width: 700px) {
+  .watchlist-container {
+    padding: 10px;
+    min-width: unset;
+  }
+  .watchlist-stock {
+    padding: 12px 8px;
+    border-radius: 8px;
+  }
+}

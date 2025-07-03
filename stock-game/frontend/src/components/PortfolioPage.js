@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import HoldingsTable from "./HoldingsTable";
 import PortfolioBalanceGraph from "./PortfolioBalanceGraph";
 import TransactionDashboard from "./TransactionDashboard";
+import Watchlist from "./Watchlist";
 import { getOrCreateUserId } from "../userId";
 import "../styles/portfolio.css";
 
@@ -42,10 +43,13 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Holdings Table */}
-      <HoldingsTable portfolio={portfolio} />
 
-      {/* Transaction Dashboard */}
+      <HoldingsTable portfolio={portfolio} />
+      <div style={{ marginTop: 50 }}> 
+
+      </div>
+      <Watchlist />
+
       <div className="transaction-dashboard-wrapper">
         <TransactionDashboard transactions={portfolio.transactions} />
       </div>

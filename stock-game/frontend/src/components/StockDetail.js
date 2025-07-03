@@ -1,48 +1,86 @@
-// src/components/StockDetail.jsx
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import StockGraph from './StockGraph'
 import TransactionModal from './TransactionModal'
 import '../styles/stockdetail.css'
 import { getOrCreateUserId } from '../userId'
+
 export default function StockDetail() {
   const { ticker } = useParams()
-  const [stock, setStock]   = useState(null)
+  const userId = getOrCreateUserId()
+  const [stock, setStock] = useState(null)
   const [history, setHistory] = useState([])
   const [showModal, setShowModal] = useState(false)
+  const [watchlist, setWatchlist] = useState([])
+  const [loadingWatchlist, setLoadingWatchlist] = useState(true)
 
-  // fetch stock & history...
+  // Fetch stock info, price history, and watchlist on mount and ticker change
   useEffect(() => {
     async function fetchStock() {
-      const res    = await fetch(`http://localhost:5000/api/stocks`)
-      const list   = await res.json()
-      setStock(list.find(s => s.ticker===ticker) || null)
+      const res = await fetch(`http://localhost:5000/api/stocks`)
+      const list = await res.json()
+      setStock(list.find(s => s.ticker === ticker) || null)
     }
     async function fetchHistory() {
-      const res  = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`)
-      const obj  = await res.json()
+      const res = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`)
+      const obj = await res.json()
       if (Array.isArray(obj.history)) setHistory(obj.history)
+    }
+    async function fetchWatchlist() {
+      setLoadingWatchlist(true)
+      const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
+      const obj = await res.json()
+      setWatchlist(Array.isArray(obj.watchlist) ? obj.watchlist : [])
+      setLoadingWatchlist(false)
     }
     fetchStock()
     fetchHistory()
-  }, [ticker])
+    fetchWatchlist()
+    // eslint-disable-next-line
+  }, [ticker, userId])
 
-  // lifts your old performTransaction into a callback the modal can call:
+  // Add to watchlist
+  async function handleAddWatch() {
+    await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticker })
+    })
+    // Refresh from backend to stay consistent!
+    const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
+    const obj = await res.json()
+    setWatchlist(Array.isArray(obj.watchlist) ? obj.watchlist : [])
+  }
+
+  // Remove from watchlist
+  async function handleRemoveWatch() {
+    await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
+      method: "DELETE"
+    })
+    // Refresh from backend to stay consistent!
+    const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
+    const obj = await res.json()
+    setWatchlist(Array.isArray(obj.watchlist) ? obj.watchlist : [])
+  }
+
+  // Helper: is this stock already in watchlist?
+  const onWatchlist = watchlist.includes(ticker.toUpperCase())
+
+  // Transaction handler
   const performTransaction = async (type, shares, strike, expiryTick) => {
-    const userId = getOrCreateUserId()
     const payload = { userId, type, ticker, shares }
-    if (type==='short')       payload.expiryTick = expiryTick
-    if (type==='call' || type==='put') {
-      payload.strike     = strike
+    if (type === 'short') payload.expiryTick = expiryTick
+    if (type === 'call' || type === 'put') {
+      payload.strike = strike
       payload.expiryTick = expiryTick
     }
 
-    const res  = await fetch(
+    const res = await fetch(
       `http://localhost:5000/api/portfolio/${userId}/transactions`,
       {
-        method:  'POST',
-        headers: {'Content-Type':'application/json'},
-        body:    JSON.stringify(payload)
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       }
     )
     const data = await res.json()
@@ -53,6 +91,7 @@ export default function StockDetail() {
     }
   }
 
+  // Not found
   if (!stock) {
     return (
       <div>
@@ -71,14 +110,35 @@ export default function StockDetail() {
       <p>EPS: {stock.eps}</p>
       <p>Market Cap: ${(stock.price * stock.outstandingShares / 1e9).toFixed(2)}B</p>
 
-      {/* single Trade button opens the modal */}
-      <button className="stock-btn trade" onClick={()=>setShowModal(true)}>
-        Trade
-      </button>
+      {/* Actions row: Trade + Watchlist */}
+      <div className="stock-actions" style={{ marginBottom: 24 }}>
+        <button className="stock-btn trade" onClick={() => setShowModal(true)}>
+          Trade
+        </button>
+        {loadingWatchlist ? (
+          <button className="stock-btn" disabled>Loading…</button>
+        ) : onWatchlist ? (
+          <button
+            className="stock-btn"
+            style={{ background: "#7c3aed" }}
+            onClick={handleRemoveWatch}
+          >
+            ★ Remove from Watchlist
+          </button>
+        ) : (
+          <button
+            className="stock-btn"
+            style={{ background: "#60a5fa" }}
+            onClick={handleAddWatch}
+          >
+            ☆ Add to Watchlist
+          </button>
+        )}
+      </div>
 
       <TransactionModal
         show={showModal}
-        onClose={()=>setShowModal(false)}
+        onClose={() => setShowModal(false)}
         ticker={ticker}
         onConfirm={performTransaction}
       />
@@ -86,11 +146,10 @@ export default function StockDetail() {
       {history.length > 0 && (
         <>
           <h3>Price History</h3>
-          <StockGraph ticker={ticker} history={history}/>
+          <StockGraph ticker={ticker} history={history} />
         </>
       )}
-      <div style={{ height: "40px" }} />  {/* Spacer */}
-
+      <div style={{ height: "40px" }} /> {/* Spacer */}
 
       <Link to="/" className="back-button">← Back</Link>
     </div>

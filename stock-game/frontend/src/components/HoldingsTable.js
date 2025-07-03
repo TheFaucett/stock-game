@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { getOrCreateUserId } from "../userId";
 const USER_ID = getOrCreateUserId();
@@ -83,7 +84,15 @@ export default function HoldingsTable({ portfolio=fetchPortfolio() }) {
 
             return (
               <tr key={ticker}>
-                <td>{ticker}</td>
+              <td>
+                <Link
+                to={`/stock/${ticker}`}
+                className="holding-ticker-link"
+                style={{ color: "#93c5fd", fontWeight: 600, textDecoration: "underline" }}
+                >
+                {ticker}
+                </Link>
+              </td>
                 <td>{name}</td>
                 <td>{shares}</td>
                 <td>${avgCost.toFixed(2)}</td>
