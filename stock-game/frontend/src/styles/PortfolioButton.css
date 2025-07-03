@@ -1,0 +1,30 @@
+.fab-portfolio {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 62px; height: 62px;
+  background: linear-gradient(135deg,#43e97b 0,#38f9d7 100%);
+  color: #222; font-size: 2rem;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px rgba(44, 199, 203, 0.18);
+  z-index: 1500;
+  transition: transform 0.15s;
+  border: none; outline: none;
+}
+.fab-portfolio:hover { transform: scale(1.07); }
+/* Keyframes for subtle bounce */
+@keyframes card-bounce {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-10px); }
+  60%  { transform: translateY(5px); }
+  80%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
+/* On hover, apply the animation */
+.featured-card:hover {
+  animation: card-bounce 0.5s;
+  /* Keep existing hover styles if any (like shadow, scale, etc) */
+  z-index: 2;
+}

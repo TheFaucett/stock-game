@@ -20,6 +20,7 @@ import TransactionDashboard from "./components/TransactionDashboard";
 import FirmsList from "./components/Firms";
 import FirmDetail from "./components/FirmDetail";
 import PortfolioPage from "./components/PortfolioPage";
+import PortfolioButton from "./components/PortfolioButton";
 import "./styles/global.css";
 import { getOrCreateUserId } from "./userId";
 await getOrCreateUserId();
@@ -57,6 +58,7 @@ function App() {
                 <>
                   <FeaturedStocks />
                   <HeatmapContainer />
+                  <PortfolioButton />
                     <MoodGraph />
                     <MarketIndexGraph />
                     <div style={{ marginTop: "5rem" }}>
