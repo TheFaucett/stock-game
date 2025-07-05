@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 const Firm = require("../models/Firm");
 
-const MONGO_URI = "mongodb://localhost:27017/stock-game"; // Update if needed
+const MONGO_URI = "mongodb://localhost:27017/stock-game";
 const DEFAULT_PRICE = 100.00;
 
 async function resetStockPrices() {
@@ -10,8 +10,9 @@ async function resetStockPrices() {
     await mongoose.connect(MONGO_URI);
     console.log("✅ Connected to MongoDB");
 
+    // --- STOCKS ---
     const stocks = await Stock.find();
-    const bulkOps = stocks.map(stock => ({
+    const stockBulkOps = stocks.map(stock => ({
       updateOne: {
         filter: { _id: stock._id },
         update: {
@@ -20,12 +21,20 @@ async function resetStockPrices() {
             history: Array(30).fill(DEFAULT_PRICE),
             change: 0,
             volatility: 0.01,
-            basePrice: DEFAULT_PRICE
-          },
-        },
-      },
+            basePrice: DEFAULT_PRICE,
+          }
+        }
+      }
     }));
-    console.log("reseting firms");
+
+    if (stockBulkOps.length > 0) {
+      const result = await Stock.bulkWrite(stockBulkOps);
+      console.log(`✅ Updated ${result.modifiedCount} stocks to $${DEFAULT_PRICE} (history reset)`);
+    } else {
+      console.log("ℹ️ No stocks found to update.");
+    }
+
+    // --- FIRMS ---
     const firms = await Firm.find();
     const firmBulkOps = firms.map(firm => ({
       updateOne: {
@@ -34,21 +43,22 @@ async function resetStockPrices() {
           $set: {
             ownedShares: {},
             transactions: [],
-            balance: 100000
-          },
-        },
-      },
+            balance: 100000,
+            lastTradeCycle: 0
+          }
+        }
+      }
     }));
-    bulkOps.push(...firmBulkOps);
 
-    if (bulkOps.length > 0) {
-      const result = await Stock.bulkWrite(bulkOps);
-      console.log(`✅ Updated ${result.modifiedCount} stocks to $${DEFAULT_PRICE}`);
+    if (firmBulkOps.length > 0) {
+      const result = await Firm.bulkWrite(firmBulkOps);
+      console.log(`✅ Reset ${result.modifiedCount} firms.`);
     } else {
-      console.log("ℹ️ No stocks found to update.");
+      console.log("ℹ️ No firms found to update.");
     }
+
   } catch (err) {
-    console.error("❌ Error resetting stock prices:", err);
+    console.error("❌ Error resetting:", err);
   } finally {
     mongoose.connection.close();
   }

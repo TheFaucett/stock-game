@@ -7,7 +7,9 @@ export default function TransactionDashboard({ userId }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [currentTick, setCurrentTick] = useState(null);
 
+  // Fetch transactions
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
@@ -22,6 +24,23 @@ export default function TransactionDashboard({ userId }) {
         setLoading(false);
       });
   }, [userId]);
+
+  // Fetch current tick (for reference, optional)
+  useEffect(() => {
+    async function fetchTick() {
+      try {
+        const res = await fetch("http://localhost:5000/api/tick");
+        const data = await res.json();
+        setCurrentTick(data.tick);
+      } catch (err) {
+        setCurrentTick(null);
+      }
+    }
+    fetchTick();
+    // Optionally poll every 2s for live tick
+    const interval = setInterval(fetchTick, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="transaction-dashboard-collapsible">
@@ -40,33 +59,43 @@ export default function TransactionDashboard({ userId }) {
           ) : transactions.length === 0 ? (
             <div className="empty">No transactions yet.</div>
           ) : (
-            <table className="transaction-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Ticker</th>
-                  <th>Shares</th>
-                  <th>Price</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions
-                  .slice()
-                  .reverse()
-                  .map(tx => (
-                    <tr key={tx._id}>
-                      <td>{new Date(tx.date).toLocaleDateString()}</td>
-                      <td>{tx.type}</td>
-                      <td>{tx.ticker}</td>
-                      <td>{tx.shares}</td>
-                      <td>${tx.price.toFixed(2)}</td>
-                      <td>${tx.total.toFixed(2)}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+            <>
+              {/* Optional: Show the current tick at top */}
+              <div style={{ fontSize: "0.95em", color: "#bbb", marginBottom: 4 }}>
+                {currentTick !== null ? `Current Tick: ${currentTick}` : ""}
+              </div>
+              <table className="transaction-table">
+                <thead>
+                  <tr>
+                    <th>Tick</th>
+                    <th>Type</th>
+                    <th>Ticker</th>
+                    <th>Shares</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions
+                    .slice()
+                    .reverse()
+                    .map(tx => (
+                      <tr key={tx._id}>
+                        <td>
+                          {typeof tx.tickOpened === "number"
+                            ? `#${tx.tickOpened}`
+                            : "–"}
+                        </td>
+                        <td>{tx.type}</td>
+                        <td>{tx.ticker}</td>
+                        <td>{tx.shares}</td>
+                        <td>${tx.price.toFixed(2)}</td>
+                        <td>${tx.total.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       )}

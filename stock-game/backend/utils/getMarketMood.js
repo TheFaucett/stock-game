@@ -1,5 +1,5 @@
 let moodHistory = [];
-
+const { getCurrentTick } = require('./tickTracker.js');
 // Optional: If you still want to show a label, we can derive it from the score
 function labelFromPercent(percentUp) {
   if (percentUp > 0.65) return "bullish";
@@ -32,7 +32,7 @@ function recordMarketMood(stocks) {
   moodHistory.push({
     mood: label,
     value: numericMood,         // 👈 Now the value is 0.0–1.0
-    timestamp: Date.now(),
+    timestamp: getCurrentTick(),
   });
 
   if (moodHistory.length > 30) {

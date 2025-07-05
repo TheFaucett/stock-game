@@ -13,7 +13,8 @@ const userRoutes = require('./routes/userRoutes');
 const marketData = require('./routes/marketData');
 const bankRoutes = require('./routes/bankRoutes');
 const featuredStockRoutes = require('./routes/featuredStockRoutes');
-const firmRoutes = require('./routes/firmRoutes'); // Uncomment if you need firm routes
+const firmRoutes = require('./routes/firmRoutes'); 
+const tickRoutes = require('./routes/tickRoutes'); 
 //CONTROLLERS
 const { updateMarket } = require('./controllers/marketController');
 
@@ -31,7 +32,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB Connected'))
 .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-const tradeWindow = 1000 //30 seconds
+const tradeWindow = 30000 //30 seconds
 setInterval(async () => {
     console.log("⏳ Running market update...");
     await updateMarket();
@@ -48,6 +49,7 @@ app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/featured-stocks', featuredStockRoutes);
 app.use('/api/firms', firmRoutes);
+app.use('/api/tick', tickRoutes); 
 // 📌 Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

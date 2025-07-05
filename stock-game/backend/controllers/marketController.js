@@ -36,10 +36,19 @@ function randNormal() {
 function clamp(x, lo, hi) {
   return Math.min(hi, Math.max(lo, x));
 }
+function logMemoryUsage(context = "") {
+  const mem = process.memoryUsage();
+  const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MB";
+  console.log(
+    `[MEMORY${context ? " | " + context : ""}]`,
+    `RSS: ${mb(mem.rss)} | Heap Used: ${mb(mem.heapUsed)} | Heap Total: ${mb(mem.heapTotal)}`
+  );
+}
 
 async function updateMarket() {
   try {
     console.log("🔄 Updating market state…");
+    logMemoryUsage("before market update");
     maybeApplyShock();
 
     const tick = incrementTick();
@@ -85,6 +94,7 @@ async function updateMarket() {
     const bulk = [];
 
     // MAIN: Per-stock update
+    logMemoryUsage("before single stock updates");
     for (const s of stocks) {
       const prev = s.price;
       const volatility = s.volatility ?? 0.015;
@@ -131,6 +141,8 @@ async function updateMarket() {
         }
       });
     }
+    logMemoryUsage("after single stock updates");
+
       //debug
 // Market cap telemetry
       const marketCap = stocks.reduce((sum, s) => sum + s.price, 0);
@@ -149,7 +161,7 @@ async function updateMarket() {
       await Stock.bulkWrite(bulk);
       console.log(`✅ Updated ${bulk.length} stocks`);
     }
-
+    logMemoryUsage("after stock updates");
     recordMarketIndexHistory(stocks);
     recordMarketMood(stocks);
   } catch (err) {

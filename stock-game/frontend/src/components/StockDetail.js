@@ -14,28 +14,46 @@ export default function StockDetail() {
   const [watchlist, setWatchlist] = useState([])
   const [loadingWatchlist, setLoadingWatchlist] = useState(true)
 
-  // Fetch stock info, price history, and watchlist on mount and ticker change
+  // 🚩 INTERVAL (ms) - change this to your desired speed!
+  const REFRESH_INTERVAL = 2000
+
+  // Single function to update all the info
+  async function fetchAll() {
+    // Fetch stock details
+    const res = await fetch(`http://localhost:5000/api/stocks`)
+    const list = await res.json()
+    setStock(list.find(s => s.ticker === ticker) || null)
+
+    // Fetch history
+    const res2 = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`)
+    const obj2 = await res2.json()
+    if (Array.isArray(obj2.history)) setHistory(obj2.history)
+
+    // Fetch watchlist
+    setLoadingWatchlist(true)
+    const res3 = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
+    const obj3 = await res3.json()
+    setWatchlist(Array.isArray(obj3.watchlist) ? obj3.watchlist : [])
+    setLoadingWatchlist(false)
+  }
+
+  // Mount effect: run on mount and every time ticker/userId changes, set up interval.
   useEffect(() => {
-    async function fetchStock() {
-      const res = await fetch(`http://localhost:5000/api/stocks`)
-      const list = await res.json()
-      setStock(list.find(s => s.ticker === ticker) || null)
+    let stopped = false
+
+    // First fetch immediately
+    fetchAll()
+
+    // Setup interval to refresh data
+    const interval = setInterval(() => {
+      if (!stopped) fetchAll()
+    }, REFRESH_INTERVAL)
+
+    // Clean up interval on unmount or ticker/userId change
+    return () => {
+      stopped = true
+      clearInterval(interval)
     }
-    async function fetchHistory() {
-      const res = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`)
-      const obj = await res.json()
-      if (Array.isArray(obj.history)) setHistory(obj.history)
-    }
-    async function fetchWatchlist() {
-      setLoadingWatchlist(true)
-      const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
-      const obj = await res.json()
-      setWatchlist(Array.isArray(obj.watchlist) ? obj.watchlist : [])
-      setLoadingWatchlist(false)
-    }
-    fetchStock()
-    fetchHistory()
-    fetchWatchlist()
     // eslint-disable-next-line
   }, [ticker, userId])
 
@@ -46,10 +64,7 @@ export default function StockDetail() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticker })
     })
-    // Refresh from backend to stay consistent!
-    const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
-    const obj = await res.json()
-    setWatchlist(Array.isArray(obj.watchlist) ? obj.watchlist : [])
+    fetchAll() // Re-fetch watchlist to stay consistent
   }
 
   // Remove from watchlist
@@ -57,10 +72,7 @@ export default function StockDetail() {
     await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
       method: "DELETE"
     })
-    // Refresh from backend to stay consistent!
-    const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
-    const obj = await res.json()
-    setWatchlist(Array.isArray(obj.watchlist) ? obj.watchlist : [])
+    fetchAll() // Re-fetch watchlist to stay consistent
   }
 
   // Helper: is this stock already in watchlist?
@@ -88,6 +100,7 @@ export default function StockDetail() {
       alert(`Failed: ${data.error}`)
     } else {
       alert('Transaction successful!')
+      fetchAll() // Ensure UI reflects change!
     }
   }
 

@@ -6,7 +6,7 @@ const optionSchema = new mongoose.Schema({
   strike     : { type: Number, required: true },
   expiryTick : { type: Number, required: true, default: getCurrentTick() + 10 }, // 10 ticks from now
   premium    : { type: Number, required: true }, // price per contract
-  createdAt  : { type: Date,   default: Date.now },
+  createdAt  : { type: Number, required: true, default: getCurrentTick()},
 }, { indexes: [{ unique: true, fields: { underlying:1, variant:1, strike:1, expiryTick:1 } }] });
 
 module.exports = mongoose.model('Option', optionSchema);

@@ -4,8 +4,6 @@ import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 import "../styles/marketIndexGraph.css";
 
-
-
 const fetchMarketIndex = async () => {
   const res = await fetch("http://localhost:5000/api/market-data/index");
   if (!res.ok) throw new Error("Failed to fetch market index");
@@ -13,11 +11,11 @@ const fetchMarketIndex = async () => {
 };
 
 const INTERVAL_OPTIONS = [
-  { label: "1D", value: 1 },
+
   { label: "5D", value: 5 },
   { label: "1M", value: 21 },
   { label: "6M", value: 126 },
-  { label: "YTD", value: "ytd" },
+  { label: "YTD", value: "ytd" },   // Optional: requires logic
   { label: "1Y", value: 252 },
   { label: "5Y", value: 1260 },
   { label: "All", value: "all" }
@@ -35,20 +33,28 @@ const MarketIndexGraph = () => {
   if (isLoading) return <p>Loading Market Index...</p>;
   if (error) return <p>Error loading Market Index</p>;
 
+  // Filter based on tick window
   const filteredData = (() => {
     if (interval === "all") return data;
     if (interval === "ytd") {
-      const startOfYear = new Date(new Date().getFullYear(), 0, 1).getTime();
-      return data.filter(entry => entry.timestamp >= startOfYear);
+      // You could use a backend "current tick" endpoint and
+      // start of year tick here for more accuracy!
+      return data;
     }
-    const count = parseInt(interval);
+    const count = parseInt(interval, 10);
     return data.slice(-count);
   })();
 
-  const labels = filteredData.map(entry => {
-    const date = new Date(entry.timestamp);
-    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
-  });
+  // Fallback tick calculation: oldest tick in filtered window
+  const totalTicks = data.length;
+  const firstTick = totalTicks - filteredData.length + 1;
+
+  // Labels: prefer entry.tick, fallback to calculated
+  const labels = filteredData.map((entry, i) =>
+    entry.tick !== undefined
+      ? `Tick ${entry.tick}`
+      : `Tick ${firstTick + i}`
+  );
 
   const prices = filteredData.map(entry => entry.price);
   const minPrice = Math.min(...prices);
@@ -73,10 +79,7 @@ const MarketIndexGraph = () => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false
-    },
+    interaction: { mode: 'index', intersect: false },
     plugins: {
       tooltip: {
         enabled: true,
@@ -96,9 +99,7 @@ const MarketIndexGraph = () => {
       y: {
         min: minPrice - rangePadding,
         max: maxPrice + rangePadding,
-        ticks: {
-          callback: val => `$${Number(val).toFixed(2)}`
-        }
+        ticks: { callback: val => `$${Number(val).toFixed(2)}` }
       }
     }
   };
@@ -106,7 +107,6 @@ const MarketIndexGraph = () => {
   return (
     <div style={{ height: "250px", width: "100%", marginBottom: "1rem" }}>
       <h3>📊 Overall Market Price Index</h3>
-
       <div className="interval-buttons">
         {INTERVAL_OPTIONS.map(({ label, value }) => (
           <button
@@ -118,7 +118,6 @@ const MarketIndexGraph = () => {
           </button>
         ))}
       </div>
-
       <Line data={chartData} options={options} />
     </div>
   );

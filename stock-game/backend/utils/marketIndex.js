@@ -1,12 +1,12 @@
 let indexHistory = [];
-
+const { getCurrentTick } = require('./tickTracker.js');
 function recordMarketIndexHistory(stocks) {
   const averagePrice = stocks.reduce((acc, stock) => acc + stock.price, 0) / stocks.length;
   const rounded = parseFloat(averagePrice.toFixed(2));
   
   indexHistory.push({
     price: rounded,
-    timestamp: Date.now(),
+    timestamp: getCurrentTick(),
   });
 
   if (indexHistory.length > 1825) {

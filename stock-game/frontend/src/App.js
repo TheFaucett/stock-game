@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -21,6 +21,7 @@ import FirmsList from "./components/Firms";
 import FirmDetail from "./components/FirmDetail";
 import PortfolioPage from "./components/PortfolioPage";
 import PortfolioButton from "./components/PortfolioButton";
+import TutorialModal from "./components/TutorialModal";
 import "./styles/global.css";
 import { getOrCreateUserId } from "./userId";
 await getOrCreateUserId();
@@ -45,6 +46,22 @@ const HeatmapContainer = () => {
 };
 
 function App() {
+  const [showModal, setShowModal] = useState(false);
+
+    useEffect(() => {
+        const seen = localStorage.getItem("hasSeenTutorial");
+        if (!seen) {
+            setShowModal(true);
+        
+        }
+    }, []);
+    const handleClose = () => {
+        setShowModal(false);
+        localStorage.setItem("hasSeenTutorial", "true");
+    };
+
+
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
@@ -56,6 +73,7 @@ function App() {
               path="/"
               element={
                 <>
+                  <TutorialModal isOpen={showModal} onClose={handleClose} />
                   <FeaturedStocks />
                   <HeatmapContainer />
                   <PortfolioButton />
@@ -78,6 +96,7 @@ function App() {
             <Route path="/firms" element={<FirmsList />} />
             <Route path="/firms/:name" element={<FirmDetail />} />
             <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/tutorial" element={<TutorialModal />} />
 
           </Routes>
         </div>

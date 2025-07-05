@@ -10,7 +10,6 @@ export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch portfolio data
   useEffect(() => {
     const fetchPortfolio = async () => {
       const userId = getOrCreateUserId();
@@ -43,11 +42,8 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-
       <HoldingsTable portfolio={portfolio} />
-      <div style={{ marginTop: 50 }}> 
-
-      </div>
+      <div style={{ marginTop: 0 }} />
       <Watchlist />
 
       <div className="transaction-dashboard-wrapper">
@@ -60,7 +56,8 @@ export default function PortfolioPage() {
         <ul>
           {(portfolio.transactions || []).slice(-20).reverse().map((t, idx) => (
             <li key={idx}>
-              [{new Date(t.date).toLocaleString()}] <b>{t.type}</b> {t.shares} <b>{t.ticker}</b> @ ${t.price.toFixed(2)}
+              [{typeof t.tickOpened === "number" ? `Tick #${t.tickOpened}` : "–"}]{" "}
+              <b>{t.type}</b> {t.shares} <b>{t.ticker}</b> @ ${t.price.toFixed(2)}
             </li>
           ))}
         </ul>

@@ -177,6 +177,7 @@ export default function Sidebar() {
                 <>
                   <p>{bestTicker}: {bestShares} shares</p>
                   <StockGraph ticker={bestTicker} />
+                  <div style={{ height: '5em' }}></div>
                 </>
               )
             })()}
