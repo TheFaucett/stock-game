@@ -1,0 +1,55 @@
+.random-stock-picker-app-card {
+  background: #232345;
+  border-radius: 14px;
+  box-shadow: 0 2px 16px #0004;
+  padding: 1.4rem 1.8rem 1.5rem 1.5rem;
+  max-width: 350px;
+  margin-bottom: 2rem;
+}
+
+.rsp-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.rsp-btn, .rsp-link-btn {
+  background: linear-gradient(90deg, #60a5fa, #6366f1);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 7px;
+  margin-top: 0.25rem;
+  margin-bottom: 0.8rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.16s, transform 0.11s;
+  box-shadow: 0 1px 6px #0002;
+}
+.rsp-btn:active, .rsp-link-btn:active {
+  transform: scale(0.96);
+}
+.rsp-link-btn {
+  background: #191929;
+  color: #fff;
+  font-size: 0.98rem;
+  margin-top: 0.4rem;
+  padding: 7px 18px;
+  border: 1px solid #60a5fa;
+}
+
+.rsp-result {
+  animation: pop 0.22s cubic-bezier(.25,1.1,.46,1.03);
+  margin-top: 0.2rem;
+}
+@keyframes pop {
+  0% { opacity: 0; transform: scale(0.9);}
+  100% { opacity: 1; transform: scale(1);}
+}
+
+.rsp-error {
+  color: #f87171;
+  margin: 0.7rem 0;
+  font-size: 0.97rem;
+}

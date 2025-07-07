@@ -22,6 +22,7 @@ import FirmDetail from "./components/FirmDetail";
 import PortfolioPage from "./components/PortfolioPage";
 import PortfolioButton from "./components/PortfolioButton";
 import TutorialModal from "./components/TutorialModal";
+import RandomStockPicker from "./components/RandomStockPicker";
 import "./styles/global.css";
 import { getOrCreateUserId } from "./userId";
 await getOrCreateUserId();
@@ -75,6 +76,10 @@ function App() {
                 <>
                   <TutorialModal isOpen={showModal} onClose={handleClose} />
                   <FeaturedStocks />
+                  <div className="random-picker-center">
+                    <RandomStockPicker />
+                  </div>
+
                   <HeatmapContainer />
                   <PortfolioButton />
                     <MoodGraph />

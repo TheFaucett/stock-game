@@ -1,4 +1,3 @@
-// TutorialModal.jsx
 import React from "react";
 import "../styles/TutorialModal.css"; // if using plain CSS
 

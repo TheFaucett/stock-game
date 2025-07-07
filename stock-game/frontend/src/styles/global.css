@@ -32,3 +32,10 @@ body {
     border-color: #888;
     transform: translateX(-2px);
 }
+.random-picker-center {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;   /* top-align with cards */
+  margin: 1.5rem 0 1rem 0;
+}
