@@ -1,5 +1,5 @@
 import React from "react";
-import "../styles/TutorialModal.css"; // if using plain CSS
+import "../styles/tutorialModal.css"; // if using plain CSS
 
 const TutorialModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
