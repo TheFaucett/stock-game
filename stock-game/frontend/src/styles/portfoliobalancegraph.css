@@ -1,5 +1,6 @@
 /* src/styles/portfoliobalancegraph.css */
 
+/* --- Range selector buttons (unchanged) --- */
 .portfolio-graph .range-buttons {
   margin-bottom: 0.75rem;
   display: flex;
@@ -29,4 +30,27 @@
   color: #ffffff;
   border: 1px solid #7986cb;
   box-shadow: 0 0 6px rgba(92, 107, 192, 0.4);
+}
+
+/* === NEW: Graph size variants === */
+.portfolio-graph.small {
+  height: 120px;
+  min-height: 110px;
+  width: 100%;
+  /* You can add margin or tweak as needed for Sidebar fit */
+}
+.portfolio-graph.large {
+  height: 250px;
+  min-height: 200px;
+  width: 100%;
+  /* Roomier for Portfolio page */
+}
+
+/* Optionally: Tweak Chart.js canvas to fully fill parent */
+.portfolio-graph canvas {
+  width: 100% !important;
+  height: 100% !important;
+  /* Remove box-shadow or border if unwanted */
+  background: transparent;
+  border-radius: 12px;
 }

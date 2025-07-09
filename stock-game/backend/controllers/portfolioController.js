@@ -83,7 +83,7 @@ exports.executeTransaction = async (req, res) => {
                     if (portfolio.ownedShares.get(key) === 0) portfolio.ownedShares.delete(key);
                 }
 
-                // Let Mongoose know the Map was changed!
+
                 portfolio.markModified('ownedShares');
 
                 portfolio.transactions.push({

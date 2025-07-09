@@ -22,10 +22,7 @@
   position: relative;
   margin-left: -48px; /* Key: negative to create overlap */
   cursor: pointer;
-  transition: 
-    transform 0.2s cubic-bezier(.28,.84,.42,1),
-    box-shadow 0.2s cubic-bezier(.28,.84,.42,1),
-    filter 0.2s;
+
   outline: none;
   border: 2px solid rgba(255,255,255,0.09);
   /* Optional: tilt the cards for realism */
@@ -36,7 +33,7 @@
 }
 .featured-card:hover,
 .featured-card:focus {
-  transform: scale(1.05) translateY(-12px);
+
   box-shadow: 0 16px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.12);
   filter: brightness(1.08) saturate(1.07);
   z-index: 99;
@@ -56,7 +53,4 @@
 }
 
 /* Optional: add a slight rotation to each card for a more "hand-fanned" effect */
-.featured-card:nth-child(1) { transform: rotate(-7deg); }
-.featured-card:nth-child(2) { transform: rotate(-2deg); }
-.featured-card:nth-child(3) { transform: rotate(3deg); }
-.featured-card:nth-child(4) { transform: rotate(7deg); }
+

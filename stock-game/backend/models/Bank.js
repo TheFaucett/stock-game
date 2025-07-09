@@ -14,7 +14,7 @@ const loanSchema = new mongoose.Schema({
       principal: { type: Number, required: true },
       interest:  { type: Number, required: true },
       total:     { type: Number, required: true },
-      date:      { type: Date,   default: Date.now }
+
     }
   ]
 });
@@ -29,7 +29,7 @@ const depositSchema = new mongoose.Schema({
     {
       tick:   { type: Number, required: true },
       amount: { type: Number, required: true },
-      date:   { type: Date,   default: Date.now }
+
     }
   ]
 });

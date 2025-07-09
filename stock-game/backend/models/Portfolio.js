@@ -21,7 +21,7 @@ const portfolioSchema = new mongoose.Schema({
       shares     : { type: Number, required: true },    // REQUIRED
       price      : { type: Number, required: true },
       total      : { type: Number, required: true },
-      date       : { type: Date, default: Date.now },
+
       tickOpened : { type: Number, default: 1 },
 
       expired    : { type: Boolean, default: false }, // may remain empty for buy/sell

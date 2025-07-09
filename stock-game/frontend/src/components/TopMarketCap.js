@@ -15,7 +15,7 @@ export default function TopMarketCapStocks() {
       return res.data.topCap || res.data.movers || [];
     },
     refetchOnWindowFocus: false,
-    refetchInterval: 10000
+    refetchInterval: 30000
   });
 
   return (

@@ -37,7 +37,7 @@ export default function Heatmap({ sector }) {
   const { data = [], isLoading, error } = useQuery({
     queryKey: ["heatmap", sector],
     queryFn: fetchHeatmapData,
-    refetchInterval: 5000,
+    refetchInterval: 30000,
     refetchOnWindowFocus: false,
   });
 

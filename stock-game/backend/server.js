@@ -15,6 +15,7 @@ const bankRoutes = require('./routes/bankRoutes');
 const featuredStockRoutes = require('./routes/featuredStockRoutes');
 const firmRoutes = require('./routes/firmRoutes'); 
 const tickRoutes = require('./routes/tickRoutes'); 
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 //CONTROLLERS
 const { updateMarket } = require('./controllers/marketController');
 
@@ -50,6 +51,7 @@ app.use('/api/bank', bankRoutes);
 app.use('/api/featured-stocks', featuredStockRoutes);
 app.use('/api/firms', firmRoutes);
 app.use('/api/tick', tickRoutes); 
+app.use('/api/leaderboard', leaderboardRoutes);
 // 📌 Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -19,7 +19,7 @@ export default function Sidebar() {
   const { data: portfolio, isLoading, error } = useQuery({
     queryKey: ['portfolio', USER_ID],
     queryFn: fetchPortfolio,
-    refetchInterval: 10_000
+    refetchInterval: 30_000
   })
   const [isOpen, setIsOpen] = useState(false)
 

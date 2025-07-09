@@ -20,10 +20,10 @@ const firmSchema = new mongoose.Schema({
     transactions: { type: Array, default: [] },
     lastTradeCycle: Number,
 
-    // NEW MEMORY
+    // memory
     recentTrades: { type: [tradeSchema], default: [] },
 
-    // NEW EMOTIONS
+    // emotion
     emotions: {
         confidence: { type: Number, default: 0.5 },   // 0 = low, 1 = high
         frustration: { type: Number, default: 0.0 },

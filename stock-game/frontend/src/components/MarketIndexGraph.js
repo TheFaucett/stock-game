@@ -27,7 +27,7 @@ const MarketIndexGraph = () => {
   const { data = [], isLoading, error } = useQuery({
     queryKey: ["marketIndex"],
     queryFn: fetchMarketIndex,
-    refetchInterval: 10000
+    refetchInterval: 30000
   });
 
   if (isLoading) return <p>Loading Market Index...</p>;

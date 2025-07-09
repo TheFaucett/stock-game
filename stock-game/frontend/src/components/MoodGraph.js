@@ -14,7 +14,7 @@ const MoodGraph = () => {
   const { data: moodHistory = [], isLoading, error } = useQuery({
     queryKey: ["moodHistory"],
     queryFn: fetchMoodHistory,
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   if (isLoading) return <p>Loading market mood...</p>;

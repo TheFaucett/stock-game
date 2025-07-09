@@ -12,7 +12,7 @@ export default function TopDividends() {
       // fallback to .topYield or .movers or []
       return data.topYield || data.movers || [];
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
     refetchOnWindowFocus: false,
   });
 

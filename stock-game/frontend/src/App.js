@@ -17,6 +17,7 @@ import TopMarketCapStocks from "./components/TopMarketCap";
 import TopDividends from "./components/TopDividends";
 import Bank from "./components/Bank";
 import TransactionDashboard from "./components/TransactionDashboard";
+import Leaderboard from "./components/Leaderboard";
 import FirmsList from "./components/Firms";
 import FirmDetail from "./components/FirmDetail";
 import PortfolioPage from "./components/PortfolioPage";
@@ -102,6 +103,7 @@ function App() {
             <Route path="/firms/:name" element={<FirmDetail />} />
             <Route path="/portfolio" element={<PortfolioPage />} />
             <Route path="/tutorial" element={<TutorialModal />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
 
           </Routes>
         </div>
