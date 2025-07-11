@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import StockGraph from './StockGraph'
 import TransactionModal from './TransactionModal'
+import OptionTutorial from "./OptionTutorial"   // <-- import this!
 import '../styles/stockdetail.css'
 import { getOrCreateUserId } from '../userId'
 
@@ -13,8 +14,9 @@ export default function StockDetail() {
   const [showModal, setShowModal] = useState(false)
   const [watchlist, setWatchlist] = useState([])
   const [loadingWatchlist, setLoadingWatchlist] = useState(true)
+  const [showOptionTutorial, setShowOptionTutorial] = useState(false) // <-- state for modal
 
-  // 🚩 INTERVAL (ms) - change this to your desired speed!
+  // 🚩 INTERVAL (ms)
   const REFRESH_INTERVAL = 2000
 
   // Single function to update all the info
@@ -37,19 +39,12 @@ export default function StockDetail() {
     setLoadingWatchlist(false)
   }
 
-  // Mount effect: run on mount and every time ticker/userId changes, set up interval.
   useEffect(() => {
     let stopped = false
-
-    // First fetch immediately
     fetchAll()
-
-    // Setup interval to refresh data
     const interval = setInterval(() => {
       if (!stopped) fetchAll()
     }, REFRESH_INTERVAL)
-
-    // Clean up interval on unmount or ticker/userId change
     return () => {
       stopped = true
       clearInterval(interval)
@@ -57,28 +52,35 @@ export default function StockDetail() {
     // eslint-disable-next-line
   }, [ticker, userId])
 
-  // Add to watchlist
+  // Show OptionTutorial only if not already seen (when hitting Trade)
+  function handleTradeClick() {
+    const hasSeen = localStorage.getItem("hasSeenOptionTutorial");
+    if (!hasSeen) {
+      setShowOptionTutorial(true);
+      localStorage.setItem("hasSeenOptionTutorial", "true");
+    }
+    setShowModal(true);
+  }
+
+  // Add/Remove watchlist handlers (same)
   async function handleAddWatch() {
     await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticker })
     })
-    fetchAll() // Re-fetch watchlist to stay consistent
+    fetchAll()
   }
 
-  // Remove from watchlist
   async function handleRemoveWatch() {
     await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
       method: "DELETE"
     })
-    fetchAll() // Re-fetch watchlist to stay consistent
+    fetchAll()
   }
 
-  // Helper: is this stock already in watchlist?
   const onWatchlist = watchlist.includes(ticker.toUpperCase())
 
-  // Transaction handler
   const performTransaction = async (type, shares, strike, expiryTick) => {
     const payload = { userId, type, ticker, shares }
     if (type === 'short') payload.expiryTick = expiryTick
@@ -86,7 +88,6 @@ export default function StockDetail() {
       payload.strike = strike
       payload.expiryTick = expiryTick
     }
-
     const res = await fetch(
       `http://localhost:5000/api/portfolio/${userId}/transactions`,
       {
@@ -100,7 +101,7 @@ export default function StockDetail() {
       alert(`Failed: ${data.error}`)
     } else {
       alert('Transaction successful!')
-      fetchAll() // Ensure UI reflects change!
+      fetchAll()
     }
   }
 
@@ -117,6 +118,9 @@ export default function StockDetail() {
 
   return (
     <div style={{ padding: 20 }}>
+      {/* 🚩 OptionTutorial Modal */}
+      <OptionTutorial isOpen={showOptionTutorial} onClose={() => setShowOptionTutorial(false)} />
+
       <h1>{stock.ticker}</h1>
       <p>Price: ${stock.price.toFixed(2)}</p>
       <p>Change: {stock.change}%</p>
@@ -125,7 +129,7 @@ export default function StockDetail() {
 
       {/* Actions row: Trade + Watchlist */}
       <div className="stock-actions" style={{ marginBottom: 24 }}>
-        <button className="stock-btn trade" onClick={() => setShowModal(true)}>
+        <button className="stock-btn trade" onClick={handleTradeClick}>
           Trade
         </button>
         {loadingWatchlist ? (

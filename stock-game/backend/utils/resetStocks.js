@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 const Firm = require("../models/Firm");
-
+const Portfolio = require("../models/Portfolio");
 const MONGO_URI = "mongodb://localhost:27017/stock-game";
 const DEFAULT_PRICE = 100.00;
 
@@ -64,4 +64,39 @@ async function resetStockPrices() {
   }
 }
 
+async function resetStockPrices() {
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log("✅ Connected to MongoDB");
+
+    // ... STOCK/FIRM logic ...
+
+    // --- PORTFOLIOS ---
+    const portfolios = await Portfolio.find();
+    const portfolioBulkOps = portfolios.map(portfolio => ({
+      updateOne: {
+        filter: { _id: portfolio._id },
+        update: {
+          $set: {
+            transactions: [],      // 🧹 clear some irrelevant info from the frontend if there is a resetStocks call
+            borrowedShares: {},    // shorts/calls/puts
+
+          }
+        }
+      }
+    }));
+
+    if (portfolioBulkOps.length > 0) {
+      const result = await Portfolio.bulkWrite(portfolioBulkOps);
+      console.log(`✅ Reset ${result.modifiedCount} portfolios.`);
+    } else {
+      console.log("ℹ️ No portfolios found to update.");
+    }
+
+  } catch (err) {
+    console.error("❌ Error resetting:", err);
+  } finally {
+    mongoose.connection.close();
+  }
+}
 resetStockPrices();
