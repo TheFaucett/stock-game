@@ -57,20 +57,6 @@ async function resetStockPrices() {
       console.log("ℹ️ No firms found to update.");
     }
 
-  } catch (err) {
-    console.error("❌ Error resetting:", err);
-  } finally {
-    mongoose.connection.close();
-  }
-}
-
-async function resetStockPrices() {
-  try {
-    await mongoose.connect(MONGO_URI);
-    console.log("✅ Connected to MongoDB");
-
-    // ... STOCK/FIRM logic ...
-
     // --- PORTFOLIOS ---
     const portfolios = await Portfolio.find();
     const portfolioBulkOps = portfolios.map(portfolio => ({
@@ -78,9 +64,8 @@ async function resetStockPrices() {
         filter: { _id: portfolio._id },
         update: {
           $set: {
-            transactions: [],      // 🧹 clear some irrelevant info from the frontend if there is a resetStocks call
-            borrowedShares: {},    // shorts/calls/puts
-
+            transactions: [],
+            borrowedShares: {},
           }
         }
       }
@@ -99,4 +84,5 @@ async function resetStockPrices() {
     mongoose.connection.close();
   }
 }
+
 resetStockPrices();

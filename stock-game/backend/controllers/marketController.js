@@ -9,7 +9,7 @@ const { incrementTick } = require("../utils/tickTracker.js");
 const { sweepOptionExpiries } = require("../utils/sweepOptions.js");
 const { sweepLoanPayments } = require("../utils/sweepLoans.js");
 const { payDividends } = require("../utils/payDividends.js");
-
+const { processFirms } = require("./firmController.js");
 const HISTORY_LIMIT = 1200
 
 // Macro parameters
@@ -163,7 +163,8 @@ async function updateMarket() {
     }
     logMemoryUsage("after stock updates");
     recordMarketIndexHistory(stocks);
-    recordMarketMood(stocks);
+    const marketMood = recordMarketMood(stocks);
+    processFirms(marketMood);
   } catch (err) {
     console.error("🔥 Market update error:", err);
   }

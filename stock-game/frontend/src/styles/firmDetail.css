@@ -1,0 +1,77 @@
+.firm-detail-container {
+  max-width: 820px;            /* Increased width */
+  margin: 3.5rem auto 2.5rem auto;
+  background: #181d26;
+  color: #fafbfc;
+  border-radius: 26px;
+  box-shadow: 0 10px 48px rgba(23,30,40,0.26);
+  padding: 2.5rem 3.5rem 2.5rem 3rem; /* More padding */
+  font-size: 1.2rem;
+}
+
+.firm-detail-back {
+  display: inline-block;
+  margin-bottom: 1.7rem;
+  color: #b6c2ff;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 1.13rem;
+  transition: color 0.18s;
+}
+.firm-detail-back:hover {
+  color: #9fbaff;
+  text-decoration: underline;
+}
+
+.firm-detail-title {
+  font-size: 2.7rem;           /* Bigger title */
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.5rem;
+  color: #f3eaea;
+}
+
+.firm-detail-strategy {
+  font-size: 1.23rem;
+  font-weight: 500;
+  color: #92ffe7;
+  margin-bottom: 0.5rem;
+}
+
+.firm-detail-balance {
+  font-size: 1.23rem;
+  font-weight: 700;
+  margin-bottom: 1.8rem;
+  color: #d0ffae;
+}
+
+.firm-detail-transactions {
+  margin-top: 2.5rem;
+  padding-left: 0;
+}
+.firm-detail-transactions h3 {
+  font-size: 1.4rem;
+  color: #ffe57a;
+  margin-bottom: 1rem;
+  letter-spacing: 0.01em;
+}
+.firm-detail-transactions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 10px;
+  background: #23293a;
+  box-shadow: 0 2px 16px rgba(23,30,40,0.12);
+  max-height: 420px;              /* Larger scrollable area */
+  overflow-y: auto;
+}
+.firm-detail-transactions li {
+  font-size: 1.07rem;
+  border-bottom: 1px solid #21263a;
+  padding: 13px 22px;
+  color: #fff;
+  line-height: 1.4;
+}
+.firm-detail-transactions li:last-child {
+  border-bottom: none;
+}

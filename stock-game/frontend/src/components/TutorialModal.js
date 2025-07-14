@@ -21,7 +21,7 @@ const TutorialModal = ({ isOpen, onClose }) => {
           <li>IRL, traders use news to predict market moves, so we do the same here! That information is available by hitting that little drop down up and to the right!</li>
           <li>To the left, you'll find a similar arrow which allows you to access your sidebar, which contains some basic info about your portfolio, but a full workup of what you have is available by hitting that fancy green button to the right.</li>
           <li>🔎 There is a ton to this app and I am constantly adding changes and features (shorting, firms, mood trends, banks, and all sorts of other craziness), so feel free to explore!</li>
-          <li>📝 If you have anything to let me know about (or you found something that's broken), check out this github repo with the full code: https://github.com/TheFaucett/stock-game</li>
+          <li>📝 If you have anything to let me know about (or you found something that's broken), check out this github repo with the full code: <a href="https://github.com/TheFaucett/stock-game">https://github.com/TheFaucett/stock-game</a></li>
           <li>🎉 Enjoy the game!  -TheFaucett, 2025.07.05</li>
         </ul>
         <button onClick={onClose}>Okay, got it!</button>

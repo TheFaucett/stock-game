@@ -1,0 +1,39 @@
+/* firmbalancegraph.css (or add to your existing CSS) */
+.firm-balance-graph-container {
+  max-width: 600px;
+  margin: 32px auto 0 auto;
+  background: #181f2e;
+  border-radius: 18px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.16);
+  padding: 32px 24px 36px 24px;
+  min-height: 350px;
+}
+
+.firm-balance-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #fff;
+}
+
+.range-buttons {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.range-button {
+  background: #232a44;
+  color: #fff;
+  border: none;
+  padding: 7px 18px;
+  border-radius: 18px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.range-button.active, .range-button:hover {
+  background: #4f8cff;
+}
