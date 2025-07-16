@@ -1,4 +1,6 @@
+// utils/tick.js
 let currentTick = 0;
+const TICK_LENGTH = 30; // seconds
 
 function incrementTick() {
   currentTick++;
@@ -9,4 +11,8 @@ function getCurrentTick() {
   return currentTick;
 }
 
-module.exports = { incrementTick, getCurrentTick };
+function getTickLength() {
+  return TICK_LENGTH;
+}
+
+module.exports = { incrementTick, getCurrentTick, getTickLength };

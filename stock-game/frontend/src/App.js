@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+//TICK PROVIDER: 
+import { TickProvider } from "./TickProvider";
 
 // Components
 import Sidebar from "./components/Sidebar";
@@ -24,6 +26,9 @@ import PortfolioPage from "./components/PortfolioPage";
 import PortfolioButton from "./components/PortfolioButton";
 import TutorialModal from "./components/TutorialModal";
 import RandomStockPicker from "./components/RandomStockPicker";
+import HomeTabs from "./components/HomeTabs";
+import TickerSearch from "./components/TickerSearch";
+import TickProgressBar from "./components/TickProgressbar";
 import "./styles/global.css";
 import { getOrCreateUserId } from "./userId";
 await getOrCreateUserId();
@@ -66,10 +71,13 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <TickProvider >
       <Router>
         <div className="container">
           <Topbar />
+          <TickProgressBar />
           <Sidebar />
+ 
           <Routes>
             <Route
               path="/"
@@ -77,9 +85,12 @@ function App() {
                 <>
                   <TutorialModal isOpen={showModal} onClose={handleClose} />
                   <FeaturedStocks />
+                  <HomeTabs />
                   <div className="random-picker-center">
                     <RandomStockPicker />
+                    <TickerSearch />
                   </div>
+
 
                   <HeatmapContainer />
                   <PortfolioButton />
@@ -108,6 +119,7 @@ function App() {
           </Routes>
         </div>
       </Router>
+      </TickProvider>
     </QueryClientProvider>
   );
 }

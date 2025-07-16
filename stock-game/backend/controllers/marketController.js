@@ -24,7 +24,7 @@ const SECTOR_STEP = 0.00005, SECTOR_CLAMP = 0.001;
 
 const stockDrifts = new Map();
 const DRIFT_STEP = 0.00002, DRIFT_CLAMP = 0.0005;
-
+let initialMarketCap = null;
 // Normal random helper
 function randNormal() {
   let u = 0, v = 0;
@@ -143,18 +143,21 @@ async function updateMarket() {
     }
     logMemoryUsage("after single stock updates");
 
-      //debug
-// Market cap telemetry
-      const marketCap = stocks.reduce((sum, s) => sum + s.price, 0);
-      if (tick === 1) {
-      initialMarketCap = marketCap;
-      console.log(`🟢 Initial market cap $${initialMarketCap.toFixed(2)}`);
+      
+      const marketCap = stocks.reduce((sum, s) => sum + s.price * (s.outstandingShares ?? 1), 0);
+      console.log(marketCap);
+    // Only set once, at the first market update with valid data
+      if (initialMarketCap === null || initialMarketCap === 0) {
+      if (marketCap > 0) {
+        initialMarketCap = marketCap;
+          console.log(`🟢 Initial market cap set: $${initialMarketCap.toFixed(2)}`);
+      } else {
+          console.warn(`⚠️ Cannot set initial market cap, current market cap is zero.`);
+      }
       } else {
       const capDelta = ((marketCap - initialMarketCap) / initialMarketCap) * 100;
-      console.log(`📊 Market cap since tick 1: ${capDelta.toFixed(2)}%`);
+      console.log(`📊 Market cap since baseline: ${capDelta.toFixed(2)}%`);
       }
-
-
 
 
     if (bulk.length) {

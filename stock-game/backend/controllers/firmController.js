@@ -3,11 +3,18 @@ const Firm = require("../models/Firm");
 const { getCurrentTick } = require("../utils/tickTracker.js");
 const { getEconomicFactors } = require("../utils/economicEnvironment.js");
 
+// Mood multipliers
 function getMoodBias(mood) {
     return {
         buyBias: 0.4 + mood,
         sellBias: 0.6 - mood,
     };
+}
+
+// 1. Make Sell More Frequent and Diverse
+// Utility to pick a random portion to sell
+function getSellPortion(currentShares) {
+    return Math.max(1, Math.floor(currentShares * (0.3 + Math.random() * 0.7)));
 }
 
 function updateRiskTolerance(firm, outcome) {
@@ -19,12 +26,14 @@ function updateRiskTolerance(firm, outcome) {
     }
 }
 
+// Track memory for smarter decisions
 function updateMemoryAndEmotions(firm, stock, action, tradePrice, econ, outcome) {
     if (!firm.memory) firm.memory = {};
     const ticker = stock.ticker;
-    const m = firm.memory[ticker] || { recentPrices: [], lastOutcome: 'neutral' };
+    const m = firm.memory[ticker] || { recentPrices: [], lastOutcome: 'neutral', boughtAtTick: null };
     m.recentPrices.push(tradePrice);
     if (m.recentPrices.length > 10) m.recentPrices.shift();
+    if (action === "buy") m.boughtAtTick = getCurrentTick();
     m.lastOutcome = outcome;
     firm.memory[ticker] = m;
 
@@ -67,146 +76,208 @@ function getTradeShares(firm, price) {
     return Math.max(1, Math.floor(maxShares * (0.3 + 0.7 * Math.random())));
 }
 
-// --- New: Should Sell Helper (profit/loss/holding period logic) ---
-function shouldSell(firm, stock) {
+// -- 2. Should Sell: More Aggressive, Rebalance, and Take Profits --
+// - More frequent, lower thresholds, plus forced periodic rebalance
+function shouldSell(firm, stock, currentTick) {
     const mem = firm.memory?.[stock.ticker];
-    if (!mem || !mem.recentPrices?.length) return false;
+    if (!mem || !mem.recentPrices.length) return false;
     const avgBuy = mem.recentPrices.reduce((a, b) => a + b, 0) / mem.recentPrices.length;
     const gain = (stock.price - avgBuy) / avgBuy;
-    if (gain > 0.09) return true;   // Take profit at +9%
-    if (gain < -0.07) return true;  // Stop loss at -7%
-    // Add a random trigger to ensure some selling
-    if (Math.random() < 0.07) return true;
+    const holdingPeriod = (currentTick - (mem.boughtAtTick || currentTick));
+
+    // 3. Lowered thresholds: take profit or stop loss quickly
+    if (gain > 0.035 && holdingPeriod >= 2) return true;   // Profit at +3.5%
+    if (gain < -0.025) return true;  // Stop loss at -2.5%
+    // 4. If cash below 10% of start, force sell
+    if (firm.balance < 10000) return true;
+    // 5. Every 4th tick, rebalance: sell biggest unrealized winner
+    if (currentTick % 4 === 0 && gain > 0) return true;
+    // Add random churn
+    if (Math.random() < 0.11) return true;
     return false;
 }
 
-// --- Strategies ---
+function shouldBuy(firm, stock) {
+    const mem = firm.memory?.[stock.ticker];
+    if (!mem || !mem.recentPrices.length) return true;
+    const recent = mem.recentPrices.slice(-5);
+    const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    return stock.price < avg * 0.98; // Only buy if 2% below recent avg
+}
+
 const strategies = {
-    momentum: async (firm, mood, econ) => {
+    // All strategies use the same selling improvements now!
+    momentum: async (firm, mood, econ, currentTick) => {
         let { buyBias, sellBias } = getMoodBias(mood);
         if (econ.macroEvent === "boom") buyBias += 0.08;
-        if (econ.macroEvent === "recession") sellBias += 0.10;
-
+        if (econ.macroEvent === "recession") sellBias += 0.12;
         const top = await Stock.find().sort({ change: -1 }).limit(5);
-        const bottom = await Stock.find().sort({ change: 1 }).limit(5);
         const buy = randomElement(top);
 
-        // Improved sell: always consider if any holding meets shouldSell
+        let buyResult = null;
+        if (Math.random() < buyBias && buy && firm.balance > buy.price && shouldBuy(firm, buy)) {
+            buyResult = await executeFirmTrade(firm, buy, 'buy', econ, currentTick);
+        }
+
+        // Try to sell any eligible holding
         const owned = Object.keys(firm.ownedShares || {});
-        let sell = null;
+        let sellResult = null;
+        // Sell biggest winner if forced rebalance tick
+        let bestTicker = null, bestGain = -Infinity;
         for (let ticker of owned) {
             const s = await Stock.findOne({ ticker });
-            if (s && shouldSell(firm, s)) { sell = s; break; }
+            const mem = firm.memory?.[ticker];
+            if (!s || !mem) continue;
+            const avgBuy = mem.recentPrices.reduce((a, b) => a + b, 0) / mem.recentPrices.length;
+            const gain = (s.price - avgBuy) / avgBuy;
+            if (gain > bestGain) { bestGain = gain; bestTicker = ticker; }
+            if (shouldSell(firm, s, currentTick)) {
+                sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
+                break;
+            }
         }
-        if (!sell && owned.length > 0 && Math.random() < sellBias) {
-            const s = await Stock.findOne({ ticker: randomElement(owned) });
-            sell = s;
+        // Rebalance: force sell biggest winner occasionally
+        if (!sellResult && owned.length > 0 && currentTick % 4 === 0 && bestTicker) {
+            const s = await Stock.findOne({ ticker: bestTicker });
+            sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
         }
-
-        if (Math.random() < buyBias && buy && firm.balance > buy.price) return executeFirmTrade(firm, buy, 'buy', econ);
-        if (sell) return executeFirmTrade(firm, sell, 'sell', econ);
-        return null;
+        return buyResult || sellResult || null;
     },
 
-    // All other strategies can use similar improved selling logic!
-    contrarian: async (firm, mood, econ) => {
+    // All other strategies now share improved logic
+    contrarian: async (firm, mood, econ, currentTick) => {
         let { buyBias, sellBias } = getMoodBias(mood);
-        if (econ.macroEvent === "recession") buyBias += 0.05;
-        if (econ.macroEvent === "boom") sellBias += 0.04;
-
+        if (econ.macroEvent === "recession") buyBias += 0.06;
+        if (econ.macroEvent === "boom") sellBias += 0.05;
         const bottom = await Stock.find().sort({ change: 1 }).limit(5);
         const buy = randomElement(bottom);
 
-        // Improved sell logic
+        let buyResult = null;
+        if (Math.random() < buyBias && buy && firm.balance > buy.price && shouldBuy(firm, buy)) {
+            buyResult = await executeFirmTrade(firm, buy, 'buy', econ, currentTick);
+        }
         const owned = Object.keys(firm.ownedShares || {});
-        let sell = null;
+        let sellResult = null;
+        let bestTicker = null, bestGain = -Infinity;
         for (let ticker of owned) {
             const s = await Stock.findOne({ ticker });
-            if (s && shouldSell(firm, s)) { sell = s; break; }
+            const mem = firm.memory?.[ticker];
+            if (!s || !mem) continue;
+            const avgBuy = mem.recentPrices.reduce((a, b) => a + b, 0) / mem.recentPrices.length;
+            const gain = (s.price - avgBuy) / avgBuy;
+            if (gain > bestGain) { bestGain = gain; bestTicker = ticker; }
+            if (shouldSell(firm, s, currentTick)) {
+                sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
+                break;
+            }
         }
-        if (!sell && owned.length > 0 && Math.random() < sellBias) {
-            const s = await Stock.findOne({ ticker: randomElement(owned) });
-            sell = s;
+        if (!sellResult && owned.length > 0 && currentTick % 4 === 0 && bestTicker) {
+            const s = await Stock.findOne({ ticker: bestTicker });
+            sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
         }
-
-        if (Math.random() < buyBias && buy && firm.balance > buy.price) return executeFirmTrade(firm, buy, 'buy', econ);
-        if (sell) return executeFirmTrade(firm, sell, 'sell', econ);
-        return null;
+        return buyResult || sellResult || null;
     },
 
-    growth: async (firm, mood, econ) => {
+    growth: async (firm, mood, econ, currentTick) => {
         let { buyBias, sellBias } = getMoodBias(mood);
-        if (econ.macroEvent === "boom") buyBias += 0.06;
-        if (econ.macroEvent === "recession") sellBias += 0.08;
-
+        if (econ.macroEvent === "boom") buyBias += 0.07;
+        if (econ.macroEvent === "recession") sellBias += 0.09;
         const growth = await Stock.find().sort({ eps: -1 }).limit(5);
         const buy = randomElement(growth);
 
+        let buyResult = null;
+        if (Math.random() < buyBias && buy && firm.balance > buy.price && shouldBuy(firm, buy)) {
+            buyResult = await executeFirmTrade(firm, buy, 'buy', econ, currentTick);
+        }
         const owned = Object.keys(firm.ownedShares || {});
-        let sell = null;
+        let sellResult = null;
+        let bestTicker = null, bestGain = -Infinity;
         for (let ticker of owned) {
             const s = await Stock.findOne({ ticker });
-            if (s && shouldSell(firm, s)) { sell = s; break; }
+            const mem = firm.memory?.[ticker];
+            if (!s || !mem) continue;
+            const avgBuy = mem.recentPrices.reduce((a, b) => a + b, 0) / mem.recentPrices.length;
+            const gain = (s.price - avgBuy) / avgBuy;
+            if (gain > bestGain) { bestGain = gain; bestTicker = ticker; }
+            if (shouldSell(firm, s, currentTick)) {
+                sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
+                break;
+            }
         }
-        if (!sell && owned.length > 0 && Math.random() < sellBias) {
-            const s = await Stock.findOne({ ticker: randomElement(owned) });
-            sell = s;
+        if (!sellResult && owned.length > 0 && currentTick % 4 === 0 && bestTicker) {
+            const s = await Stock.findOne({ ticker: bestTicker });
+            sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
         }
-
-        if (Math.random() < buyBias && buy && firm.balance > buy.price) return executeFirmTrade(firm, buy, 'buy', econ);
-        if (sell) return executeFirmTrade(firm, sell, 'sell', econ);
-        return null;
+        return buyResult || sellResult || null;
     },
 
-    volatility: async (firm, mood, econ) => {
+    volatility: async (firm, mood, econ, currentTick) => {
         let { buyBias, sellBias } = getMoodBias(mood);
-        if (econ.macroEvent === "boom" || econ.inflationRate > 0.04) buyBias += 0.04;
-        if (econ.macroEvent === "recession" || econ.inflationRate > 0.05) sellBias += 0.05;
-
+        if (econ.macroEvent === "boom" || econ.inflationRate > 0.04) buyBias += 0.05;
+        if (econ.macroEvent === "recession" || econ.inflationRate > 0.05) sellBias += 0.07;
         const volatile = await Stock.find().sort({ volatility: -1 }).limit(5);
         const buy = randomElement(volatile);
 
+        let buyResult = null;
+        if (Math.random() < buyBias && buy && firm.balance > buy.price && shouldBuy(firm, buy)) {
+            buyResult = await executeFirmTrade(firm, buy, 'buy', econ, currentTick);
+        }
         const owned = Object.keys(firm.ownedShares || {});
-        let sell = null;
+        let sellResult = null;
+        let bestTicker = null, bestGain = -Infinity;
         for (let ticker of owned) {
             const s = await Stock.findOne({ ticker });
-            if (s && shouldSell(firm, s)) { sell = s; break; }
+            const mem = firm.memory?.[ticker];
+            if (!s || !mem) continue;
+            const avgBuy = mem.recentPrices.reduce((a, b) => a + b, 0) / mem.recentPrices.length;
+            const gain = (s.price - avgBuy) / avgBuy;
+            if (gain > bestGain) { bestGain = gain; bestTicker = ticker; }
+            if (shouldSell(firm, s, currentTick)) {
+                sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
+                break;
+            }
         }
-        if (!sell && owned.length > 0 && Math.random() < sellBias) {
-            const s = await Stock.findOne({ ticker: randomElement(owned) });
-            sell = s;
+        if (!sellResult && owned.length > 0 && currentTick % 4 === 0 && bestTicker) {
+            const s = await Stock.findOne({ ticker: bestTicker });
+            sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
         }
-
-        if (Math.random() < buyBias && buy && firm.balance > buy.price) return executeFirmTrade(firm, buy, 'buy', econ);
-        if (sell) return executeFirmTrade(firm, sell, 'sell', econ);
-        return null;
+        return buyResult || sellResult || null;
     },
 
-    balanced: async (firm, mood, econ) => {
+    balanced: async (firm, mood, econ, currentTick) => {
         let { buyBias, sellBias } = getMoodBias(mood);
-        if (econ.macroEvent === "boom") buyBias += 0.04;
-        if (econ.macroEvent === "recession") sellBias += 0.04;
-
+        if (econ.macroEvent === "boom") buyBias += 0.05;
+        if (econ.macroEvent === "recession") sellBias += 0.09;
         const [buy] = await Stock.aggregate([{ $sample: { size: 1 } }]);
+
+        let buyResult = null;
+        if (Math.random() < buyBias && buy && firm.balance > buy.price && shouldBuy(firm, buy)) {
+            buyResult = await executeFirmTrade(firm, buy, 'buy', econ, currentTick);
+        }
         const owned = Object.keys(firm.ownedShares || {});
-        let sell = null;
+        let sellResult = null;
+        let bestTicker = null, bestGain = -Infinity;
         for (let ticker of owned) {
             const s = await Stock.findOne({ ticker });
-            if (s && shouldSell(firm, s)) { sell = s; break; }
+            const mem = firm.memory?.[ticker];
+            if (!s || !mem) continue;
+            const avgBuy = mem.recentPrices.reduce((a, b) => a + b, 0) / mem.recentPrices.length;
+            const gain = (s.price - avgBuy) / avgBuy;
+            if (gain > bestGain) { bestGain = gain; bestTicker = ticker; }
+            if (shouldSell(firm, s, currentTick)) {
+                sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
+                break;
+            }
         }
-        if (!sell && owned.length > 0 && Math.random() < sellBias) {
-            const s = await Stock.findOne({ ticker: randomElement(owned) });
-            sell = s;
+        if (!sellResult && owned.length > 0 && currentTick % 4 === 0 && bestTicker) {
+            const s = await Stock.findOne({ ticker: bestTicker });
+            sellResult = await executeFirmTrade(firm, s, 'sell', econ, currentTick);
         }
-
-        if (Math.random() < buyBias && buy && firm.balance > buy.price) return executeFirmTrade(firm, buy, 'buy', econ);
-        if (sell) return executeFirmTrade(firm, sell, 'sell', econ);
-        return null;
+        return buyResult || sellResult || null;
     }
 };
 
-// --- Execute Trade with New Logic ---
-const executeFirmTrade = async (firm, stock, action, econ) => {
+const executeFirmTrade = async (firm, stock, action, econ, currentTick) => {
     if (!stock) return null;
     firm.ownedShares = firm.ownedShares || {};
     firm.transactions = firm.transactions || [];
@@ -223,21 +294,22 @@ const executeFirmTrade = async (firm, stock, action, econ) => {
         firm.balance -= shares * stock.price;
         firm.ownedShares[stock.ticker] = currentShares + shares;
         firm.transactions.push({
-            type: "buy", ticker: stock.ticker, shares, price: stock.price, total: shares * stock.price, date: getCurrentTick()
+            type: "buy", ticker: stock.ticker, shares, price: stock.price, total: shares * stock.price, date: currentTick
         });
     } else {
         if (currentShares <= 0) return null;
-        const sharesToSell = Math.max(1, Math.ceil(currentShares * (firm.riskTolerance || 0.2)));
+        // 2. More dynamic selling: random portion, always at least 1
+        const sharesToSell = getSellPortion(currentShares);
         const proceeds = sharesToSell * stock.price;
         firm.balance += proceeds;
         const remaining = currentShares - sharesToSell;
         if (remaining > 0) firm.ownedShares[stock.ticker] = remaining;
         else delete firm.ownedShares[stock.ticker];
         firm.transactions.push({
-            type: "sell", ticker: stock.ticker, shares: sharesToSell, price: stock.price, total: proceeds, date: getCurrentTick()
+            type: "sell", ticker: stock.ticker, shares: sharesToSell, price: stock.price, total: proceeds, date: currentTick
         });
 
-        // Calculate win/loss using memory of entry price
+        // Calculate win/loss for memory
         const mem = firm.memory[stock.ticker];
         if (mem && mem.recentPrices && mem.recentPrices.length) {
             const avgBuy = mem.recentPrices.reduce((a, b) => a + b, 0) / mem.recentPrices.length;
@@ -261,8 +333,6 @@ const processFirms = async (marketMood) => {
         const allTrades = [];
         const currentTick = getCurrentTick();
         const econ = getEconomicFactors();
-
-        // Herding (optional)
         const herdBuys = [];
 
         for (const firm of firms) {
@@ -273,18 +343,16 @@ const processFirms = async (marketMood) => {
             ) {
                 continue;
             }
-
             const strategyFn = strategies[firm.strategy];
             let trade;
 
-            // Herding: occasionally copy a random other buy
             if (Math.random() < 0.05 && herdBuys.length > 0) {
                 const { ticker } = randomElement(herdBuys);
                 const stock = await Stock.findOne({ ticker });
-                trade = await executeFirmTrade(firm, stock, 'buy', econ);
+                trade = await executeFirmTrade(firm, stock, 'buy', econ, currentTick);
                 if (trade) trade.herd = true;
             } else if (strategyFn) {
-                trade = await strategyFn(firm, marketMood, econ);
+                trade = await strategyFn(firm, marketMood, econ, currentTick);
             }
 
             if (trade) {

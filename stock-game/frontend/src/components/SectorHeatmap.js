@@ -2,50 +2,45 @@ import React from "react";
 import { Treemap, Tooltip, ResponsiveContainer } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { useTick } from "../TickProvider"; // 👈 Import useTick
 
-// ✅ Fetch Sector Data
 const fetchSectorData = async () => {
     const { data } = await axios.get("http://localhost:5000/api/stocks/sector-heatmap");
-    console.log("API Response:", data);
     return data.sectors || [];
 };
 
-// ✅ Determine Color Based on Change %
 const getColor = (change) => {
     if (!change || isNaN(change)) return "gray";
     return change > 0
-        ? `rgb(0, ${Math.min(255, 50 + change * 15)}, 0)` // Green for gains
-        : `rgb(${Math.min(255, 50 - change * 15)}, 0, 0)`; // Red for losses
+        ? `rgb(0, ${Math.min(255, 50 + change * 15)}, 0)`
+        : `rgb(${Math.min(255, 50 - change * 15)}, 0, 0)`;
 };
 
-// ✅ Format Market Cap Display
 const formatMarketCap = (value) => {
     if (!value || isNaN(value)) return "$0";
-    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`; // Trillions
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`; // Billions
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`; // Millions
+    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
     return `$${value.toFixed(2)}`;
 };
 
 const SectorHeatmap = ({ onSectorClick }) => {
+    const { tick } = useTick(); // 👈 Use tick from provider
+
+    // 👇 Add tick to queryKey so it refetches every tick
     const { data: sectors, isLoading, error } = useQuery({
-        queryKey: ["sectors"],
+        queryKey: ["sectors", tick], // React-query will refetch on every tick
         queryFn: fetchSectorData
     });
 
     if (isLoading) return <p>Loading sectors...</p>;
     if (error) return <p>Error loading sector data.</p>;
-    const formattedData = sectors.map((sector, index) => {
-        console.log("Sector Object:", sector); // ✅ Debugging log for each sector
-
-        return {
-            name: sector.name || sector._id || `Sector ${index}`, // 🔥 Ensure we use the correct name field
-            value: sector.totalMarketCap || 1,  // Market Cap as value
-            change: sector.avgChange || 0,  // % Change
-            key: sector._id || sector.name || `sector-${index}`, // Unique key
-        };
-    });
-
+    const formattedData = sectors.map((sector, index) => ({
+        name: sector.name || sector._id || `Sector ${index}`,
+        value: sector.totalMarketCap || 1,
+        change: sector.avgChange || 0,
+        key: sector._id || sector.name || `sector-${index}`,
+    }));
 
     return (
         <div className="sector-heatmap-container">
@@ -71,8 +66,8 @@ const SectorHeatmap = ({ onSectorClick }) => {
                             />
                             {width > 70 && height > 30 && (
                                 <>
-                                    <text x={10} y={20} fill="white" fontSize={14}  letterSpacing="0.09rem">
-                                        {name} {/* ✅ Fix: Display correct sector name */}
+                                    <text x={10} y={20} fill="white" fontSize={14} letterSpacing="0.09rem">
+                                        {name}
                                     </text>
                                     <text x={10} y={40} fill="white" fontSize={12} letterSpacing="0.09rem">
                                         {formatMarketCap(value)}

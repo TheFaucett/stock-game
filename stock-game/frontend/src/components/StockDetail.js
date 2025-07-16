@@ -1,58 +1,57 @@
-import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import StockGraph from './StockGraph'
-import TransactionModal from './TransactionModal'
-import OptionTutorial from "./OptionTutorial"   // <-- import this!
-import '../styles/stockdetail.css'
-import { getOrCreateUserId } from '../userId'
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import StockGraph from './StockGraph';
+import TransactionModal from './TransactionModal';
+import OptionTutorial from "./OptionTutorial";
+import '../styles/stockdetail.css';
+import { getOrCreateUserId } from '../userId';
+import { useTick } from '../TickProvider';
 
 export default function StockDetail() {
-  const { ticker } = useParams()
-  const userId = getOrCreateUserId()
-  const [stock, setStock] = useState(null)
-  const [history, setHistory] = useState([])
-  const [showModal, setShowModal] = useState(false)
-  const [watchlist, setWatchlist] = useState([])
-  const [loadingWatchlist, setLoadingWatchlist] = useState(true)
-  const [showOptionTutorial, setShowOptionTutorial] = useState(false) // <-- state for modal
+  const { ticker } = useParams();
+  const userId = getOrCreateUserId();
+  const [stock, setStock] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [watchlist, setWatchlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [watchlistPending, setWatchlistPending] = useState(false);
+  const [showOptionTutorial, setShowOptionTutorial] = useState(false);
 
-  // 🚩 INTERVAL (ms)
-  const REFRESH_INTERVAL = 2000
+  const { tick } = useTick(); // always use {tick} destructure
 
-  // Single function to update all the info
-  async function fetchAll() {
-    // Fetch stock details
-    const res = await fetch(`http://localhost:5000/api/stocks`)
-    const list = await res.json()
-    setStock(list.find(s => s.ticker === ticker) || null)
+  // Single function to fetch everything
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Stock details
+      const res = await fetch(`http://localhost:5000/api/stocks`);
+      const list = await res.json();
+      setStock(list.find(s => s.ticker === ticker) || null);
 
-    // Fetch history
-    const res2 = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`)
-    const obj2 = await res2.json()
-    if (Array.isArray(obj2.history)) setHistory(obj2.history)
+      // History
+      const res2 = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`);
+      const obj2 = await res2.json();
+      setHistory(Array.isArray(obj2.history) ? obj2.history : []);
 
-    // Fetch watchlist
-    setLoadingWatchlist(true)
-    const res3 = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`)
-    const obj3 = await res3.json()
-    setWatchlist(Array.isArray(obj3.watchlist) ? obj3.watchlist : [])
-    setLoadingWatchlist(false)
-  }
-
-  useEffect(() => {
-    let stopped = false
-    fetchAll()
-    const interval = setInterval(() => {
-      if (!stopped) fetchAll()
-    }, REFRESH_INTERVAL)
-    return () => {
-      stopped = true
-      clearInterval(interval)
+      // Watchlist
+      const res3 = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`);
+      const obj3 = await res3.json();
+      setWatchlist(Array.isArray(obj3.watchlist) ? obj3.watchlist : []);
+    } catch (err) {
+      // Optionally add error handling here
+      setStock(null);
+    } finally {
+      setLoading(false);
     }
-    // eslint-disable-next-line
-  }, [ticker, userId])
+  }, [ticker, userId]);
 
-  // Show OptionTutorial only if not already seen (when hitting Trade)
+  // Run fetchAll whenever ticker/userId/tick changes
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll, tick]);
+
+  // Handle Trade button and OptionTutorial logic
   function handleTradeClick() {
     const hasSeen = localStorage.getItem("hasSeenOptionTutorial");
     if (!hasSeen) {
@@ -62,31 +61,36 @@ export default function StockDetail() {
     setShowModal(true);
   }
 
-  // Add/Remove watchlist handlers (same)
+  // --- Optimistic Add/Remove for Watchlist ---
   async function handleAddWatch() {
+    setWatchlistPending(true);
     await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticker })
-    })
-    fetchAll()
+    });
+    await fetchAll(); // Always re-sync after
+    setWatchlistPending(false);
   }
 
   async function handleRemoveWatch() {
+    setWatchlistPending(true);
     await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
       method: "DELETE"
-    })
-    fetchAll()
+    });
+    await fetchAll(); // Always re-sync after
+    setWatchlistPending(false);
   }
 
-  const onWatchlist = watchlist.includes(ticker.toUpperCase())
+  // Only allow add/remove when *not* pending or loading
+  const onWatchlist = watchlist.includes(ticker.toUpperCase());
 
   const performTransaction = async (type, shares, strike, expiryTick) => {
-    const payload = { userId, type, ticker, shares }
-    if (type === 'short') payload.expiryTick = expiryTick
+    const payload = { userId, type, ticker, shares };
+    if (type === 'short') payload.expiryTick = expiryTick;
     if (type === 'call' || type === 'put') {
-      payload.strike = strike
-      payload.expiryTick = expiryTick
+      payload.strike = strike;
+      payload.expiryTick = expiryTick;
     }
     const res = await fetch(
       `http://localhost:5000/api/portfolio/${userId}/transactions`,
@@ -95,17 +99,20 @@ export default function StockDetail() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       }
-    )
-    const data = await res.json()
+    );
+    const data = await res.json();
     if (!res.ok) {
-      alert(`Failed: ${data.error}`)
+      alert(`Failed: ${data.error}`);
     } else {
-      alert('Transaction successful!')
-      fetchAll()
+      alert('Transaction successful!');
+      fetchAll();
     }
-  }
+  };
 
-  // Not found
+  // Loading or not found states
+  if (loading) {
+    return <div style={{padding: 20}}><p>Loading…</p></div>;
+  }
   if (!stock) {
     return (
       <div>
@@ -113,32 +120,31 @@ export default function StockDetail() {
         <p>{ticker} does not exist.</p>
         <Link to="/">← Back</Link>
       </div>
-    )
+    );
   }
 
+  // Render UI
   return (
     <div style={{ padding: 20 }}>
-      {/* 🚩 OptionTutorial Modal */}
       <OptionTutorial isOpen={showOptionTutorial} onClose={() => setShowOptionTutorial(false)} />
-
       <h1>{stock.ticker}</h1>
       <p>Price: ${stock.price.toFixed(2)}</p>
       <p>Change: {stock.change}%</p>
       <p>EPS: {stock.eps}</p>
       <p>Market Cap: ${(stock.price * stock.outstandingShares / 1e9).toFixed(2)}B</p>
 
-      {/* Actions row: Trade + Watchlist */}
       <div className="stock-actions" style={{ marginBottom: 24 }}>
         <button className="stock-btn trade" onClick={handleTradeClick}>
           Trade
         </button>
-        {loadingWatchlist ? (
+        {loading || watchlistPending ? (
           <button className="stock-btn" disabled>Loading…</button>
         ) : onWatchlist ? (
           <button
             className="stock-btn"
             style={{ background: "#7c3aed" }}
             onClick={handleRemoveWatch}
+            disabled={watchlistPending}
           >
             ★ Remove from Watchlist
           </button>
@@ -147,6 +153,7 @@ export default function StockDetail() {
             className="stock-btn"
             style={{ background: "#60a5fa" }}
             onClick={handleAddWatch}
+            disabled={watchlistPending}
           >
             ☆ Add to Watchlist
           </button>
@@ -170,5 +177,5 @@ export default function StockDetail() {
 
       <Link to="/" className="back-button">← Back</Link>
     </div>
-  )
+  );
 }

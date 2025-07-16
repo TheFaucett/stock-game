@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import axios from 'axios';
+import { useTick } from '../TickProvider'; 
 import "../styles/topbar.css";
+
 
 const fetchNews = async () => {
     try {
@@ -28,13 +30,17 @@ const fetchNews = async () => {
 };
 
 const Topbar = () => {
-    const { data: news, isLoading, error } = useQuery({
+    const { data: news, isLoading, error, refetch } = useQuery({
         queryKey: ['news'],
-        queryFn: fetchNews,
-        refetchInterval: 30000 // ✅ Refreshes every 30 seconds
+        queryFn: fetchNews
     });
-
+    const { tick } = useTick();
     const [isOpen, setIsOpen] = useState(false);
+    console.log("🔄 Topbar news:", news);
+    useEffect(() => {
+        refetch();
+    }, [tick, refetch]);
+
 
     return (
         <div className={`topbar-container ${isOpen ? 'open' : 'closed'}`}>

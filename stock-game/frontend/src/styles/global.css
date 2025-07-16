@@ -36,6 +36,17 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: flex-start;   /* top-align with cards */
-  margin: 1.5rem 0 1rem 0;
+  align-items: center;           /* Center vertically in the row */
+  gap: 32px;                     /* Nice space between picker and search */
+  margin: 2.5rem 0 1.2rem 0;     /* More margin for visual breathing */
+  position: relative;
+}
+
+@media (max-width: 700px) {
+  .random-picker-center {
+    flex-direction: column;
+    gap: 16px;
+    margin: 1.2rem 0 0.8rem 0;
+    align-items: stretch;
+  }
 }

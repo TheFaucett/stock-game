@@ -3,12 +3,16 @@ const router = express.Router();
 const User = require('../models/User'); // ✅ Import User model
 const userController = require('../controllers/userController');
 const mongoose = require('mongoose'); // ✅ Required for ObjectId conversion
+const { getCurrentTick, getTickLength } = require('../utils/tickTracker'); // <-- Tick logic
 
 
-//TEST
 router.get('/', (req, res) => {
-    res.json({ message: "Users route is working!" });
+  res.json({
+    tick: getCurrentTick(),
+    tickLength: getTickLength(),
+  });
 });
+
 
 router.post('/:userId/sync-balance', userController.syncUserBalance);
 

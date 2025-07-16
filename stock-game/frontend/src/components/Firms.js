@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import "../styles/firms.css";
 
 export default function FirmsList() {
   const { data, isLoading } = useQuery({
@@ -11,17 +12,21 @@ export default function FirmsList() {
   if (isLoading) return <p>Loading firms...</p>;
 
   return (
-    <div>
+    <div className="firms-list-container">
       <h2>AI Firms</h2>
-      <ul>
+      <div className="firms-card-grid">
         {data.map(firm => (
-          <li key={firm.name}>
+          <div className="firm-card" key={firm.name}>
             <Link to={`/firms/${encodeURIComponent(firm.name)}`}>
-              {firm.name} ({firm.strategy}) – Balance: ${firm.balance.toLocaleString()}
+              <div className="firm-card-content">
+                <div className="firm-card-title">{firm.name}</div>
+                <div className="firm-card-strategy">({firm.strategy})</div>
+                <div className="firm-card-balance">Balance: <b>${firm.balance.toLocaleString()}</b></div>
+              </div>
             </Link>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

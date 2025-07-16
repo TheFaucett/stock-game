@@ -1,0 +1,53 @@
+.folder-tabs-floating {
+  position: fixed;
+  right: 30px;         /* Adjust as needed to line up with FAB */
+  bottom: 105px;       /* Just above your FAB (adjust as needed) */
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #222a38;
+  border-radius: 1.2em;
+  padding: 10px 5px;
+  box-shadow: 0 2px 16px #000a;
+  align-items: flex-end;
+}
+
+.folder-tab {
+  color: #c7d0ed;
+  font-weight: 700;
+  font-size: 1.08rem;
+  padding: 7px 24px;
+  background: #232849;
+  border-radius: 1.3em;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+  box-shadow: 0 1px 3px #0003;
+  margin-left: auto;
+  min-width: 80px;
+  text-align: right;
+  letter-spacing: 0.01em;
+}
+
+.folder-tab:hover,
+.folder-tab:focus {
+  background: #4066ed;
+  color: #fff;
+  transform: translateY(-2px) scale(1.06);
+}
+
+@media (max-width: 600px) {
+  .folder-tabs-floating {
+    right: 8px;
+    bottom: 78px;
+    padding: 4px 4px;
+    gap: 6px;
+  }
+  .folder-tab {
+    font-size: 0.97rem;
+    padding: 5px 12px;
+  }
+}
