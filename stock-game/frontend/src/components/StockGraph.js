@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
-
+import API_BASE_URL from "../apiConfig";
 async function fetchStockData(ticker) {
-  const res = await fetch(`http://localhost:5000/api/stocks/${ticker}`);
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${ticker}`);
   if (!res.ok) throw new Error("Stock data fetch failed");
   return res.json();
 }

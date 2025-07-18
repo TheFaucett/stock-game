@@ -6,7 +6,7 @@ import OptionTutorial from "./OptionTutorial";
 import '../styles/stockdetail.css';
 import { getOrCreateUserId } from '../userId';
 import { useTick } from '../TickProvider';
-
+import API_BASE_URL from '../apiConfig';
 export default function StockDetail() {
   const { ticker } = useParams();
   const userId = getOrCreateUserId();
@@ -25,17 +25,17 @@ export default function StockDetail() {
     setLoading(true);
     try {
       // Stock details
-      const res = await fetch(`http://localhost:5000/api/stocks`);
+      const res = await fetch(`${API_BASE_URL}/api/stocks`);
       const list = await res.json();
       setStock(list.find(s => s.ticker === ticker) || null);
 
       // History
-      const res2 = await fetch(`http://localhost:5000/api/stocks/${ticker}/history`);
+      const res2 = await fetch(`${API_BASE_URL}/api/stocks/${ticker}/history`);
       const obj2 = await res2.json();
       setHistory(Array.isArray(obj2.history) ? obj2.history : []);
 
       // Watchlist
-      const res3 = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`);
+      const res3 = await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist`);
       const obj3 = await res3.json();
       setWatchlist(Array.isArray(obj3.watchlist) ? obj3.watchlist : []);
     } catch (err) {
@@ -64,7 +64,7 @@ export default function StockDetail() {
   // --- Optimistic Add/Remove for Watchlist ---
   async function handleAddWatch() {
     setWatchlistPending(true);
-    await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/add`, {
+    await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist/${ticker}/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticker })
@@ -75,7 +75,7 @@ export default function StockDetail() {
 
   async function handleRemoveWatch() {
     setWatchlistPending(true);
-    await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
+    await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
       method: "DELETE"
     });
     await fetchAll(); // Always re-sync after
@@ -93,7 +93,7 @@ export default function StockDetail() {
       payload.expiryTick = expiryTick;
     }
     const res = await fetch(
-      `http://localhost:5000/api/portfolio/${userId}/transactions`,
+      `${API_BASE_URL}/api/portfolio/${userId}/transactions`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

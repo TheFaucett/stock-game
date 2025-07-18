@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import "../styles/firms.css";
+import API_BASE_URL from "../apiConfig";
 
 export default function FirmsList() {
   const { data, isLoading } = useQuery({
     queryKey: ["firms"],
-    queryFn: async () => (await axios.get("http://localhost:5000/api/firms")).data.firms,
+    queryFn: async () => (await axios.get(`${API_BASE_URL}/api/firms`)).data.firms,
   });
   if (isLoading) return <p>Loading firms...</p>;
 

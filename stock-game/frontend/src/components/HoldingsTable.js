@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import API_BASE_URL from "../apiConfig";
 import { getOrCreateUserId } from "../userId";
 const USER_ID = getOrCreateUserId();
 /**
@@ -24,7 +25,7 @@ function calcAvgCost(transactions, ticker) {
 
 const fetchPortfolio = async () => {
     const { data } = await axios.get(
-        `http://localhost:5000/api/portfolio/${USER_ID}`
+        `${API_BASE_URL}/api/portfolio/${USER_ID}`
     )
     return data;
 }
@@ -41,7 +42,7 @@ export default function HoldingsTable({ portfolio=fetchPortfolio() }) {
       // Fetch each ticker's info using the backend endpoint
       const entries = await Promise.all(
         tickers.map(async ticker => {
-          const res = await fetch(`http://localhost:5000/api/stocks/${ticker}`);
+          const res = await fetch(`${API_BASE_URL}/api/stocks/${ticker}`);
           if (!res.ok) return [ticker, null];
           const stock = await res.json();
           return [ticker, stock];

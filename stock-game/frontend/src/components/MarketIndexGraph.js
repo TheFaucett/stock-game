@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 import "../styles/marketIndexGraph.css";
-
+import API_BASE_URL from "../apiConfig";
 const fetchMarketIndex = async () => {
-  const res = await fetch("http://localhost:5000/api/market-data/index");
+  const res = await fetch(`${API_BASE_URL}/api/market-data/index`);
   if (!res.ok) throw new Error("Failed to fetch market index");
   return res.json();
 };

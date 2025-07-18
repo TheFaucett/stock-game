@@ -4,11 +4,12 @@ import { useQuery }        from '@tanstack/react-query';
 import axios               from 'axios';
 import '../styles/bank.css';
 import { getOrCreateUserId }  from '../userId';
+import API_BASE_URL from '../apiConfig';
 const USER_ID = getOrCreateUserId();
 
 async function fetchBank({ queryKey }) {
   const [, userId] = queryKey
-  const { data }   = await axios.get(`http://localhost:5000/api/bank/${userId}`)
+  const { data }   = await axios.get(`/api/bank/${userId}`)
   return data
 }
 
@@ -38,7 +39,7 @@ export default function Bank() {
   async function handleDeposit() {
     const amt = parseFloat(depositAmt)
     if (isNaN(amt) || amt <= 0) return alert('Enter a valid deposit amount')
-    await axios.post(`http://localhost:5000/api/bank/${USER_ID}/deposit`, { amount: amt })
+    await axios.post(`${API_BASE_URL}/api/bank/${USER_ID}/deposit`, { amount: amt })
     setDepositAmt('')
     refetch()
   }
@@ -49,7 +50,7 @@ export default function Bank() {
     if (isNaN(amt) || amt <= 0 || isNaN(term) || term <= 0)
       return alert('Enter valid loan amount and term')
     try {
-      await axios.post(`http://localhost:5000/api/bank/${USER_ID}/loan`, { amount: amt, term })
+      await axios.post(`${API_BASE_URL}/api/bank/${USER_ID}/loan`, { amount: amt, term })
       setLoanAmt('')
       setLoanTerm('')
       refetch()

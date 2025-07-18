@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/topStocks.css'; // Use your unified style
-
+import API_BASE_URL from '../apiConfig';
 export default function TopDividends() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['topDividends'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:5000/api/featured-stocks/dividends');
+      const { data } = await axios.get(`${API_BASE_URL}/api/featured-stocks/dividends`);
       // fallback to .topYield or .movers or []
       return data.topYield || data.movers || [];
     },

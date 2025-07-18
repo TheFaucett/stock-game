@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import axios from 'axios';
 import { useTick } from '../TickProvider'; 
 import "../styles/topbar.css";
-
+import API_BASE_URL from '../apiConfig';
 
 const fetchNews = async () => {
     try {
         const [globalNewsRes, sectorNewsRes, stockNewsRes] = await Promise.all([
-            axios.get('http://localhost:5000/api/news/global'),
-            axios.get('http://localhost:5000/api/news/sector'),
-            axios.get('http://localhost:5000/api/news/stock')
+            axios.get(`${API_BASE_URL}/api/news/global`),
+            axios.get(`${API_BASE_URL}/api/news/sector`),
+            axios.get(`${API_BASE_URL}/api/news/stock`)
         ]);
 
         // ✅ Handle stock news properly

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import FirmBalanceGraph from "./FirmBalanceGraph"
+import API_BASE_URL from "../apiConfig";
 import "../styles/firmDetail.css";  // Import your new css
 
 export default function FirmDetail() {
@@ -10,7 +11,7 @@ export default function FirmDetail() {
   const enabled = !!name;  // Only run query if name is defined!
   const { data, isLoading, error } = useQuery({
   queryKey: ["firm", name],
-  queryFn: async () => (await axios.get(`http://localhost:5000/api/firms/${encodeURIComponent(name)}`)).data.firm,
+  queryFn: async () => (await axios.get(`${API_BASE_URL}/api/firms/${encodeURIComponent(name)}`)).data.firm,
   enabled,
   });
   if (!name) {

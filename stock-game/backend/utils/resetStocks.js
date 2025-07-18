@@ -1,8 +1,11 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+
 const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 const Firm = require("../models/Firm");
 const Portfolio = require("../models/Portfolio");
-const MONGO_URI = "mongodb://localhost:27017/stock-game";
+const MONGO_URI = process.env.MONGO_URI;
+
 const DEFAULT_PRICE = 100.00;
 
 async function resetStockPrices() {

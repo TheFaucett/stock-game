@@ -4,12 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/topStocks.css'; // Use your unified style
-
+import API_BASE_URL from '../apiConfig';
 export default function TopMarketCapStocks() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['topMarketCap'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:5000/api/featured-stocks/marketcap');
+      const res = await axios.get(`${API_BASE_URL}/api/featured-stocks/marketcap`);
       // Support both {topCap: [...]} and just [...]
 
       return res.data.topCap || res.data.movers || [];

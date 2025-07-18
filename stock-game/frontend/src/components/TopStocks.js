@@ -4,13 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/topStocks.css';
-
+import API_BASE_URL from '../apiConfig';
 // 🟢 Accept endpoint, title, and an optional formatValue function
 export default function TopStocksPage({ endpoint = 'movers', title = 'Top Movers', formatValue }) {
   const { data, isLoading, error } = useQuery({
     queryKey: [endpoint],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/featured-stocks/${endpoint}`);
+      const res = await axios.get(`${API_BASE_URL}/api/featured-stocks/${endpoint}`);
       return res.data.movers || res.data.topCap || res.data.topYield || [];
     },
     refetchOnWindowFocus: false,

@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import "../styles/portfolioButton.css"; // see CSS below
+import "../styles/portfolioButton.css"; 
 
 export default function PortfolioButton() {
   return (

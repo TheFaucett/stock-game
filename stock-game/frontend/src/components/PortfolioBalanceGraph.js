@@ -6,10 +6,10 @@ import "chartjs-adapter-date-fns";
 import "../styles/portfoliobalancegraph.css";
 import { getOrCreateUserId } from "../userId";
 const USER_ID = getOrCreateUserId();
-
+import API_BASE_URL from "../apiConfig";
 /* ---------- fetch portfolio ---------- */
 async function fetchPortfolio() {
-  const res = await fetch(`http://localhost:5000/api/portfolio/${USER_ID}`);
+  const res = await fetch(`${API_BASE_URL}/api/portfolio/${USER_ID}`);
   if (!res.ok) throw new Error("Portfolio fetch failed");
   return res.json();
 }

@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import "../styles/firmBalanceGraph.css"; 
-
+import API_BASE_URL from "../apiConfig";
 const fmt = v => {
   const a = Math.abs(v);
   if (a >= 1e12) return `$${(v / 1e12).toFixed(1)} T`;
@@ -15,7 +15,7 @@ const fmt = v => {
 // Fetch firm by name
 async function fetchFirm(name) {
   console.log(name);
-  const res = await fetch(`http://localhost:5000/api/firms/${encodeURIComponent(name).trim()}`);
+  const res = await fetch(`${API_BASE_URL}/api/firms/${encodeURIComponent(name).trim()}`);
   if (!res.ok) throw new Error("Firm fetch failed");
   const obj = await res.json();
   return obj.firm; // expect: { name, balance, transactions, ... }

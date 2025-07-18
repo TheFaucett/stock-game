@@ -4,14 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/topStocks.css';
-
+import API_BASE_URL from '../apiConfig';
 // 1️⃣ Accept endpoint, title, formatValue as PROPS (so it matches TopStocksPage)
 export default function TopVolatility({ endpoint = 'volatility', title = 'Most Volatile Stocks' }) {
   // 2️⃣ Unified fetch logic (endpoint is prop)
   const { data, isLoading, error } = useQuery({
     queryKey: [endpoint],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/featured-stocks/${endpoint}`);
+      const res = await axios.get(`${API_BASE_URL}/api/featured-stocks/${endpoint}`);
       // Ensure we always return an array, even if field name changes
       return res.data.movers || res.data.volatile || [];
     },

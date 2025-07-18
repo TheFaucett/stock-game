@@ -5,7 +5,7 @@ import TransactionDashboard from "./TransactionDashboard";
 import Watchlist from "./Watchlist";
 import { getOrCreateUserId } from "../userId";
 import "../styles/portfolio.css";
-
+import API_BASE_URL from "../apiConfig";
 export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ export default function PortfolioPage() {
   useEffect(() => {
     const fetchPortfolio = async () => {
       const userId = getOrCreateUserId();
-      const res = await fetch(`http://localhost:5000/api/portfolio/${userId}`);
+      const res = await fetch(`${API_BASE_URL}/api/portfolio/${userId}`);
       if (!res.ok) {
         setPortfolio(null);
       } else {

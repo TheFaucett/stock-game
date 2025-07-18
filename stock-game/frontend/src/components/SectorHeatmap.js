@@ -3,9 +3,9 @@ import { Treemap, Tooltip, ResponsiveContainer } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useTick } from "../TickProvider"; // 👈 Import useTick
-
+import API_BASE_URL from "../apiConfig";
 const fetchSectorData = async () => {
-    const { data } = await axios.get("http://localhost:5000/api/stocks/sector-heatmap");
+    const { data } = await axios.get(`${API_BASE_URL}/api/stocks/sector-heatmap`);
     return data.sectors || [];
 };
 

@@ -6,11 +6,12 @@ import StockGraph from './StockGraph';
 import PortfolioBalanceGraph from './PortfolioBalanceGraph';
 import '../styles/sidebar.css';
 import { getOrCreateUserId } from '../userId';
+import API_BASE_URL from '../apiConfig';
 const USER_ID = getOrCreateUserId();
 
 const fetchPortfolio = async () => {
   const { data } = await axios.get(
-    `http://localhost:5000/api/portfolio/${USER_ID}`
+    `${API_BASE_URL}/api/portfolio/${USER_ID}`
   )
   return data
 }

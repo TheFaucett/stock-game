@@ -1,26 +1,12 @@
-// src/components/FolderTabs.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 import "../styles/homeTabs.css";
 
 export default function FolderTabs() {
   return (
     <nav className="folder-tabs-floating">
-      <a
-        className="folder-tab"
-        href="http://localhost:3000/firms"
-        target="_self"
-        rel="noopener noreferrer"
-      >
-        Firms
-      </a>
-      <a
-        className="folder-tab"
-        href="http://localhost:3000/bank"
-        target="_self"
-        rel="noopener noreferrer"
-      >
-        Bank
-      </a>
+      <Link className="folder-tab" to="/firms">Firms</Link>
+      <Link className="folder-tab" to="/bank">Bank</Link>
     </nav>
   );
 }
