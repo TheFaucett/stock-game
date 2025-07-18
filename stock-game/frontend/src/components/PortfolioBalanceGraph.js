@@ -5,8 +5,9 @@ import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 import "../styles/portfoliobalancegraph.css";
 import { getOrCreateUserId } from "../userId";
+import API_BASE_URL from "../apiConfig";//NO SPLIT IMPORT
+console.log("No split import (needed for deploy)");
 const USER_ID = getOrCreateUserId();
-import API_BASE_URL from "../apiConfig";
 /* ---------- fetch portfolio ---------- */
 async function fetchPortfolio() {
   const res = await fetch(`${API_BASE_URL}/api/portfolio/${USER_ID}`);
