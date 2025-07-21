@@ -64,7 +64,7 @@ export default function Bank() {
     if (isNaN(amt) || amt <= 0) return alert('Enter a valid withdraw amount')
     try {
       await axios.post(
-        `http://localhost:5000/api/bank/${USER_ID}/deposit/${depositId}/withdraw`,
+        `${API_BASE_URL}/api/bank/${USER_ID}/deposit/${depositId}/withdraw`,
         { amount: amt }
       )
       // clear just that field

@@ -3,10 +3,10 @@ import { Treemap, Tooltip, ResponsiveContainer } from "recharts";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
+import API_BASE_URL from "../apiConfig";
 // Fetch Heatmap Data
 async function fetchHeatmapData() {
-  const { data } = await axios.get("http://localhost:5000/api/stocks/heatmap");
+  const { data } = await axios.get(`${API_BASE_URL}/api/stocks/heatmap`);
   return data.heatmapData || [];
 }
 

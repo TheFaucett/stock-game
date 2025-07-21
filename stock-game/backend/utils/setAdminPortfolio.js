@@ -1,6 +1,17 @@
-#!/usr/bin/env node
 
-const mongoose = require('mongoose');
+
+
+
+// This code set up an admin portfolio used for dev purposes
+
+
+
+
+
+
+
+
+/*const mongoose = require('mongoose');
 const Portfolio = require('../models/Portfolio'); // adjust path if needed
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/YOUR_DB_NAME';
@@ -48,3 +59,4 @@ if (!userId || isNaN(newBalance)) {
   await mongoose.disconnect();
   process.exit(0);
 })();
+*/

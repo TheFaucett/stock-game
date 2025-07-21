@@ -1,3 +1,11 @@
+
+
+//This code seeded liquidity for all stocks in the database, but is now basically irrelevant
+
+
+/*
+
+
 const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 
@@ -20,3 +28,4 @@ const seedLiquidity = async () => {
 };
 
 seedLiquidity();
+*/
