@@ -36,7 +36,7 @@ mongoose.connect(process.env.MONGO_URI, {
 // -----------------------------
 // ⏰ TICK HANDLING LOGIC
 // -----------------------------
-const tradeWindow = 30_000; // 30 seconds
+const tradeWindow = getTickLength() * 1000; // Convert to milliseconds
 
 setInterval(async () => {
     const tick = incrementTick(); // Increments and returns the new tick number

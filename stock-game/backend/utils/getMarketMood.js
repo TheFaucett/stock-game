@@ -24,22 +24,34 @@ function calculateMood(stocks) {
 }
 
 function recordMarketMood(stocks) {
+  if (!stocks || stocks.length === 0) return 0.5;
 
+  // 1. Compute average % change
+  const changes = stocks.map(s => s.change ?? 0);
+  const avgChange = changes.reduce((a, b) => a + b, 0) / changes.length;
 
-  const numericMood = calculateMood(stocks);
-  const label = labelFromPercent(numericMood); // optional
+  // 2. Use tanh to emphasize emotional swings (±1% avg → ~0.24 to ~0.76 mood)
+  const moodRaw = Math.tanh(avgChange / 2); // Scale factor controls sensitivity
+  const numericMood = 0.5 + moodRaw * 0.5;   // Maps -1..1 → 0..1
 
+  // 3. Optional label (bullish/bearish/neutral)
+  let label = "neutral";
+  if (numericMood > 0.66) label = "bullish";
+  else if (numericMood < 0.33) label = "bearish";
+
+  // 4. Store history with label + numeric value
   moodHistory.push({
     mood: label,
-    value: numericMood,         // 👈 Now the value is 0.0–1.0
+    value: +numericMood.toFixed(4),
     timestamp: getCurrentTick(),
   });
 
+  // 5. Limit history length
   if (moodHistory.length > 30) {
     moodHistory = moodHistory.slice(-30);
   }
 
-  return numericMood; // returns the numeric value
+  return numericMood;
 }
 
 function getMoodHistory() {
