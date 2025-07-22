@@ -1,41 +1,63 @@
 const Stock = require('../models/Stock');
-const mongoose = require('mongoose');
 
-// ✅ Gaussian noise function using Geometric Brownian Motion
+function randNormal() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function clamp(x, min, max) {
+  return Math.max(min, Math.min(max, x));
+}
+
+let macroMomentum = 0;
+
 const applyGaussian = async () => {
-    try {
-        // Fetch all stocks
-        const stocks = await Stock.find();
+  try {
+    const stocks = await Stock.find();
+    const baseDrift = 0.0002;
+    const macroStrength = 0.007;
+    const marketVolatility = 0.01;
+    const maxPctChange = 0.25;
 
-        // Define market-wide parameters
-        const market_drift = 0.0003;  // Expected daily market return
-        const market_volatility = 0.01; // Market-wide volatility factor
+    macroMomentum += randNormal() * 0.02;
+    macroMomentum = clamp(macroMomentum, -3, 3);
 
-        for (let stock of stocks) {
-            const { price, volatility } = stock;
+    const macroDrift = Math.tanh(macroMomentum) * macroStrength;
+    const effectiveDrift = baseDrift + macroDrift;
 
-            // Generate Gaussian noise
-            const epsilon = Math.random() * 2 - 1; // Uniformly distributed between -1 and 1
-            const market_noise = Math.random() * 2 - 1; // Market-wide random movement
+    const bulkOps = [];
 
-            // Apply GBM formula
-            const newPrice = price * Math.exp(
-                (market_drift - 0.5 * volatility ** 2) +
-                volatility * epsilon +
-                market_volatility * market_noise
-            );
+    for (let stock of stocks) {
+      const { _id, price, volatility = 0.015 } = stock;
+      const epsilon = randNormal();
+      const marketNoise = randNormal();
 
-            // Compute % change
-            const change = ((newPrice - price) / price) * 100;
+      const rawChange = effectiveDrift + volatility * epsilon + marketVolatility * marketNoise;
+      const boundedChange = clamp(rawChange, -maxPctChange, maxPctChange);
+      const updatedPrice = Math.max(price * (1 + boundedChange), 0.01);
 
-            // Update stock in DB
-            await Stock.findByIdAndUpdate(stock._id, { price: newPrice, change });
+      bulkOps.push({
+        updateOne: {
+          filter: { _id },
+          update: {
+            $set: {
+              price: +updatedPrice.toFixed(4),
+              change: +(boundedChange * 100).toFixed(2)
+            }
+          }
         }
-
-        console.log("✅ Stock prices updated with Gaussian noise.");
-    } catch (error) {
-        console.error("❌ Error updating stock prices:", error);
+      });
     }
+
+    if (bulkOps.length) {
+      await Stock.bulkWrite(bulkOps);
+      console.log(`✅ Gaussian noise applied to ${bulkOps.length} stocks.`);
+    }
+  } catch (error) {
+    console.error("❌ Error applying Gaussian noise:", error);
+  }
 };
 
 module.exports = { applyGaussian };
