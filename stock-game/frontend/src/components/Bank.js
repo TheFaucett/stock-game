@@ -5,7 +5,7 @@ import axios               from 'axios';
 import '../styles/bank.css';
 import { getOrCreateUserId }  from '../userId';
 const USER_ID = getOrCreateUserId();
-
+import API_BASE_URL from '../apiConfig';
 async function fetchBank({ queryKey }) {
   const [, userId] = queryKey
   const { data }   = await axios.get(`http://localhost:5000/api/bank/${userId}`)
@@ -38,7 +38,7 @@ export default function Bank() {
   async function handleDeposit() {
     const amt = parseFloat(depositAmt)
     if (isNaN(amt) || amt <= 0) return alert('Enter a valid deposit amount')
-    await axios.post(`http://localhost:5000/api/bank/${USER_ID}/deposit`, { amount: amt })
+    await axios.post(`${API_BASE_URL}/api/bank/${USER_ID}/deposit`, { amount: amt })
     setDepositAmt('')
     refetch()
   }
@@ -49,7 +49,7 @@ export default function Bank() {
     if (isNaN(amt) || amt <= 0 || isNaN(term) || term <= 0)
       return alert('Enter valid loan amount and term')
     try {
-      await axios.post(`http://localhost:5000/api/bank/${USER_ID}/loan`, { amount: amt, term })
+      await axios.post(`${API_BASE_URL}/api/bank/${USER_ID}/loan`, { amount: amt, term })
       setLoanAmt('')
       setLoanTerm('')
       refetch()
@@ -63,7 +63,7 @@ export default function Bank() {
     if (isNaN(amt) || amt <= 0) return alert('Enter a valid withdraw amount')
     try {
       await axios.post(
-        `http://localhost:5000/api/bank/${USER_ID}/deposit/${depositId}/withdraw`,
+        `${API_BASE_URL}/api/bank/${USER_ID}/deposit/${depositId}/withdraw`,
         { amount: amt }
       )
       // clear just that field

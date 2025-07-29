@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaDice } from "react-icons/fa"; // Install react-icons if needed
 import "../styles/randomStockPicker.css"; // Import your styles
+import API_BASE_URL from "../apiConfig"; // Adjust the import path as needed
+
+
 export default function RandomStockPicker() {
   const [randomStock, setRandomStock] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -12,7 +15,7 @@ export default function RandomStockPicker() {
     setError("");
     setRandomStock(null);
     try {
-      const res = await fetch("http://localhost:5000/api/stocks");
+      const res = await fetch(`${API_BASE_URL}/api/stocks`);
       if (!res.ok) throw new Error("Could not fetch stock list.");
       const stocks = await res.json();
       if (!Array.isArray(stocks) || stocks.length === 0)

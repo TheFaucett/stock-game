@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/transactionDashboard.css";
-
+import API_BASE_URL from "../apiConfig";
 export default function TransactionDashboard({ userId }) {
   const [open, setOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -14,7 +14,7 @@ export default function TransactionDashboard({ userId }) {
     if (!userId) return;
     setLoading(true);
     axios
-      .get(`http://localhost:5000/api/portfolio/${userId}`)
+      .get(`${API_BASE_URL}/api/portfolio/${userId}`)
       .then(res => {
         setTransactions(res.data.transactions || []);
         setLoading(false);
@@ -29,7 +29,7 @@ export default function TransactionDashboard({ userId }) {
   useEffect(() => {
     async function fetchTick() {
       try {
-        const res = await fetch("http://localhost:5000/api/tick");
+        const res = await fetch(`${API_BASE_URL}/api/tick`);
         const data = await res.json();
         setCurrentTick(data.tick);
       } catch (err) {

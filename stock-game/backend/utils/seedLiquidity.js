@@ -1,4 +1,22 @@
-const mongoose = require("mongoose");
+
+
+
+//This file was used to seed liquidity for all stocks but is useless rn 😜
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 
 const seedLiquidity = async () => {
@@ -20,3 +38,4 @@ const seedLiquidity = async () => {
 };
 
 seedLiquidity();
+*/

@@ -7,7 +7,7 @@ export default function FolderTabs() {
     <nav className="folder-tabs-floating">
       <a
         className="folder-tab"
-        href="http://localhost:3000/firms"
+        href="/firms"
         target="_self"
         rel="noopener noreferrer"
       >
@@ -15,7 +15,7 @@ export default function FolderTabs() {
       </a>
       <a
         className="folder-tab"
-        href="http://localhost:3000/bank"
+        href="/bank"
         target="_self"
         rel="noopener noreferrer"
       >

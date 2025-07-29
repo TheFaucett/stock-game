@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
+import API_BASE_URL from "../apiConfig";
 // Use className so you can also assign .random-stock-picker-app-card directly if you wish
 export default function TickerSearch({ className = "" }) {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export default function TickerSearch({ className = "" }) {
   const { data: tickers, isLoading } = useQuery({
     queryKey: ["all-tickers"],
     queryFn: async () => {
-      const { data } = await axios.get("http://localhost:5000/api/stocks");
+      const { data } = await axios.get(`${API_BASE_URL}/api/stocks`);
       return data.map(s => s.ticker);
     },
     staleTime: 60_000,

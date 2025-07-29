@@ -15,7 +15,8 @@ const fmt = v => {
 // Fetch firm by name
 async function fetchFirm(name) {
   console.log(name);
-  const res = await fetch(`http://localhost:5000/api/firms/${encodeURIComponent(name).trim()}`);
+  const res = await fetch(`${API_BASE_URL}/api/firms/${encodeURIComponent(name).trim()}`);
+
   if (!res.ok) throw new Error("Firm fetch failed");
   const obj = await res.json();
   return obj.firm; // expect: { name, balance, transactions, ... }

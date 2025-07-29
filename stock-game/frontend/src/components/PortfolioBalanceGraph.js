@@ -5,11 +5,12 @@ import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 import "../styles/portfoliobalancegraph.css";
 import { getOrCreateUserId } from "../userId";
+import API_BASE_URL from "../apiConfig";//NO SPLIT IMPORT
+console.log("No split import (needed for deploy)");
 const USER_ID = getOrCreateUserId();
-
 /* ---------- fetch portfolio ---------- */
 async function fetchPortfolio() {
-  const res = await fetch(`http://localhost:5000/api/portfolio/${USER_ID}`);
+  const res = await fetch(`${API_BASE_URL}/api/portfolio/${USER_ID}`);
   if (!res.ok) throw new Error("Portfolio fetch failed");
   return res.json();
 }

@@ -1,4 +1,18 @@
-#!/usr/bin/env node
+
+
+
+
+
+
+
+//This utils is now deprecated (and lowk didnt work anyways 💀)
+
+
+
+
+
+
+/*#!/usr/bin/env node
 
 const mongoose = require('mongoose');
 const Portfolio = require('../models/Portfolio'); // adjust path if needed
@@ -48,3 +62,4 @@ if (!userId || isNaN(newBalance)) {
   await mongoose.disconnect();
   process.exit(0);
 })();
+*/

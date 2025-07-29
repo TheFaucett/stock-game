@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import StockGraph from "./StockGraph";
 import { getOrCreateUserId } from "../userId";
 import "../styles/watchlist.css"; // Add your styles here
+import API_BASE_URL from "../apiConfig";
 export default function Watchlist() {
   const [watchlist, setWatchlist] = useState([]);
   const [stockData, setStockData] = useState({});
@@ -12,7 +13,7 @@ export default function Watchlist() {
   // Fetch watchlist on mount
   useEffect(() => {
     async function fetchWatchlist() {
-      const res = await fetch(`http://localhost:5000/api/portfolio/${userId}/watchlist`);
+      const res = await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist`);
       const json = await res.json();
       setWatchlist(Array.isArray(json.watchlist) ? json.watchlist : []);
     }
@@ -25,7 +26,7 @@ export default function Watchlist() {
     let active = true;
     Promise.all(
       watchlist.map(async ticker => {
-        const res = await fetch(`http://localhost:5000/api/stocks/${ticker}`);
+        const res = await fetch(`${API_BASE_URL}/api/stocks/${ticker}`);
         if (!res.ok) return [ticker, null];
         const stock = await res.json();
         return [ticker, stock];

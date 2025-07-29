@@ -2,10 +2,10 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
-
+import API_BASE_URL from "../apiConfig";
 // Fetch mood history from backend
 const fetchMoodHistory = async () => {
-  const res = await fetch("http://localhost:5000/api/market-data/mood");
+  const res = await fetch(`${API_BASE_URL}/api/market-data/mood`);
   const data = await res.json();
   return data.moodHistory;
 };
