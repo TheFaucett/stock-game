@@ -1,5 +1,6 @@
 
 
+<<<<<<< HEAD
 //This code seeded liquidity for all stocks in the database, but is now basically irrelevant
 
 
@@ -7,6 +8,25 @@
 
 
 const mongoose = require("mongoose");
+=======
+
+//This file was used to seed liquidity for all stocks but is useless rn 😜
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*const mongoose = require("mongoose");
+>>>>>>> dev-local
 const Stock = require("../models/Stock");
 
 const seedLiquidity = async () => {

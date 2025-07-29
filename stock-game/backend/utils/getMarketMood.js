@@ -1,45 +1,47 @@
 let moodHistory = [];
 const { getCurrentTick } = require('./tickTracker.js');
-// Optional: If you still want to show a label, we can derive it from the score
-function labelFromPercent(percentUp) {
-  if (percentUp > 0.65) return "bullish";
-  if (percentUp > 0.5) return "slightly bullish";
-  if (percentUp < 0.35) return "bearish";
-  if (percentUp < 0.5) return "slightly bearish";
+
+// Optional: Mood label
+function labelFromScore(score) {
+  if (score > 0.66) return "bullish";
+  if (score > 0.55) return "slightly bullish";
+  if (score < 0.33) return "bearish";
+  if (score < 0.45) return "slightly bearish";
   return "neutral";
 }
 
-// Calculate a numeric market sentiment from 0 to 1
-function calculateMood(stocks) {
-  let up = 0, down = 0;
-  for (const stock of stocks) {
-    if (stock.change > 0) up++;
-    else if (stock.change < 0) down++;
-  }
-
-
-  const total = up + down;
-  const percentUp = total === 0 ? 0.5 : up / total; // neutral fallback
-  return parseFloat(percentUp.toFixed(3)); // optional: trim to 3 decimals
-}
-
 function recordMarketMood(stocks) {
+  if (!stocks || !stocks.length) return 0.5;
 
+  // 1. Compute average % change
+  const changes = stocks.map(s => s.change ?? 0);
+  const avgChange = changes.reduce((a, b) => a + b, 0) / changes.length;
 
-  const numericMood = calculateMood(stocks);
-  const label = labelFromPercent(numericMood); // optional
+  // 2. Amplify mood signal
+  const SENSITIVITY = 3.5; // ✅ Tune this
+  const moodRaw = Math.tanh(avgChange * SENSITIVITY); // ~-1 to +1
+  const moodScore = 0.5 + moodRaw * 0.5;               // map to 0..1
+
+  // 3. Apply slight momentum (mood inertia)
+  const previous = moodHistory.at(-1)?.value ?? 0.5;
+  const blended = 0.75 * moodScore + 0.25 * previous;
+
+  // 4. Label
+  const moodLabel = labelFromScore(blended);
 
   moodHistory.push({
-    mood: label,
-    value: numericMood,         // 👈 Now the value is 0.0–1.0
-    timestamp: getCurrentTick(),
+    mood: moodLabel,
+    value: +blended.toFixed(4),
+    timestamp: getCurrentTick()
   });
 
   if (moodHistory.length > 30) {
     moodHistory = moodHistory.slice(-30);
   }
 
-  return numericMood; // returns the numeric value
+  console.log(`📈 Market mood: ${moodLabel} (${blended.toFixed(4)}) from avg Δ${avgChange.toFixed(2)}%`);
+
+  return blended;
 }
 
 function getMoodHistory() {

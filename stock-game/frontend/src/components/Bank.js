@@ -6,7 +6,7 @@ import '../styles/bank.css';
 import { getOrCreateUserId }  from '../userId';
 import API_BASE_URL from '../apiConfig';
 const USER_ID = getOrCreateUserId();
-
+import API_BASE_URL from '../apiConfig';
 async function fetchBank({ queryKey }) {
   const [, userId] = queryKey
   const { data }   = await axios.get(`/api/bank/${userId}`)

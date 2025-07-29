@@ -9,12 +9,13 @@ const { sweepOptionExpiries } = require("../utils/sweepOptions.js");
 const { sweepLoanPayments } = require("../utils/sweepLoans.js");
 const { payDividends } = require("../utils/payDividends.js");
 const { processFirms } = require("./firmController.js");
+const { resetStockPrices } = require("../utils/resetStocks.js");
 
 const HISTORY_LIMIT = 1200;
 const TRADING_DAYS = 365;
 const ANNUAL_DRIFT = 0.09;
 const DAILY_DRIFT = ANNUAL_DRIFT / TRADING_DAYS;
-const MEAN_REVERT_ALPHA = 0.01;
+const MEAN_REVERT_ALPHA = 0.03;
 
 // 📈 Matthew Effect Drift
 const matthewDriftMap = new Map();
@@ -28,10 +29,12 @@ let chopDuration = 0;
 
 let initialMarketCap = null;
 
-function logMemoryUsage(context = "") {
-  const mem = process.memoryUsage();
-  const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MB";
-  console.log(`[MEMORY${context ? " | " + context : ""}]`, `RSS: ${mb(mem.rss)} | Heap Used: ${mb(mem.heapUsed)} | Heap Total: ${mb(mem.heapTotal)}`);
+// 🧮 Historical Mean Calculator
+function getHistoricalMean(stock) {
+  const prices = stock.history;
+  if (!Array.isArray(prices) || prices.length === 0) return stock.basePrice || stock.price;
+  const sum = prices.reduce((a, b) => a + b, 0);
+  return sum / prices.length;
 }
 
 function computeMatthewDrift(history = []) {
@@ -58,6 +61,12 @@ function applyMacroChop(tick) {
   return macroChopWindow;
 }
 
+function logMemoryUsage(context = "") {
+  const mem = process.memoryUsage();
+  const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MB";
+  console.log(`[MEMORY${context ? " | " + context : ""}] RSS: ${mb(mem.rss)} | Heap Used: ${mb(mem.heapUsed)} | Heap Total: ${mb(mem.heapTotal)}`);
+}
+
 async function updateMarket() {
   try {
     console.log("🔄 Starting market tick update...");
@@ -68,12 +77,18 @@ async function updateMarket() {
 
     if (tick % 2 === 0) await autoCoverShorts();
     if (tick % 90 === 0) await payDividends();
+    if (tick % 1000 === 0) await resetStockPrices();
     await sweepOptionExpiries(tick);
     await sweepLoanPayments(tick);
 
     const stocks = await Stock.find({}, {
-      ticker: 1, price: 1, basePrice: 1, volatility: 1,
-      history: 1, outstandingShares: 1
+      ticker: 1,
+      price: 1,
+      basePrice: 1,
+      volatility: 1,
+      history: 1,
+      outstandingShares: 1,
+      change: 1
     }).lean();
 
     if (!stocks.length) return console.error("⚠️ No stocks found in DB");
@@ -82,38 +97,37 @@ async function updateMarket() {
     const bulk = [];
 
     for (const stock of stocks) {
-      const prev = stock.price;
-      const base = stock.basePrice ?? prev;
-      const driftedBase = base * (1 + DAILY_DRIFT);
+      const prevPrice = stock.price;
+      const historicalMean = getHistoricalMean(stock);
 
-      // ⛅ Mean reversion
-      const performanceScore = (prev - base) / base;
-      const revert = MEAN_REVERT_ALPHA * (driftedBase - prev);
-      const extremeRevert = performanceScore > 0.3 ? revert * 1.5 : revert;
+      // ⛅ Mean Reversion
+      const deviation = historicalMean - prevPrice;
+      const reversionForce = deviation * MEAN_REVERT_ALPHA;
 
-      // 🧠 Matthew Effect
+      // 📈 Matthew Drift
       const prevDrift = matthewDriftMap.get(stock.ticker) ?? 0;
       const driftAdj = computeMatthewDrift(stock.history);
       const newDrift = Math.max(MIN_MATTHEW_DRIFT, Math.min(MAX_MATTHEW_DRIFT, prevDrift + driftAdj));
       matthewDriftMap.set(stock.ticker, newDrift);
-      const driftEffect = prev * newDrift;
+      const matthewEffect = prevPrice * newDrift;
 
       // 🌪️ Chop noise
-      const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prev : 0;
+      const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prevPrice : 0;
 
-      const newPrice = Math.max(prev + extremeRevert + driftEffect + chopNoise, 0.01);
-      const history = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), newPrice];
-      const change = ((newPrice - prev) / prev) * 100;
+      // Final price
+      const updatedPrice = Math.max(prevPrice + reversionForce + matthewEffect + chopNoise, 0.01);
+      const updatedHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), updatedPrice];
+      const changePercent = ((updatedPrice - prevPrice) / prevPrice) * 100;
 
       bulk.push({
         updateOne: {
           filter: { _id: stock._id },
           update: {
             $set: {
-              price: +newPrice.toFixed(4),
-              change: +change.toFixed(2),
-              basePrice: +driftedBase.toFixed(4),
-              history
+              price: +updatedPrice.toFixed(4),
+              change: +changePercent.toFixed(2),
+              basePrice: +(stock.basePrice * (1 + DAILY_DRIFT)).toFixed(4),
+              history: updatedHistory
             }
           }
         }
@@ -130,12 +144,12 @@ async function updateMarket() {
 
     const marketCap = stocks.reduce((sum, s) => sum + s.price * (s.outstandingShares ?? 1), 0);
     if (!initialMarketCap) initialMarketCap = marketCap;
-    const capDelta = ((marketCap - initialMarketCap) / initialMarketCap) * 100;
-    console.log(`📊 Market cap since baseline: ${capDelta.toFixed(2)}%`);
+    const delta = ((marketCap - initialMarketCap) / initialMarketCap) * 100;
+    console.log(`📊 Market cap since baseline: ${delta.toFixed(2)}%`);
 
     recordMarketIndexHistory(stocks);
-    const marketMood = recordMarketMood(stocks);
-    processFirms(marketMood);
+    const mood = recordMarketMood(stocks);
+    processFirms(mood);
 
   } catch (err) {
     console.error("🔥 Market update error:", err);
@@ -146,6 +160,9 @@ module.exports = {
   updateMarket,
   getMarketMoodController: (req, res) => {
     const history = getMoodHistory();
-    res.json({ mood: history.at(-1)?.mood || "neutral", moodHistory: history });
+    res.json({
+      mood: history.at(-1)?.mood || "neutral",
+      moodHistory: history
+    });
   }
 };

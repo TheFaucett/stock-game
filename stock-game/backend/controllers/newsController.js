@@ -35,7 +35,7 @@ async function getLatestNewsData() {
  * @returns {Number} - Weight of impact
  */
 function determineNewsWeight(newsItem) {
-    if (newsItem.type === "global") return 1.22;
+    if (newsItem.type === "global") return 1.19;
     if (newsItem.type === "sector") return 1.45;
     if (newsItem.type === "stock") return 1.8;
     return 1.0; // Default weight
