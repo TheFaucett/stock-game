@@ -2,13 +2,20 @@ const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 const Firm = require("../models/Firm");
 const Portfolio = require("../models/Portfolio");
+
 const MONGO_URI = "mongodb://localhost:27017/stock-game";
 const DEFAULT_PRICE = 100.00;
 
+let didConnect = false;
+
 async function resetStockPrices() {
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log("✅ Connected to MongoDB");
+    // Only connect if we're not already connected
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(MONGO_URI);
+      didConnect = true;
+      console.log("✅ Connected to MongoDB");
+    }
 
     // --- STOCKS ---
     const stocks = await Stock.find();
@@ -30,38 +37,43 @@ async function resetStockPrices() {
     if (stockBulkOps.length > 0) {
       const result = await Stock.bulkWrite(stockBulkOps);
       console.log(`✅ Updated ${result.modifiedCount} stocks to $${DEFAULT_PRICE} (history reset)`);
-    } else {
-      console.log("ℹ️ No stocks found to update.");
     }
 
-    // --- FIRMS ---
-    const firms = await Firm.find();
-    const firmBulkOps = firms.map(firm => ({
-      updateOne: {
+
+    const firmBulkOps = (await Firm.find()).map(firm => ({
+    updateOne: {
         filter: { _id: firm._id },
         update: {
-          $set: {
+        $set: {
             ownedShares: {},
             transactions: [],
-            balance: 100000,
-            lastTradeCycle: 0
-          }
+            balance: 10_000_000,
+            lastTradeCycle: 0,
+            emotions: {
+            confidence: 0.5,
+            frustration: 0.2,
+            greed: 0.5,
+            regret: 0.2
+            },
+            memory: {},
+            cooldownUntil: null,
+            riskTolerance: 0.15 + Math.random() * 0.2,
+            startingBalance: 10_000_000
         }
-      }
+        }
+    }
     }));
 
     if (firmBulkOps.length > 0) {
-      const result = await Firm.bulkWrite(firmBulkOps);
-      console.log(`✅ Reset ${result.modifiedCount} firms.`);
-    } else {
-      console.log("ℹ️ No firms found to update.");
+    const result = await Firm.bulkWrite(firmBulkOps);
+    console.log(`✅ Reset ${result.modifiedCount} firms.`);
     }
 
+
     // --- PORTFOLIOS ---
-    const portfolios = await Portfolio.find();
-    const portfolioBulkOps = portfolios.map(portfolio => ({
+    const portfolioBulkOps = (await Portfolio.find()).map(p => ({
       updateOne: {
-        filter: { _id: portfolio._id },
+        filter: { _id: p._id },
         update: {
           $set: {
             transactions: [],
@@ -70,19 +82,24 @@ async function resetStockPrices() {
         }
       }
     }));
-
     if (portfolioBulkOps.length > 0) {
       const result = await Portfolio.bulkWrite(portfolioBulkOps);
       console.log(`✅ Reset ${result.modifiedCount} portfolios.`);
-    } else {
-      console.log("ℹ️ No portfolios found to update.");
     }
 
   } catch (err) {
     console.error("❌ Error resetting:", err);
   } finally {
-    mongoose.connection.close();
+    if (didConnect) {
+      await mongoose.connection.close(); // only if we opened it
+    }
   }
 }
 
-resetStockPrices();
+// Exportable if needed elsewhere
+module.exports = resetStockPrices;
+
+// Auto-run only if this file is run directly (not imported)
+if (require.main === module) {
+  resetStockPrices();
+}

@@ -49,41 +49,53 @@ exports.getBankForPortfolio = async (req, res) => {
  */
 exports.deposit = async (req, res) => {
   try {
-    const { userId }    = req.params;
-    const { amount, rate } = req.body;
+    const { userId } = req.params;
+    let { amount, rate } = req.body;
 
-    if (!userId || typeof amount !== 'number' || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid userId or amount' });
+    // 🔍 Validate base input
+    if (!userId || typeof amount !== 'number' || isNaN(amount) || amount <= 0) {
+      return res.json({ message: 'No deposit made', balance: null });
     }
 
     const portfolio = await findOrCreatePortfolio(userId);
-    if (portfolio.balance < amount) {
-      return res.status(400).json({ error: 'Insufficient balance' });
+
+    // 🛡️ Safeguard: Cap deposit at available balance
+    if (amount > portfolio.balance) {
+      amount = portfolio.balance;
+    }
+
+    // If still no money to deposit, just return
+    if (amount <= 0) {
+      return res.json({ message: 'No deposit made', balance: portfolio.balance });
     }
 
     const bank = await getOrCreateBank();
 
-    // 1️⃣ debit the player’s cash
+    // 💳 1️⃣ Debit player's cash
     portfolio.balance -= amount;
 
-    // 2️⃣ record the deposit
+    // 🏦 2️⃣ Record deposit
     bank.deposits.push({
-      portfolioId: portfolio._id, // always valid, even if userId is a string
+      portfolioId: portfolio._id,
       amount,
-      rate:       rate ?? DEFAULT_DEPOSIT_RATE,
-      startTick:  getCurrentTick(),
-      closed:     false,
-      withdrawals:[]
+      rate: rate ?? DEFAULT_DEPOSIT_RATE,
+      startTick: getCurrentTick(),
+      closed: false,
+      withdrawals: []
     });
 
-    await Promise.all([ portfolio.save(), bank.save() ]);
-    res.json({ balance: portfolio.balance });
-  }
-  catch (err) {
+    await Promise.all([portfolio.save(), bank.save()]);
+
+    res.json({
+      message: `Deposited $${amount.toFixed(2)}`,
+      balance: portfolio.balance
+    });
+  } catch (err) {
     console.error('Deposit error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 /**
  * POST /api/bank/:userId/loan
