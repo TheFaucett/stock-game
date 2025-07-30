@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback} from 'react';
 import { useParams, Link } from 'react-router-dom';
 import StockGraph from './StockGraph';
 import TransactionModal from './TransactionModal';
@@ -17,7 +17,7 @@ export default function StockDetail() {
   const [loading, setLoading] = useState(true);
   const [watchlistPending, setWatchlistPending] = useState(false);
   const [showOptionTutorial, setShowOptionTutorial] = useState(false);
-
+  const [isMegaCap, setisMegaCap] = useState(false);
   const { tick } = useTick(); // always use {tick} destructure
 
   // Single function to fetch everything
@@ -50,6 +50,31 @@ export default function StockDetail() {
   useEffect(() => {
     fetchAll();
   }, [fetchAll, tick]);
+  useEffect(() => {
+  async function fetchMegaCaps() {
+      try {
+      const res = await fetch(`${API_BASE_URL}/api/stocks/mega-caps`);
+      const megaData = await res.json(); // ✅ parse JSON
+
+      // make sure it has the right shape
+      if (!megaData || !Array.isArray(megaData.megaCaps) || typeof megaData.selectionTick !== "number") {
+          console.warn("Mega caps API returned unexpected format:", megaData);
+          return;
+      }
+
+      const revealTimePassed = tick - megaData.selectionTick >= 200;
+      if (megaData.megaCaps.includes(ticker) && revealTimePassed) {
+          setisMegaCap(true);
+      } else {
+          setisMegaCap(false);
+      }
+      } catch (err) {
+      console.error("Failed to fetch mega caps:", err);
+      }
+  }
+
+  fetchMegaCaps();
+  }, [ticker, tick]); // ✅ also depends on tick
 
   // Handle Trade button and OptionTutorial logic
   function handleTradeClick() {
@@ -127,7 +152,7 @@ export default function StockDetail() {
   return (
     <div style={{ padding: 20 }}>
       <OptionTutorial isOpen={showOptionTutorial} onClose={() => setShowOptionTutorial(false)} />
-      <h1>{stock.ticker}</h1>
+      <h1>{isMegaCap && <span>✨</span>}{stock.ticker}</h1>
       <p>Price: ${stock.price.toFixed(2)}</p>
       <p>Change: {stock.change}%</p>
       <p>EPS: {stock.eps}</p>

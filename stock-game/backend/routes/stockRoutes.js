@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Stock = require('../models/Stock'); // Ensure correct model import
-
+const { selectMegaCaps, getMegaCaps } = require('../utils/megaCaps'); 
 // GET all stocks with rounded values
 router.get('/', async (req, res) => {
     try {
@@ -112,7 +112,10 @@ router.get('/sector-heatmap', async (req, res) => {
         res.status(500).json({ success: false, error: "Server error" });
     }
 });
-
+router.get('/mega-caps', (req, res) => {
+  const { megaCaps, selectionTick } = getMegaCaps();
+  res.json({ megaCaps, selectionTick });
+});
 //For StockDetail
 router.get("/:ticker", async (req, res) => {
     try {

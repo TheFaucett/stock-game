@@ -9,7 +9,8 @@ const { sweepOptionExpiries } = require("../utils/sweepOptions.js");
 const { sweepLoanPayments } = require("../utils/sweepLoans.js");
 const { payDividends } = require("../utils/payDividends.js");
 const { processFirms } = require("./firmController.js");
-const { resetStockPrices } = require("../utils/resetStocks.js");
+const resetStockPrices = require("../utils/resetStocks.js");
+const { selectMegaCaps, getMegaCaps } = require("../utils/megaCaps.js");
 
 const HISTORY_LIMIT = 1200;
 const TRADING_DAYS = 365;
@@ -26,7 +27,6 @@ const MATTHEW_STEP = 0.000001;
 // 🌪️ Macro chop state
 let macroChopWindow = false;
 let chopDuration = 0;
-
 let initialMarketCap = null;
 
 // 🧮 Historical Mean Calculator
@@ -75,12 +75,13 @@ async function updateMarket() {
     const tick = incrementTick();
     console.log(`⏱️ Tick #${tick}`);
 
+    // Scheduled jobs
     if (tick % 2 === 0) await autoCoverShorts();
     if (tick % 90 === 0) await payDividends();
-    if (tick % 1000 === 0) await resetStockPrices();
     await sweepOptionExpiries(tick);
     await sweepLoanPayments(tick);
 
+    // Fetch stocks once
     const stocks = await Stock.find({}, {
       ticker: 1,
       price: 1,
@@ -93,9 +94,16 @@ async function updateMarket() {
 
     if (!stocks.length) return console.error("⚠️ No stocks found in DB");
 
+    // Mega cap selection + stock reset every 1000 ticks
+    if ((tick % 1000 === 0 || tick === 1) || !getMegaCaps().megaCaps.length) {
+        await resetStockPrices();
+        await selectMegaCaps(stocks, tick);
+    }
+
     const isChoppy = applyMacroChop(tick);
     const bulk = [];
 
+    // Price update loop
     for (const stock of stocks) {
       const prevPrice = stock.price;
       const historicalMean = getHistoricalMean(stock);
@@ -114,7 +122,7 @@ async function updateMarket() {
       // 🌪️ Chop noise
       const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prevPrice : 0;
 
-      // Final price
+      // Final price calc
       const updatedPrice = Math.max(prevPrice + reversionForce + matthewEffect + chopNoise, 0.01);
       const updatedHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), updatedPrice];
       const changePercent = ((updatedPrice - prevPrice) / prevPrice) * 100;
@@ -134,11 +142,13 @@ async function updateMarket() {
       });
     }
 
+    // Bulk DB update
     if (bulk.length) {
       await Stock.bulkWrite(bulk);
       console.log(`✅ Macro + mean reversion + Matthew drift${isChoppy ? " + volatility chop" : ""} applied to ${bulk.length} stocks.`);
     }
 
+    // Other updates
     await applyImpactToStocks();
     await applyGaussian();
 

@@ -11,6 +11,8 @@ function labelFromScore(score) {
 }
 
 function recordMarketMood(stocks) {
+
+
   if (!stocks || !stocks.length) return 0.5;
 
   // 1. Compute average % change
@@ -21,7 +23,7 @@ function recordMarketMood(stocks) {
   const SENSITIVITY = 3.5; // ✅ Tune this
   const moodRaw = Math.tanh(avgChange * SENSITIVITY); // ~-1 to +1
   const moodScore = 0.5 + moodRaw * 0.5;               // map to 0..1
-
+  const cycle = Math.sin(getCurrentTick()/500) *0.5 // to prevent stuck mood 
   // 3. Apply slight momentum (mood inertia)
   const previous = moodHistory.at(-1)?.value ?? 0.5;
   const blended = 0.75 * moodScore + 0.25 * previous;
