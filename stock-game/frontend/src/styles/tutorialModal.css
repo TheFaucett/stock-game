@@ -1,3 +1,4 @@
+/* tutorialModal.css */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -6,82 +7,65 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 1000;
+  align-items: center;
+  z-index: 9999;
+  padding: 1rem;
 }
 
+/* Mobile-first modal */
 .modal-content {
-  background: #2e2e2e;
-  padding: 3rem;
-  border-radius: 16px;
-  width: 95%;
-  max-width: 750px;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
-  text-align: left;
-  color: #f0f0f0;
-  font-family: "Segoe UI", Roboto, sans-serif;
-  line-height: 1.6;
+  background: rgb(32, 31, 31);
+  border-radius: 8px;
+  padding: 1rem;
+  width: 100%;
+  max-width: 100%;  /* full width on small devices */
+  max-height: 90vh; /* fit on screen */
+  overflow-y: auto; /* scroll if too tall */
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-content h2 {
-  font-size: 2.2rem;
-  text-align: center;
-  color: #00aaff;
-  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
 }
 
-.modal-content p {
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-}
-
+.modal-content p,
 .modal-content ul {
-  padding-left: 1.4rem;
-  margin-bottom: 2rem;
-  list-style: none;
-}
-
-.modal-content li {
-  margin-bottom: 1rem;
-  font-size: 1.05rem;
-  position: relative;
-  padding-left: 0.5rem;
-}
-
-.modal-content li::before {
-  content: "";
-  position: absolute;
-  left: -1.2rem;
-  top: 0.4rem;
-  width: 6px;
-  height: 6px;
-  background-color: #00aaff;
-  border-radius: 50%;
-  display: inline-block;
-  opacity: 0.6;
+  font-size: 0.9rem;
 }
 
 .modal-content button {
-  display: block;
-  margin: 0 auto;
-  margin-top: 2rem;
-  padding: 0.8rem 1.6rem;
+  margin-top: auto;
+  padding: 0.75rem;
   font-size: 1rem;
-  font-weight: bold;
-  color: white;
-  background-color: #0074d9;
+  background-color: #4CAF50;
   border: none;
-  border-radius: 10px;
+  border-radius: 5px;
+  color: white;
   cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
 .modal-content button:hover {
-  background-color: #005fa3;
+  background-color: #45a049;
 }
-a:link {
-    color: #00aaff;
 
+/* Desktop & larger tablet styles */
+@media (min-width: 768px) {
+  .modal-content {
+    max-width: 600px; /* ✅ fixed modal width */
+    max-height: 80vh; /* ✅ shorter height for desktop */
+    padding: 2rem;    /* ✅ more space inside */
+    font-size: 1rem;
+  }
 
+  .modal-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .modal-content p,
+  .modal-content ul {
+    font-size: 1rem;
+  }
 }
