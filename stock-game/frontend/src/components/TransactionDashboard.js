@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/transactionDashboard.css";
 import API_BASE_URL from "../apiConfig";
+
 export default function TransactionDashboard({ userId }) {
   const [open, setOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -37,10 +38,21 @@ export default function TransactionDashboard({ userId }) {
       }
     }
     fetchTick();
-    // Optionally poll every 2s for live tick
     const interval = setInterval(fetchTick, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case "buy": return "🟢 Buy";
+      case "sell": return "🔴 Sell";
+      case "call": return "📈 Call";
+      case "put": return "📉 Put";
+      case "short": return "🏴 Short";
+      case "cover": return "↩ Cover";
+      default: return type;
+    }
+  };
 
   return (
     <div className="transaction-dashboard-collapsible">
@@ -60,7 +72,6 @@ export default function TransactionDashboard({ userId }) {
             <div className="empty">No transactions yet.</div>
           ) : (
             <>
-              {/* Optional: Show the current tick at top */}
               <div style={{ fontSize: "0.95em", color: "#bbb", marginBottom: 4 }}>
                 {currentTick !== null ? `Current Tick: ${currentTick}` : ""}
               </div>
@@ -73,26 +84,68 @@ export default function TransactionDashboard({ userId }) {
                     <th>Shares</th>
                     <th>Price</th>
                     <th>Total</th>
+                    <th>P/L</th>
+                    <th>Break-even</th>
+                    <th>Expiry</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions
                     .slice()
                     .reverse()
-                    .map(tx => (
-                      <tr key={tx._id}>
-                        <td>
-                          {typeof tx.tickOpened === "number"
-                            ? `#${tx.tickOpened}`
-                            : "–"}
-                        </td>
-                        <td>{tx.type}</td>
-                        <td>{tx.ticker}</td>
-                        <td>{tx.shares}</td>
-                        <td>${tx.price.toFixed(2)}</td>
-                        <td>${tx.total.toFixed(2)}</td>
-                      </tr>
-                    ))}
+                    .map(tx => {
+                      const plValue =
+                        tx.realizedPL != null
+                          ? tx.realizedPL
+                          : tx.unrealizedPL != null
+                            ? tx.unrealizedPL
+                            : null;
+                      const plColor =
+                        plValue > 0 ? "limegreen" : plValue < 0 ? "red" : "inherit";
+
+                      return (
+                        <tr key={tx._id}>
+                          <td>
+                            {typeof tx.tickOpened === "number"
+                              ? `#${tx.tickOpened}`
+                              : "–"}
+                          </td>
+                          <td>{getTypeIcon(tx.type)}</td>
+                          <td>{tx.ticker}</td>
+                          <td>{tx.shares}</td>
+                          <td>${tx.price.toFixed(2)}</td>
+                          <td>${tx.total.toFixed(2)}</td>
+
+                          {/* P/L column */}
+                          <td style={{ color: plColor }}>
+                            {plValue != null
+                              ? `$${plValue.toFixed(2)}`
+                              : "—"}
+                            {tx.percentChange != null && (
+                              <div style={{ fontSize: "0.8em" }}>
+                                ({tx.percentChange.toFixed(2)}%)
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Break-even */}
+                          <td>
+                            {tx.breakEven
+                              ? <span title={`Break-even price: $${tx.breakEven.toFixed(2)}`}>
+                                  ${tx.breakEven.toFixed(2)}
+                                </span>
+                              : "—"}
+                          </td>
+
+                          {/* Expiry countdown */}
+                          <td>
+                            {tx.expiryTick && currentTick != null
+                              ? `${tx.expiryTick - currentTick} ticks`
+                              : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </>

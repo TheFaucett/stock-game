@@ -18,6 +18,25 @@ const ANNUAL_DRIFT = 0.09;
 const DAILY_DRIFT = ANNUAL_DRIFT / TRADING_DAYS;
 const MEAN_REVERT_ALPHA = 0.03;
 
+// 📈 Dynamic Mean Reversion Config
+const meanRevertMap = new Map();
+const ALPHA_VARIATION = 0.01; // +/- around the mean
+const ALPHA_CHANGE_PROB = 0.005; // 0.5% chance per tick
+function getAlpha(ticker) {
+  if (!meanRevertMap.has(ticker)) {
+    meanRevertMap.set(ticker, MEAN_REVERT_ALPHA);
+  }
+  return meanRevertMap.get(ticker);
+}
+function maybeChangeAlpha(ticker) {
+  if (Math.random() < ALPHA_CHANGE_PROB) {
+    const variation = (Math.random() * 2 - 1) * ALPHA_VARIATION;
+    let newAlpha = MEAN_REVERT_ALPHA + variation;
+    newAlpha = Math.max(0.015, Math.min(0.045, newAlpha));
+    meanRevertMap.set(ticker, newAlpha);
+  }
+}
+
 // 📈 Matthew Effect Drift
 const matthewDriftMap = new Map();
 const MAX_MATTHEW_DRIFT = 0.001;
@@ -29,12 +48,10 @@ let macroChopWindow = false;
 let chopDuration = 0;
 let initialMarketCap = null;
 
-// 🧮 Historical Mean Calculator
 function getHistoricalMean(stock) {
   const prices = stock.history;
   if (!Array.isArray(prices) || prices.length === 0) return stock.basePrice || stock.price;
-  const sum = prices.reduce((a, b) => a + b, 0);
-  return sum / prices.length;
+  return prices.reduce((a, b) => a + b, 0) / prices.length;
 }
 
 function computeMatthewDrift(history = []) {
@@ -42,7 +59,6 @@ function computeMatthewDrift(history = []) {
   const past = history[history.length - 30];
   const current = history[history.length - 1];
   if (!past || past === 0) return 0;
-
   const pctChange = (current - past) / past;
   if (pctChange > 0.05) return MATTHEW_STEP;
   if (pctChange < -0.05) return -MATTHEW_STEP * 0.33;
@@ -75,13 +91,11 @@ async function updateMarket() {
     const tick = incrementTick();
     console.log(`⏱️ Tick #${tick}`);
 
-    // Scheduled jobs
     if (tick % 2 === 0) await autoCoverShorts();
     if (tick % 90 === 0) await payDividends();
     await sweepOptionExpiries(tick);
     await sweepLoanPayments(tick);
 
-    // Fetch stocks once
     const stocks = await Stock.find({}, {
       ticker: 1,
       price: 1,
@@ -94,23 +108,23 @@ async function updateMarket() {
 
     if (!stocks.length) return console.error("⚠️ No stocks found in DB");
 
-    // Mega cap selection + stock reset every 1000 ticks
     if ((tick % 1000 === 0 || tick === 1) || !getMegaCaps().megaCaps.length) {
-        await resetStockPrices();
-        await selectMegaCaps(stocks, tick);
+      await resetStockPrices();
+      await selectMegaCaps(stocks, tick);
     }
 
     const isChoppy = applyMacroChop(tick);
     const bulk = [];
 
-    // Price update loop
     for (const stock of stocks) {
       const prevPrice = stock.price;
       const historicalMean = getHistoricalMean(stock);
 
-      // ⛅ Mean Reversion
+      // 🎯 Dynamic Mean Reversion
+      maybeChangeAlpha(stock.ticker);
+      const dynamicAlpha = getAlpha(stock.ticker);
       const deviation = historicalMean - prevPrice;
-      const reversionForce = deviation * MEAN_REVERT_ALPHA;
+      const reversionForce = deviation * dynamicAlpha;
 
       // 📈 Matthew Drift
       const prevDrift = matthewDriftMap.get(stock.ticker) ?? 0;
@@ -122,7 +136,6 @@ async function updateMarket() {
       // 🌪️ Chop noise
       const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prevPrice : 0;
 
-      // Final price calc
       const updatedPrice = Math.max(prevPrice + reversionForce + matthewEffect + chopNoise, 0.01);
       const updatedHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), updatedPrice];
       const changePercent = ((updatedPrice - prevPrice) / prevPrice) * 100;
@@ -142,13 +155,11 @@ async function updateMarket() {
       });
     }
 
-    // Bulk DB update
     if (bulk.length) {
       await Stock.bulkWrite(bulk);
-      console.log(`✅ Macro + mean reversion + Matthew drift${isChoppy ? " + volatility chop" : ""} applied to ${bulk.length} stocks.`);
+      console.log(`✅ Dynamic alpha + Matthew drift${isChoppy ? " + volatility chop" : ""} applied to ${bulk.length} stocks.`);
     }
 
-    // Other updates
     await applyImpactToStocks();
     await applyGaussian();
 

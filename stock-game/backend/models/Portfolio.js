@@ -12,13 +12,14 @@ const portfolioSchema = new mongoose.Schema({
         type    : String,
         enum    : [
           'buy','sell','short','cover',
-          'call','put','call_expire','put_expire', 'loan', 'loan_payment', 'loan_close', 'deposit', 
-          'withdrawal', 'dividend'
+          'call','put','call_expire','put_expire', 
+          'loan', 'loan_payment', 'loan_close', 
+          'deposit', 'withdrawal', 'dividend'
         ],
         required: true
       },
       ticker     : { type: String, required: true },
-      shares     : { type: Number, required: true },    // REQUIRED
+      shares     : { type: Number, required: true },    
       price      : { type: Number, required: true },
       total      : { type: Number, required: true },
 
@@ -32,6 +33,12 @@ const portfolioSchema = new mongoose.Schema({
       strike     : { type: Number },
       expiryTick : { type: Number },
       multiplier : { type: Number },
+
+      // NEW FIELDS for richer transaction tracking
+      realizedPL   : { type: Number }, // $ profit/loss for closed trades
+      unrealizedPL : { type: Number }, // $ profit/loss for open trades
+      percentChange: { type: Number }, // % change from entry price
+      breakEven    : { type: Number }, // break-even price for options
 
       // ← new flag to prevent double‐sweeping
       expired    : { type: Boolean, default: false }

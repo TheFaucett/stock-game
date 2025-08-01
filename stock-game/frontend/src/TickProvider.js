@@ -1,27 +1,42 @@
+// TickProvider.js
 import React, { createContext, useContext, useEffect, useState } from "react";
+import API_BASE_URL from "./apiConfig";
 
-const TICK_LENGTH = 30000; // 30 seconds
 const TickContext = createContext();
 
 export function TickProvider({ children }) {
-  const [tick, setTick] = useState(0);
+  const [tick, setTick] = useState(null);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Sync tick to wall clock
-    function update() {
-      const now = Date.now();
-      const currentTick = Math.floor(now / TICK_LENGTH);
-      setTick(currentTick);
-      setProgress((now % TICK_LENGTH) / TICK_LENGTH);
+    let isMounted = true;
+
+    async function fetchTick() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/tick`);
+        const data = await res.json();
+        if (isMounted && typeof data.tick === "number") {
+          setTick(data.tick);
+        }
+      } catch (err) {
+        console.error("Failed to fetch tick:", err);
+      }
     }
-    update(); // Immediate update
-    const interval = setInterval(update, 60); // Smooth bar
-    return () => clearInterval(interval);
+
+    // Fetch immediately
+    fetchTick();
+
+    // Refresh every 2 seconds (or whatever fits your tick length)
+    const interval = setInterval(fetchTick, 2000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   return (
-    <TickContext.Provider value={{ tick, progress, TICK_LENGTH }}>
+    <TickContext.Provider value={{ tick, progress }}>
       {children}
     </TickContext.Provider>
   );
@@ -30,4 +45,3 @@ export function TickProvider({ children }) {
 export function useTick() {
   return useContext(TickContext);
 }
- 

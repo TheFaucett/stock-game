@@ -1,0 +1,13 @@
+import { ACHIEVEMENTS } from '../achievements';
+import { unlockAchievement } from '../utils/achievementsStorage';
+import showAchievementPopup from '../components/showAchievementPopup'; // UI handler
+
+export function triggerAchievements(eventType, payload) {
+  ACHIEVEMENTS
+    .filter(a => a.trigger === eventType)
+    .forEach(a => {
+      if (a.check(payload) && unlockAchievement(a.id)) {
+        showAchievementPopup(a);
+      }
+    });
+}

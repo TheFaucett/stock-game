@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback} from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import StockGraph from './StockGraph';
 import TransactionModal from './TransactionModal';
@@ -7,6 +7,7 @@ import '../styles/stockdetail.css';
 import { getOrCreateUserId } from '../userId';
 import { useTick } from '../TickProvider';
 import API_BASE_URL from '../apiConfig';
+
 export default function StockDetail() {
   const { ticker } = useParams();
   const userId = getOrCreateUserId();
@@ -17,10 +18,11 @@ export default function StockDetail() {
   const [loading, setLoading] = useState(true);
   const [watchlistPending, setWatchlistPending] = useState(false);
   const [showOptionTutorial, setShowOptionTutorial] = useState(false);
-  const [isMegaCap, setisMegaCap] = useState(false);
-  const { tick } = useTick(); // always use {tick} destructure
+  const [isMegaCap, setIsMegaCap] = useState(false);
 
-  // Single function to fetch everything
+  const { tick } = useTick();
+
+  // Fetch all stock/watchlist/history data
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
@@ -39,44 +41,42 @@ export default function StockDetail() {
       const obj3 = await res3.json();
       setWatchlist(Array.isArray(obj3.watchlist) ? obj3.watchlist : []);
     } catch (err) {
-      // Optionally add error handling here
       setStock(null);
     } finally {
       setLoading(false);
     }
   }, [ticker, userId]);
 
-  // Run fetchAll whenever ticker/userId/tick changes
+  // Only refetch on tick if modal is closed
   useEffect(() => {
-    fetchAll();
-  }, [fetchAll, tick]);
-  useEffect(() => {
-  async function fetchMegaCaps() {
-      try {
-      const res = await fetch(`${API_BASE_URL}/api/stocks/mega-caps`);
-      const megaData = await res.json(); // ✅ parse JSON
+    if (!showModal) {
+      fetchAll();
+    }
+  }, [fetchAll, tick, showModal]);
 
-      // make sure it has the right shape
-      if (!megaData || !Array.isArray(megaData.megaCaps) || typeof megaData.selectionTick !== "number") {
+  // Mega cap check
+  useEffect(() => {
+    async function fetchMegaCaps() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/stocks/mega-caps`);
+        const megaData = await res.json();
+
+        if (!megaData || !Array.isArray(megaData.megaCaps) || typeof megaData.selectionTick !== "number") {
           console.warn("Mega caps API returned unexpected format:", megaData);
           return;
-      }
+        }
 
-      const revealTimePassed = tick - megaData.selectionTick >= 200;
-      if (megaData.megaCaps.includes(ticker) && revealTimePassed) {
-          setisMegaCap(true);
-      } else {
-          setisMegaCap(false);
-      }
+        const revealTimePassed = tick - megaData.selectionTick >= 200;
+        setIsMegaCap(megaData.megaCaps.includes(ticker) && revealTimePassed);
       } catch (err) {
-      console.error("Failed to fetch mega caps:", err);
+        console.error("Failed to fetch mega caps:", err);
       }
-  }
+    }
 
-  fetchMegaCaps();
-  }, [ticker, tick]); // ✅ also depends on tick
+    fetchMegaCaps();
+  }, [ticker, tick]);
 
-  // Handle Trade button and OptionTutorial logic
+  // Trade modal open logic with tutorial
   function handleTradeClick() {
     const hasSeen = localStorage.getItem("hasSeenOptionTutorial");
     if (!hasSeen) {
@@ -86,7 +86,7 @@ export default function StockDetail() {
     setShowModal(true);
   }
 
-  // --- Optimistic Add/Remove for Watchlist ---
+  // Watchlist add/remove
   async function handleAddWatch() {
     setWatchlistPending(true);
     await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist/${ticker}/add`, {
@@ -94,7 +94,7 @@ export default function StockDetail() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticker })
     });
-    await fetchAll(); // Always re-sync after
+    await fetchAll();
     setWatchlistPending(false);
   }
 
@@ -103,11 +103,10 @@ export default function StockDetail() {
     await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
       method: "DELETE"
     });
-    await fetchAll(); // Always re-sync after
+    await fetchAll();
     setWatchlistPending(false);
   }
 
-  // Only allow add/remove when *not* pending or loading
   const onWatchlist = watchlist.includes(ticker.toUpperCase());
 
   const performTransaction = async (type, shares, strike, expiryTick) => {
@@ -134,9 +133,8 @@ export default function StockDetail() {
     }
   };
 
-  // Loading or not found states
   if (loading) {
-    return <div style={{padding: 20}}><p>Loading…</p></div>;
+    return <div style={{ padding: 20 }}><p>Loading…</p></div>;
   }
   if (!stock) {
     return (
@@ -148,7 +146,6 @@ export default function StockDetail() {
     );
   }
 
-  // Render UI
   return (
     <div style={{ padding: 20 }}>
       <OptionTutorial isOpen={showOptionTutorial} onClose={() => setShowOptionTutorial(false)} />
@@ -198,8 +195,8 @@ export default function StockDetail() {
           <StockGraph ticker={ticker} history={history} />
         </>
       )}
-      <div style={{ height: "40px" }} /> {/* Spacer */}
 
+      <div style={{ height: "40px" }} />
       <Link to="/" className="back-button">← Back</Link>
     </div>
   );

@@ -46,6 +46,7 @@ function recordOptionPurchase({ portfolio, optionDoc, contracts, tickNow, tradeT
     multiplier: optionDoc.multiplier
   });
 
+  const DEFAULT_MULTIPLIER = 1;
   const multiplier = optionDoc.multiplier ?? DEFAULT_MULTIPLIER;
   const cost = contracts * optionDoc.premium * multiplier;
   console.log('  💸 Cost for this purchase:', cost);
@@ -55,25 +56,14 @@ function recordOptionPurchase({ portfolio, optionDoc, contracts, tickNow, tradeT
     throw new Error('Insufficient balance for option purchase');
   }
 
+  // Debit balance
   portfolio.balance -= cost;
   console.log('  ➖ Debited cost, new balance:', portfolio.balance);
 
-  portfolio.transactions.push({
-    type       : tradeType,           // "call" or "put"
-    ticker     : optionDoc.underlying,
-    shares     : contracts,           // <— this satisfies your schema’s required `shares`
-    contracts  : contracts,           // optional, for clarity
-    multiplier : multiplier,          // optional
-    optionId   : optionDoc._id,
-    strike     : optionDoc.strike,
-    expiryTick : optionDoc.expiryTick,
-    price      : optionDoc.premium,
-    total      : cost,
-    date       : new Date(),
-    tickOpened : tickNow
-  });
-  console.log('  📝 Logged option transaction at index', portfolio.transactions.length - 1);
+  // NOTE: Removed portfolio.transactions.push() here
+  //       The controller will now handle transaction logging with enrichment.
 }
+
 
 
 module.exports = {
