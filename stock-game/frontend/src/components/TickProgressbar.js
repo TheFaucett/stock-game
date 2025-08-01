@@ -1,10 +1,28 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTick } from "../TickProvider";
 
-
 export default function TickProgressBar() {
-  const { progress } = useTick(); // Only read progress from context
-  console.log("TickProgressBar progress:", progress);
+  const { tick } = useTick(); // only care about tick changes
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (tick == null) return;
+
+    // Reset to 0 when tick changes
+    setProgress(0);
+
+    // Animate over 30 seconds
+    const start = Date.now();
+    const TICK_LENGTH = 30000; // 30 seconds
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      setProgress(Math.min(elapsed / TICK_LENGTH, 1)); // cap at 1
+    }, 100); // update 10x/sec for smoothness
+
+    return () => clearInterval(interval);
+  }, [tick]); // re-run when tick changes
+
   return (
     <div style={barContainerStyle}>
       <div
@@ -32,6 +50,6 @@ const barContainerStyle = {
 const barFillStyle = {
   height: "100%",
   borderRadius: "6px",
-  transition: "width 0.13s linear",
+  transition: "width 0.1s linear",
   willChange: "width",
 };

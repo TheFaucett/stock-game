@@ -6,37 +6,30 @@ const TickContext = createContext();
 
 export function TickProvider({ children }) {
   const [tick, setTick] = useState(null);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    let isMounted = true;
+    let lastTick = null;
 
     async function fetchTick() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/tick`);
         const data = await res.json();
-        if (isMounted && typeof data.tick === "number") {
+        if (typeof data.tick === "number" && data.tick !== lastTick) {
           setTick(data.tick);
+          lastTick = data.tick;
         }
       } catch (err) {
-        console.error("Failed to fetch tick:", err);
+        console.error("Tick fetch error:", err);
       }
     }
 
-    // Fetch immediately
     fetchTick();
-
-    // Refresh every 2 seconds (or whatever fits your tick length)
-    const interval = setInterval(fetchTick, 2000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    const interval = setInterval(fetchTick, 2000); // check every 2s
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <TickContext.Provider value={{ tick, progress }}>
+    <TickContext.Provider value={{ tick }}>
       {children}
     </TickContext.Provider>
   );

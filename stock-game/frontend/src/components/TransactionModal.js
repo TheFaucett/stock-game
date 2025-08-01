@@ -10,23 +10,57 @@ export default function TransactionModal({ show, onClose, ticker, onConfirm }) {
   const [strike, setStrike] = useState('');
   const [expiry, setExpiry] = useState('');
   const [currentPrice, setCurrentPrice] = useState(null);
+  const [balance, setBalance] = useState(0);
+  const [holdings, setHoldings] = useState(0);
 
   const { tick: currentTick } = useTick();
 
-  // Fetch current stock price when modal opens
+  // Fetch portfolio + price when modal opens
   useEffect(() => {
-    if (show && (action === 'call' || action === 'put')) {
-      fetch(`${API_BASE_URL}/api/stocks/${ticker}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && typeof data.price === 'number') {
-            setCurrentPrice(data.price);
+    if (!show) return;
+
+    // Portfolio info
+    fetch(`${API_BASE_URL}/api/portfolio/${localStorage.getItem("userId")}`)
+      .then(res => res.json())
+      .then(data => {
+        setBalance(data.balance || 0);
+        setHoldings(data.ownedShares?.[ticker] || 0);
+      })
+      .catch(() => {});
+
+    // Price info
+    fetch(`${API_BASE_URL}/api/stocks/${ticker}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.price === 'number') {
+          setCurrentPrice(data.price);
+          if (action === 'call' || action === 'put') {
             setStrike(data.price.toFixed(2)); // default ATM
           }
-        })
-        .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, [show, ticker, action]);
+
+  // Compute placeholder text
+  const getQtyPlaceholder = () => {
+    if (!currentPrice || balance <= 0) return action.match(/call|put/) ? 'Contracts' : 'Shares';
+    if (action === 'buy') {
+      return `Max ${Math.floor(balance / currentPrice)} shares`;
     }
-  }, [show, action, ticker]);
+    if (action === 'sell') {
+      return `Max ${holdings} shares`;
+    }
+    if (action === 'short') {
+      return `Max ${Math.floor(balance / currentPrice)} shares (short)`;
+    }
+    if (action === 'call' || action === 'put') {
+      // For now assume option price ~10% of stock price
+      const estPremium = currentPrice * 0.1;
+      return `Max ${Math.floor(balance / estPremium)} contracts`;
+    }
+    return action.match(/call|put/) ? 'Contracts' : 'Shares';
+  };
 
   if (!show) return null;
 
@@ -64,7 +98,7 @@ export default function TransactionModal({ show, onClose, ticker, onConfirm }) {
             <div className="input-group">
               <input
                 type="number" min="1"
-                placeholder={action.match(/call|put/) ? 'Contracts' : 'Shares'}
+                placeholder={getQtyPlaceholder()}
                 value={qty}
                 onChange={e => setQty(e.target.value)}
                 className="modal-input"

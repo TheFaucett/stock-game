@@ -1,0 +1,26 @@
+.tick-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.5s ease; /* fade time */
+}
+
+.tick-overlay.fade-in {
+  opacity: 1;
+}
+
+.tick-overlay.fade-out {
+  opacity: 0;
+}
+
+.tick-overlay-text {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: bold;
+}

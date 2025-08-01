@@ -1,4 +1,4 @@
-import { ACHIEVEMENTS } from '../achievements';
+/*import { ACHIEVEMENTS } from './achievements';
 import { unlockAchievement } from '../utils/achievementsStorage';
 import showAchievementPopup from '../components/showAchievementPopup'; // UI handler
 
@@ -11,3 +11,4 @@ export function triggerAchievements(eventType, payload) {
       }
     });
 }
+*/

@@ -116,6 +116,9 @@ async function updateMarket() {
     const isChoppy = applyMacroChop(tick);
     const bulk = [];
 
+    let totalChangePct = 0;
+    let sampleLogs = [];
+
     for (const stock of stocks) {
       const prevPrice = stock.price;
       const historicalMean = getHistoricalMean(stock);
@@ -136,9 +139,25 @@ async function updateMarket() {
       // 🌪️ Chop noise
       const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prevPrice : 0;
 
+      // 💵 Updated price
       const updatedPrice = Math.max(prevPrice + reversionForce + matthewEffect + chopNoise, 0.01);
       const updatedHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), updatedPrice];
       const changePercent = ((updatedPrice - prevPrice) / prevPrice) * 100;
+
+      totalChangePct += changePercent;
+
+      // Log a few random tickers for investigation
+      if (sampleLogs.length < 5 && Math.random() < 0.01) {
+        sampleLogs.push({
+          ticker: stock.ticker,
+          prevPrice,
+          updatedPrice,
+          reversionForce,
+          matthewEffect,
+          chopNoise,
+          changePercent
+        });
+      }
 
       bulk.push({
         updateOne: {
@@ -157,7 +176,18 @@ async function updateMarket() {
 
     if (bulk.length) {
       await Stock.bulkWrite(bulk);
-      console.log(`✅ Dynamic alpha + Matthew drift${isChoppy ? " + volatility chop" : ""} applied to ${bulk.length} stocks.`);
+      console.log(`✅ Applied updates to ${bulk.length} stocks.`);
+    }
+
+    // Show investigation logs
+    console.log(`📊 Avg % change this tick: ${(totalChangePct / stocks.length).toFixed(4)}%`);
+    if (sampleLogs.length) {
+      console.log("🔍 Sample stock adjustments:");
+      sampleLogs.forEach(s => {
+        console.log(
+          `${s.ticker} | Prev: ${s.prevPrice.toFixed(2)} → New: ${s.updatedPrice.toFixed(2)} | Δ: ${s.changePercent.toFixed(2)}% | Revert: ${s.reversionForce.toFixed(4)} | Matthew: ${s.matthewEffect.toFixed(4)} | Chop: ${s.chopNoise.toFixed(4)}`
+        );
+      });
     }
 
     await applyImpactToStocks();
@@ -166,7 +196,7 @@ async function updateMarket() {
     const marketCap = stocks.reduce((sum, s) => sum + s.price * (s.outstandingShares ?? 1), 0);
     if (!initialMarketCap) initialMarketCap = marketCap;
     const delta = ((marketCap - initialMarketCap) / initialMarketCap) * 100;
-    console.log(`📊 Market cap since baseline: ${delta.toFixed(2)}%`);
+    console.log(`🏦 Market cap change since baseline: ${delta.toFixed(2)}%`);
 
     recordMarketIndexHistory(stocks);
     const mood = recordMarketMood(stocks);
@@ -176,6 +206,7 @@ async function updateMarket() {
     console.error("🔥 Market update error:", err);
   }
 }
+
 
 module.exports = {
   updateMarket,
