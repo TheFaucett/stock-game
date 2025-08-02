@@ -1,4 +1,5 @@
 require('dotenv').config();
+const cors = require('cors');
 console.log("🔧 Environment variables loaded, ", process.env.MONGO_URI);
 const express = require('express');
 const mongoose = require('mongoose');
@@ -22,7 +23,11 @@ const { incrementTick, getTickLength } = require('./utils/tickTracker');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: 'https://stock-game-demo.vercel.app', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+}));
 
 // -----------------------------
 // 📌 API ROUTES
