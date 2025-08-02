@@ -1,11 +1,10 @@
-// controllers/newsImpactController.js
 const Stock = require("../models/Stock");
 const { getLatestNewsData } = require("../controllers/newsController");
 
 // Helper: determine weight from sentiment
 function getNewsWeight(newsItem) {
-  const score = newsItem.sentimentScore ?? 0; 
-  const minWeight = 25; 
+  const score = newsItem.sentimentScore ?? 0;
+  const minWeight = 25;
   const maxWeight = 100;
   const absScore = Math.abs(score);
   const weight = minWeight + ((maxWeight - minWeight) * (absScore / 10));
@@ -21,10 +20,22 @@ async function applyImpactToStocks() {
       return;
     }
 
-    // 1️⃣ Flatten news into a single array
+    // 1️⃣ Flatten news into a single array safely
     const newsData = [];
     for (const [sector, items] of Object.entries(rawNews)) {
-      for (const item of items) {
+      if (!items) {
+        console.warn(`⚠️ Skipping sector '${sector}' because it is null/undefined`);
+        continue;
+      }
+      const arr = Array.isArray(items) ? items : [items];
+      if (!Array.isArray(items)) {
+        console.warn(`⚠️ Sector '${sector}' is not an array — normalizing to array`);
+      }
+      for (const item of arr) {
+        if (!item || typeof item !== "object") {
+          console.warn(`⚠️ Invalid news item in sector '${sector}', skipping:`, item);
+          continue;
+        }
         newsData.push({
           sector: sector !== "global" ? sector : null,
           ticker: item.ticker ?? null,
