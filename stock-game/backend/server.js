@@ -1,6 +1,6 @@
 require('dotenv').config();
-const cors = require('cors');
-console.log("🔧 Environment variables loaded, ", process.env.MONGO_URI);
+console.log("🔧 Environment variables loaded,", process.env.MONGO_URI);
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -23,11 +23,29 @@ const { incrementTick, getTickLength } = require('./utils/tickTracker');
 
 const app = express();
 app.use(express.json());
+
+// ✅ CORS configuration
+const allowedOrigins = [
+    'https://stock-game-demo.vercel.app', // production frontend
+    'http://localhost:3000'               // local dev frontend
+];
+
 app.use(cors({
-    origin: 'https://stock-game-demo.vercel.app', 
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            return callback(new Error('CORS not allowed for this origin: ' + origin));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
 }));
+
+// ✅ Explicitly handle OPTIONS preflight for all routes
+app.options('*', cors());
 
 // -----------------------------
 // 📌 API ROUTES
@@ -57,11 +75,9 @@ mongoose.connect(process.env.MONGO_URI, {
 })
 .then(() => {
     console.log('✅ MongoDB Connected');
-    
-    // Start server *after* DB is connected
+
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
-    // Start interval *after* DB is connected
     setInterval(async () => {
         const tick = incrementTick();
         console.log(`⏳ Tick ${tick}: Running market update...`);
