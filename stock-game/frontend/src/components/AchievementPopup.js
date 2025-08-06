@@ -1,4 +1,3 @@
-// src/components/AchievementPopup.jsx
 import React, { useEffect } from "react";
 import "../styles/achievementPopup.css";
 
