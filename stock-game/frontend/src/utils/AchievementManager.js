@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AchievementPopup from '../components/AchievementPopup';
+//import AchievementPopup from '../components/AchievementPopup';
 
 export default function AchievementManager() {
   const [active, setActive] = useState(null);
@@ -12,10 +12,5 @@ export default function AchievementManager() {
     return () => window.removeEventListener('achievementUnlocked', handler);
   }, []);
 
-  return (
-    <AchievementPopup
-      achievement={active}
-      onClose={() => setActive(null)}
-    />
-  );
+
 }

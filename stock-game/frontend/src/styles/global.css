@@ -26,6 +26,45 @@ body {
 
 }
 
+.fab-container {
+  position: fixed;
+  bottom: 32px;
+  right: 26px;
+  display: flex;
+  gap: 16px;
+  z-index: 1500;
+}
+
+/* Base FAB styles */
+.fab-button {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  font-size: 2rem;
+  color: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg,#43e97b 0,#38f9d7 100%);
+  box-shadow: 0 8px 24px rgba(44, 199, 203, 0.18);
+  transition: transform 0.15s;
+  border: none;
+  outline: none;
+}
+
+.fab-button:hover {
+  transform: scale(1.07);
+}
+
+/* Optional: Bounce animation */
+@keyframes card-bounce {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-10px); }
+  60%  { transform: translateY(5px); }
+  80%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
 
 .back-button:hover {
     background-color: #333;

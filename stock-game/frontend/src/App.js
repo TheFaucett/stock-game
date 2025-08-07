@@ -32,6 +32,7 @@ import FirmsList from "./components/Firms";
 import FirmDetail from "./components/FirmDetail";
 import PortfolioPage from "./components/PortfolioPage";
 import PortfolioButton from "./components/PortfolioButton";
+import AchievementButton from "./components/AchievementButton";
 import TutorialModal from "./components/TutorialModal";
 import RandomStockPicker from "./components/RandomStockPicker";
 import HomeTabs from "./components/HomeTabs";
@@ -106,12 +107,19 @@ function App() {
                         />
                         <FeaturedStocks />
                         <HomeTabs />
+                        <div className="fab-container">
+
+                            <AchievementButton />
+                            <PortfolioButton />
+                        </div>
                         <div className="random-picker-center">
                           <RandomStockPicker />
                           <TickerSearch />
                         </div>
                         <HeatmapContainer />
-                        <PortfolioButton />
+                  
+
+
                         <MoodGraph />
                         <MarketIndexGraph />
                         <div style={{ marginTop: "5rem" }}>
