@@ -18,6 +18,13 @@ const StockSchema = new mongoose.Schema({
         max: 1,
     },
     basePrice: { type: Number, default: 100 }, // Default base price for mean reversion
+    nextEarningsTick: { type: Number, default: () => Math.floor(Math.random() * 50) + 50 },
+    lastEarningsReport: { type: Object, default: null }, 
+
+    metadata: {
+        type: Object,
+        default: {}
+    },
 }, { timestamps: true, versionKey: false }); // ✅ Disables __v versioning
 
 module.exports = mongoose.model('Stock', StockSchema);

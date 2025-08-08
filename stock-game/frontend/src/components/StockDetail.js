@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import StockGraph from './StockGraph';
+import EarningsTable from './EarningsTable';
 import TransactionModal from './TransactionModal';
 import OptionTutorial from "./OptionTutorial";
 import '../styles/stockdetail.css';
@@ -193,10 +194,12 @@ export default function StockDetail() {
         <>
           <h3>Price History</h3>
           <StockGraph ticker={ticker} history={history} />
+          <div style={{ height: "35px" }} />
+          <EarningsTable report={stock.lastEarningsReport} />
         </>
       )}
 
-      <div style={{ height: "40px" }} />
+
       <Link to="/" className="back-button">← Back</Link>
     </div>
   );

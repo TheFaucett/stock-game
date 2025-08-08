@@ -14,7 +14,8 @@ router.get('/', async (req, res) => {
             change: parseFloat(stock.change.toFixed(2)),
             peRatio: parseFloat(stock.peRatio.toFixed(2)),
             dividendYield: parseFloat(stock.dividendYield.toFixed(4)), // Keeping 4 decimal places for yield
-            history: stock.history.map(value => parseFloat(value.toFixed(2))) // Ensuring history values are rounded too
+            history: stock.history.map(value => parseFloat(value.toFixed(2))), // Ensuring history values are rounded too
+            lastEarningsReport: stock.lastEarningsReport || null
         }));
 
         res.json(stocks);

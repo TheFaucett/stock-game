@@ -11,6 +11,7 @@ const { payDividends } = require("../utils/payDividends.js");
 const { processFirms } = require("./firmController.js");
 const resetStockPrices = require("../utils/resetStocks.js");
 const { selectMegaCaps, getMegaCaps } = require("../utils/megaCaps.js");
+const generateEarningsReport = require("../utils/generateEarnings.js");
 
 const HISTORY_LIMIT = 1200;
 const TRADING_DAYS = 365;
@@ -120,59 +121,77 @@ async function updateMarket() {
     let sampleLogs = [];
 
     for (const stock of stocks) {
-      const prevPrice = stock.price;
-      const historicalMean = getHistoricalMean(stock);
+        const prevPrice = stock.price;
+        const historicalMean = getHistoricalMean(stock);
 
-      // 🎯 Dynamic Mean Reversion
-      maybeChangeAlpha(stock.ticker);
-      const dynamicAlpha = getAlpha(stock.ticker);
-      const deviation = historicalMean - prevPrice;
-      const reversionForce = deviation * dynamicAlpha;
+        // 🎯 Dynamic Mean Reversion
+        maybeChangeAlpha(stock.ticker);
+        const dynamicAlpha = getAlpha(stock.ticker);
+        const deviation = historicalMean - prevPrice;
+        const reversionForce = deviation * dynamicAlpha;
 
-      // 📈 Matthew Drift
-      const prevDrift = matthewDriftMap.get(stock.ticker) ?? 0;
-      const driftAdj = computeMatthewDrift(stock.history);
-      const newDrift = Math.max(MIN_MATTHEW_DRIFT, Math.min(MAX_MATTHEW_DRIFT, prevDrift + driftAdj));
-      matthewDriftMap.set(stock.ticker, newDrift);
-      const matthewEffect = prevPrice * newDrift;
+        // 📈 Matthew Drift
+        const prevDrift = matthewDriftMap.get(stock.ticker) ?? 0;
+        const driftAdj = computeMatthewDrift(stock.history);
+        const newDrift = Math.max(MIN_MATTHEW_DRIFT, Math.min(MAX_MATTHEW_DRIFT, prevDrift + driftAdj));
+        matthewDriftMap.set(stock.ticker, newDrift);
+        const matthewEffect = prevPrice * newDrift;
 
-      // 🌪️ Chop noise
-      const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prevPrice : 0;
+        // 🌪️ Chop noise
+        const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prevPrice : 0;
 
-      // 💵 Updated price
-      const updatedPrice = Math.max(prevPrice + reversionForce + matthewEffect + chopNoise, 0.01);
-      const updatedHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), updatedPrice];
-      const changePercent = ((updatedPrice - prevPrice) / prevPrice) * 100;
+        let finalPrice = prevPrice + reversionForce + matthewEffect + chopNoise;
+        let finalChangePercent;
+        let finalHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), finalPrice];
+        let extraSet = {};
 
-      totalChangePct += changePercent;
+        // 📢 Earnings Report Logic
+        if (stock.nextEarningsTick !== undefined && tick >= stock.nextEarningsTick) {
+            const { report, newPrice, nextEarningsTick } = generateEarningsReport(stock, tick);
 
-      // Log a few random tickers for investigation
-      if (sampleLogs.length < 5 && Math.random() < 0.01) {
-        sampleLogs.push({
-          ticker: stock.ticker,
-          prevPrice,
-          updatedPrice,
-          reversionForce,
-          matthewEffect,
-          chopNoise,
-          changePercent
-        });
-      }
+            console.log(`💰 ${stock.ticker} earnings at tick ${tick}: EPS $${report.eps}, surprise ${report.surprise}%`);
 
-      bulk.push({
-        updateOne: {
-          filter: { _id: stock._id },
-          update: {
-            $set: {
-              price: +updatedPrice.toFixed(4),
-              change: +changePercent.toFixed(2),
-              basePrice: +(stock.basePrice * (1 + DAILY_DRIFT)).toFixed(4),
-              history: updatedHistory
-            }
-          }
+            finalPrice = newPrice;
+            finalHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), finalPrice];
+
+            extraSet.lastEarningsReport = report;
+            extraSet.nextEarningsTick = nextEarningsTick;
         }
-      });
+
+        finalPrice = Math.max(finalPrice, 0.01); // Safety
+        finalChangePercent = ((finalPrice - prevPrice) / prevPrice) * 100;
+
+        totalChangePct += finalChangePercent;
+
+        if (sampleLogs.length < 5 && Math.random() < 0.01) {
+            sampleLogs.push({
+            ticker: stock.ticker,
+            prevPrice,
+            updatedPrice: finalPrice,
+            reversionForce,
+            matthewEffect,
+            chopNoise,
+            changePercent: finalChangePercent
+            });
+        }
+
+        // ✅ Final stock update via bulkWrite
+        bulk.push({
+            updateOne: {
+            filter: { _id: stock._id },
+            update: {
+                $set: {
+                price: +finalPrice.toFixed(4),
+                change: +finalChangePercent.toFixed(2),
+                basePrice: +(stock.basePrice * (1 + DAILY_DRIFT)).toFixed(4),
+                history: finalHistory,
+                ...extraSet
+                }
+            }
+            }
+        });
     }
+
 
     if (bulk.length) {
       await Stock.bulkWrite(bulk);
