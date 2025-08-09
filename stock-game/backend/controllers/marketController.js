@@ -14,47 +14,42 @@ const { selectMegaCaps, getMegaCaps } = require("../utils/megaCaps.js");
 const generateEarningsReport = require("../utils/generateEarnings.js");
 
 const HISTORY_LIMIT = 1200;
-const TRADING_DAYS = 365;
-const ANNUAL_DRIFT = 0.09;
-const DAILY_DRIFT = ANNUAL_DRIFT / TRADING_DAYS;
-const MEAN_REVERT_ALPHA = 0.03;
 
-// 📈 Dynamic Mean Reversion Config
+// ===== Time & Drift =====
+const TRADING_DAYS = 365;
+const ANNUAL_DRIFT_BASE = 0.12;               // target baseline ~9%/yr
+let driftMultiplier = 1.0;                    // adaptive multiplier (auto-calibrated)
+const TARGET_CAGR = 0.09;                     // aim for ~9% CAGR
+const CALIBRATION_PERIOD = 90;                // re-calibrate about quarterly
+const MAX_MULT = 1.15, MIN_MULT = 0.85;       // tight clamps to prevent runaway
+const Kp = 0.15;                              // tiny proportional gain (PID-lite)
+function getDailyDrift() {
+  return (ANNUAL_DRIFT_BASE * driftMultiplier) / TRADING_DAYS;
+}
+
+// ===== Mean Reversion =====
+const MEAN_REVERT_ALPHA = 0.03;
 const meanRevertMap = new Map();
-const ALPHA_VARIATION = 0.01; // +/- around the mean
-const ALPHA_CHANGE_PROB = 0.005; // 0.5% chance per tick
+const ALPHA_VARIATION = 0.01;
+const ALPHA_CHANGE_PROB = 0.005;
+function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
 function getAlpha(ticker) {
-  if (!meanRevertMap.has(ticker)) {
-    meanRevertMap.set(ticker, MEAN_REVERT_ALPHA);
-  }
+  if (!meanRevertMap.has(ticker)) meanRevertMap.set(ticker, MEAN_REVERT_ALPHA);
   return meanRevertMap.get(ticker);
 }
 function maybeChangeAlpha(ticker) {
   if (Math.random() < ALPHA_CHANGE_PROB) {
     const variation = (Math.random() * 2 - 1) * ALPHA_VARIATION;
-    let newAlpha = MEAN_REVERT_ALPHA + variation;
-    newAlpha = Math.max(0.015, Math.min(0.045, newAlpha));
-    meanRevertMap.set(ticker, newAlpha);
+    let next = MEAN_REVERT_ALPHA + variation;
+    meanRevertMap.set(ticker, clamp(next, 0.015, 0.045));
   }
 }
 
-// 📈 Matthew Effect Drift
+// ===== Matthew Effect =====
 const matthewDriftMap = new Map();
 const MAX_MATTHEW_DRIFT = 0.001;
 const MIN_MATTHEW_DRIFT = -0.001;
 const MATTHEW_STEP = 0.000001;
-
-// 🌪️ Macro chop state
-let macroChopWindow = false;
-let chopDuration = 0;
-let initialMarketCap = null;
-
-function getHistoricalMean(stock) {
-  const prices = stock.history;
-  if (!Array.isArray(prices) || prices.length === 0) return stock.basePrice || stock.price;
-  return prices.reduce((a, b) => a + b, 0) / prices.length;
-}
-
 function computeMatthewDrift(history = []) {
   if (history.length < 30) return 0;
   const past = history[history.length - 30];
@@ -66,6 +61,10 @@ function computeMatthewDrift(history = []) {
   return 0;
 }
 
+// ===== Macro Chop =====
+let macroChopWindow = false;
+let chopDuration = 0;
+let initialMarketCapForUI = null; // for the UI baseline you already log
 function applyMacroChop(tick) {
   if (macroChopWindow) {
     chopDuration--;
@@ -78,10 +77,79 @@ function applyMacroChop(tick) {
   return macroChopWindow;
 }
 
+// ===== Helpers =====
+function randNormal() {
+  // Box–Muller
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function getHistoricalMean(stock) {
+  const prices = stock.history;
+  if (!Array.isArray(prices) || prices.length === 0) return stock.basePrice || stock.price;
+  return prices.reduce((a, b) => a + b, 0) / prices.length;
+}
 function logMemoryUsage(context = "") {
   const mem = process.memoryUsage();
   const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MB";
   console.log(`[MEMORY${context ? " | " + context : ""}] RSS: ${mb(mem.rss)} | Heap Used: ${mb(mem.heapUsed)} | Heap Total: ${mb(mem.heapTotal)}`);
+}
+
+// ===== Volatility model (adaptive) =====
+// daily vol in decimal (0.02 = 2%)
+// EWMA of squared returns + mean‑reversion to target + tiny positive noise
+const VOL_MIN = 0.015;
+const VOL_MAX = 0.25;
+const LAMBDA = 0.90;            // memory (lower => reacts faster)
+const TARGET_DAILY_VOL = 0.020; // ~2% daily (≈32% annualized)
+const MEANREV = 0.05;           // pull strength
+const VOL_NOISE = 0.0015;       // small stochastic kick
+function updateVolatility(prevVol, pctMoveAbs) {
+  const capped = Math.min(Math.abs(pctMoveAbs), 0.20);
+  const ewma = Math.sqrt(
+    LAMBDA * prevVol * prevVol +
+    (1 - LAMBDA) * capped * capped
+  );
+  let newVol = ewma + MEANREV * (TARGET_DAILY_VOL - ewma);
+  const noiseKick = Math.max(0, randNormal()) * VOL_NOISE; // non-negative
+  return clamp(newVol + noiseKick, VOL_MIN, VOL_MAX);
+}
+
+// ===== Drift Calibrator (PID-lite) =====
+let calibrationBaseCap = null;
+let calibrationBaseTick = null;
+function calibrateDriftIfNeeded(tick, currentMarketCap) {
+  if (calibrationBaseCap == null || calibrationBaseTick == null) {
+    if (currentMarketCap > 0) {
+      calibrationBaseCap = currentMarketCap;
+      calibrationBaseTick = tick;
+      console.log(`🎯 Drift calibration baseline set at tick ${tick}`);
+    }
+    return;
+  }
+
+  const elapsed = tick - calibrationBaseTick;
+  if (elapsed < CALIBRATION_PERIOD) return;
+
+  const years = elapsed / TRADING_DAYS;
+  if (years <= 0 || calibrationBaseCap <= 0) return;
+
+  const realizedCAGR = Math.pow(currentMarketCap / calibrationBaseCap, 1 / years) - 1;
+  const error = TARGET_CAGR - realizedCAGR;
+
+  // proportional bump within tight clamps (prevents runaway/walks)
+  const next = driftMultiplier * (1 + Kp * (error / Math.max(0.01, TARGET_CAGR)));
+  driftMultiplier = clamp(next, MIN_MULT, MAX_MULT);
+
+  console.log(
+    `🎛️ Drift calibrator: realized=${(realizedCAGR*100).toFixed(2)}% | ` +
+    `mult=${driftMultiplier.toFixed(4)} | window=${elapsed} ticks`
+  );
+
+  // reset window to avoid chasing noise
+  calibrationBaseCap = currentMarketCap;
+  calibrationBaseTick = tick;
 }
 
 async function updateMarket() {
@@ -104,7 +172,8 @@ async function updateMarket() {
       volatility: 1,
       history: 1,
       outstandingShares: 1,
-      change: 1
+      change: 1,
+      nextEarningsTick: 1
     }).lean();
 
     if (!stocks.length) return console.error("⚠️ No stocks found in DB");
@@ -121,101 +190,123 @@ async function updateMarket() {
     let sampleLogs = [];
 
     for (const stock of stocks) {
-        const prevPrice = stock.price;
-        const historicalMean = getHistoricalMean(stock);
+      const prevPrice = stock.price;
+      const historicalMean = getHistoricalMean(stock);
 
-        // 🎯 Dynamic Mean Reversion
-        maybeChangeAlpha(stock.ticker);
-        const dynamicAlpha = getAlpha(stock.ticker);
-        const deviation = historicalMean - prevPrice;
-        const reversionForce = deviation * dynamicAlpha;
+      // 🎯 Dynamic Mean Reversion
+      maybeChangeAlpha(stock.ticker);
+      const dynamicAlpha = getAlpha(stock.ticker);
+      const deviation = historicalMean - prevPrice;
+      const reversionForce = deviation * dynamicAlpha; // absolute $
 
-        // 📈 Matthew Drift
-        const prevDrift = matthewDriftMap.get(stock.ticker) ?? 0;
-        const driftAdj = computeMatthewDrift(stock.history);
-        const newDrift = Math.max(MIN_MATTHEW_DRIFT, Math.min(MAX_MATTHEW_DRIFT, prevDrift + driftAdj));
-        matthewDriftMap.set(stock.ticker, newDrift);
-        const matthewEffect = prevPrice * newDrift;
+      // 📈 Matthew Drift
+      const prevDrift = matthewDriftMap.get(stock.ticker) ?? 0;
+      const driftAdj = computeMatthewDrift(stock.history);
+      const newDrift = clamp(prevDrift + driftAdj, MIN_MATTHEW_DRIFT, MAX_MATTHEW_DRIFT);
+      matthewDriftMap.set(stock.ticker, newDrift);
+      const matthewEffect = prevPrice * newDrift; // absolute $
 
-        // 🌪️ Chop noise
-        const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.01 * prevPrice : 0;
+      // 🌀 Volatility‑scaled random shock
+      const vol = typeof stock.volatility === "number" ? stock.volatility : 0.018;
+      const chopMultiplier = isChoppy ? 1.3 : 1.0;     // +30% during chop window
+      const volShockPct = randNormal() * vol * chopMultiplier; // % move
+      const volShockAbs = prevPrice * volShockPct;     // absolute $
 
-        let finalPrice = prevPrice + reversionForce + matthewEffect + chopNoise;
-        let finalChangePercent;
-        let finalHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), finalPrice];
-        let extraSet = {};
+      // 🌪️ Small legacy chop noise
+      const chopNoise = isChoppy ? (Math.random() - 0.5) * 0.004 * prevPrice : 0;
 
-        // 📢 Earnings Report Logic
-        if (stock.nextEarningsTick !== undefined && tick >= stock.nextEarningsTick) {
-            const { report, newPrice, nextEarningsTick } = generateEarningsReport(stock, tick);
+      // Combine forces (drift toward anchor happens via basePrice evolution below)
+      let finalPrice = prevPrice + reversionForce + matthewEffect + volShockAbs + chopNoise;
 
-            console.log(`💰 ${stock.ticker} earnings at tick ${tick}: EPS $${report.eps}, surprise ${report.surprise}%`);
-
-            finalPrice = newPrice;
-            finalHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), finalPrice];
-
-            extraSet.lastEarningsReport = report;
-            extraSet.nextEarningsTick = nextEarningsTick;
-        }
-
-        finalPrice = Math.max(finalPrice, 0.01); // Safety
-        finalChangePercent = ((finalPrice - prevPrice) / prevPrice) * 100;
-
-        totalChangePct += finalChangePercent;
-
-        if (sampleLogs.length < 5 && Math.random() < 0.01) {
-            sampleLogs.push({
-            ticker: stock.ticker,
-            prevPrice,
-            updatedPrice: finalPrice,
-            reversionForce,
-            matthewEffect,
-            chopNoise,
-            changePercent: finalChangePercent
-            });
-        }
-
-        // ✅ Final stock update via bulkWrite
+      // 📢 Earnings Report
+      if (stock.nextEarningsTick !== undefined && tick >= stock.nextEarningsTick) {
+        const { report, newPrice, nextEarningsTick } = generateEarningsReport(stock, tick);
+        console.log(`💰 ${stock.ticker} earnings at tick ${tick}: EPS $${report.eps}, surprise ${report.surprise}%`);
+        finalPrice = newPrice;
         bulk.push({
-            updateOne: {
+          updateOne: {
             filter: { _id: stock._id },
-            update: {
-                $set: {
-                price: +finalPrice.toFixed(4),
-                change: +finalChangePercent.toFixed(2),
-                basePrice: +(stock.basePrice * (1 + DAILY_DRIFT)).toFixed(4),
-                history: finalHistory,
-                ...extraSet
-                }
-            }
-            }
+            update: { $set: { lastEarningsReport: report, nextEarningsTick } }
+          }
         });
-    }
+      }
 
+      // Safety floor
+      finalPrice = Math.max(finalPrice, 0.01);
+
+      const pctMove = (finalPrice - prevPrice) / prevPrice;
+      const newVol = +updateVolatility(vol, Math.abs(pctMove)).toFixed(4);
+
+      // Advance the base anchor with ADAPTIVE daily drift (calibrator)
+      const dailyDrift = getDailyDrift();
+      const nextBase = +( (stock.basePrice ?? prevPrice) * (1 + dailyDrift) ).toFixed(4);
+
+      const finalHistory = [...(stock.history || []).slice(-HISTORY_LIMIT + 1), finalPrice];
+      const finalChangePercent = pctMove * 100;
+      totalChangePct += finalChangePercent;
+
+      if (sampleLogs.length < 5 && Math.random() < 0.01) {
+        sampleLogs.push({
+          ticker: stock.ticker,
+          prevPrice,
+          updatedPrice: finalPrice,
+          reversionForce,
+          matthewEffect,
+          volShockAbs,
+          chopNoise,
+          vol: newVol,
+          changePercent: finalChangePercent
+        });
+      }
+
+      bulk.push({
+        updateOne: {
+          filter: { _id: stock._id },
+          update: {
+            $set: {
+              price: +finalPrice.toFixed(4),
+              change: +finalChangePercent.toFixed(2),
+              basePrice: nextBase,
+              history: finalHistory,
+              volatility: newVol
+            }
+          }
+        }
+      });
+    }
 
     if (bulk.length) {
       await Stock.bulkWrite(bulk);
       console.log(`✅ Applied updates to ${bulk.length} stocks.`);
     }
 
-    // Show investigation logs
+    // Logs
     console.log(`📊 Avg % change this tick: ${(totalChangePct / stocks.length).toFixed(4)}%`);
     if (sampleLogs.length) {
       console.log("🔍 Sample stock adjustments:");
       sampleLogs.forEach(s => {
         console.log(
-          `${s.ticker} | Prev: ${s.prevPrice.toFixed(2)} → New: ${s.updatedPrice.toFixed(2)} | Δ: ${s.changePercent.toFixed(2)}% | Revert: ${s.reversionForce.toFixed(4)} | Matthew: ${s.matthewEffect.toFixed(4)} | Chop: ${s.chopNoise.toFixed(4)}`
+          `${s.ticker} | Prev: ${s.prevPrice.toFixed(2)} → New: ${s.updatedPrice.toFixed(2)} | Δ: ${s.changePercent.toFixed(2)}% | ` +
+          `Revert: ${s.reversionForce.toFixed(4)} | Matthew: ${s.matthewEffect.toFixed(4)} | VolShock: ${s.volShockAbs.toFixed(4)} | ` +
+          `Chop: ${s.chopNoise.toFixed(4)} | Vol: ${s.vol.toFixed(4)}`
         );
       });
     }
 
-    await applyImpactToStocks();
+    // News + Gaussian (global adjustments)
+    await applyImpactToStocks?.();
     await applyGaussian();
 
+    // Market cap & drift calibration & mood/firms
     const marketCap = stocks.reduce((sum, s) => sum + s.price * (s.outstandingShares ?? 1), 0);
-    if (!initialMarketCap) initialMarketCap = marketCap;
-    const delta = ((marketCap - initialMarketCap) / initialMarketCap) * 100;
+
+    // (UI) market cap baseline log
+    if (!initialMarketCapForUI) initialMarketCapForUI = marketCap;
+    const delta = ((marketCap - initialMarketCapForUI) / initialMarketCapForUI) * 100;
     console.log(`🏦 Market cap change since baseline: ${delta.toFixed(2)}%`);
+
+    // Calibrate drift toward TARGET_CAGR safely
+    calibrateDriftIfNeeded(tick, marketCap);
 
     recordMarketIndexHistory(stocks);
     const mood = recordMarketMood(stocks);
@@ -225,7 +316,6 @@ async function updateMarket() {
     console.error("🔥 Market update error:", err);
   }
 }
-
 
 module.exports = {
   updateMarket,

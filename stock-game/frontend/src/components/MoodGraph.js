@@ -1,37 +1,53 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Filler,
+  Legend,
+} from "chart.js";
 import "chartjs-adapter-date-fns";
 import API_BASE_URL from "../apiConfig";
-// Fetch mood history from backend
-const fetchMoodHistory = async () => {
+
+ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Filler, Legend);
+
+// Fetch mood + history from backend
+const fetchMoodData = async () => {
   const res = await fetch(`${API_BASE_URL}/api/market-data/mood`);
-  const data = await res.json();
-  return data.moodHistory;
+  const data = await res.json(); // { mood, moodHistory: [{ mood, value, timestamp }, ...] }
+  return data;
 };
 
-const MoodGraph = () => {
-  const { data: moodHistory = [], isLoading, error } = useQuery({
+export default function MoodGraph() {
+  const { data, isLoading, error } = useQuery({
     queryKey: ["moodHistory"],
-    queryFn: fetchMoodHistory,
+    queryFn: fetchMoodData,
     refetchInterval: 30000,
   });
 
   if (isLoading) return <p>Loading market mood...</p>;
   if (error) return <p>Error loading market mood.</p>;
-  
-  if (!Array.isArray(moodHistory) || moodHistory.length === 0)
-    return <p>No mood history yet.</p>;
+  const moodHistory = Array.isArray(data?.moodHistory) ? data.moodHistory : [];
+  if (moodHistory.length === 0) return <p>No mood history yet.</p>;
 
-  const values = moodHistory.map((entry) => entry.value);
-  const labels = moodHistory.map((_, index) => `T-${30 - index}`); // e.g., T-30 to T-1
+  // Data points carry mood text so tooltips can access it
+  const points = moodHistory.map((entry) => ({
+    x: entry.timestamp,
+    y: entry.value,
+    mood: entry.mood,
+  }));
 
-  const data = {
-    labels,
+  const chartData = {
+    labels: points.map((p) => `T-${p.x}`),
     datasets: [
       {
         label: "Market Mood (0 = bearish, 1 = bullish)",
-        data: values,
+        data: points,
         borderColor: "#4caf50",
         backgroundColor: "rgba(76, 175, 80, 0.2)",
         pointRadius: 3,
@@ -52,33 +68,35 @@ const MoodGraph = () => {
           stepSize: 0.1,
           callback: (value) => `${(value * 100).toFixed(0)}%`,
         },
-        title: {
-          display: true,
-          text: "Bullishness %",
-        },
+        title: { display: true, text: "Bullishness %" },
       },
       x: {
-        title: {
-          display: true,
-          text: "Market Updates (Recent → Left)",
-        },
+        title: { display: true, text: "Market Updates (Recent → Left)" },
       },
     },
     plugins: {
       tooltip: {
         callbacks: {
-          label: (ctx) => `Sentiment: ${(ctx.parsed.y * 100).toFixed(1)}% bullish`,
+          label: (ctx) => {
+            const moodAtTick = ctx.raw.mood || "Unknown";
+            const pct = (ctx.parsed.y * 100).toFixed(1);
+            return `${moodAtTick} — ${pct}% bullish`;
+          },
+          title: (items) => {
+            const idx = items?.[0]?.dataIndex ?? 0;
+            const entry = moodHistory[idx];
+            return entry ? `Tick ${entry.timestamp}` : "";
+          },
         },
       },
+      legend: { display: false },
     },
   };
 
   return (
     <div style={{ height: "250px", width: "100%", marginBottom: "1rem" }}>
-      <h3>📊 Market Mood (Last 30 Updates)</h3>
-      <Line data={data} options={options} />
+      <h3>📊 Market Mood (Last {moodHistory.length} Updates)</h3>
+      <Line data={chartData} options={options} />
     </div>
   );
-};
-
-export default MoodGraph;
+}

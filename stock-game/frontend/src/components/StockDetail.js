@@ -116,6 +116,8 @@ export default function StockDetail() {
     if (type === 'call' || type === 'put') {
       payload.strike = strike;
       payload.expiryTick = expiryTick;
+      payload.contracts = shares;
+      payload.multiplier = 100;
     }
     const res = await fetch(
       `${API_BASE_URL}/api/portfolio/${userId}/transactions`,

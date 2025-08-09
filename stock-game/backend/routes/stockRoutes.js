@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Stock = require('../models/Stock'); // Ensure correct model import
+const Stock = require('../models/Stock');
+const { getLastDividendSummary } = require('../utils/payDividends'); //attempt other import method if needed FLAG
 const { selectMegaCaps, getMegaCaps } = require('../utils/megaCaps'); 
 // GET all stocks with rounded values
 router.get('/', async (req, res) => {
@@ -24,8 +25,11 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Error fetching stocks' });
     }
 });
-
-
+router.get('/last-dividend', (req, res) => {
+    const { userId } = req.query;
+    const summary = getLastDividendSummary(userId);
+    res.json(summary);  
+});
 
 async function getSectorDataForHeatmap() {
   try {

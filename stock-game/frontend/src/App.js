@@ -13,6 +13,7 @@ import { GameProgressProvider } from "./utils/gameProgressProvider";
 import AchievementManager from "./utils/AchievementManager";
 
 // Components
+import { useTick } from "./TickProvider";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Heatmap from "./components/Heatmap";
@@ -41,6 +42,8 @@ import TickProgressBar from "./components/TickProgressbar";
 import { getOrCreateUserId } from "./userId";
 import TickUpdateOverlay from "./components/TickUpdateOverlay";
 import AchievementPage from "./components/AchievementPage";
+import MarketMoodOverlay from "./components/MarketMoodOverlay";
+import DividendWatcher from "./components/DividendWatcher";
 await getOrCreateUserId();
 
 const queryClient = new QueryClient();
@@ -69,7 +72,7 @@ const HeatmapContainer = () => {
 
 function App() {
   const [showModal, setShowModal] = useState(false);
-
+  const { tick } = useTick();
   useEffect(() => {
     const seen = localStorage.getItem("hasSeenTutorial");
     if (!seen) {
@@ -92,6 +95,8 @@ function App() {
             <TickUpdateOverlay />
             <Router>
               <div className="container">
+                <MarketMoodOverlay />
+                <DividendWatcher userId={getOrCreateUserId()} tick={tick} />
                 <Topbar />
                 <TickProgressBar />
                 <Sidebar />
