@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import API_BASE_URL from "../apiConfig";
 import { getOrCreateUserId } from "../userId";
-
+import { checkAchievements } from "./utils/checkAchievements";
 const DataContext = createContext();
 export function GlobalDataProvider({ children }) {
   const userId = getOrCreateUserId();
@@ -16,6 +16,7 @@ export function GlobalDataProvider({ children }) {
     const data = await res.json();
     setPortfolio(data);
     setTransactions(data.transactions || []);
+    checkAchievements(data)
   }, [userId]);
 
   const refreshStocks = useCallback(async () => {

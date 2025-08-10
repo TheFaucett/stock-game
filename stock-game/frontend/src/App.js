@@ -8,7 +8,12 @@ import { TickProvider } from "./TickProvider";
 import { GlobalDataProvider } from "./GlobalDataContext";
 import GlobalRefreshManager from "./GlobalRefreshManager";
 
+// Achievement system
+import { GameProgressProvider } from "./utils/gameProgressProvider";
+import AchievementManager from "./utils/AchievementManager";
+
 // Components
+import { useTick } from "./TickProvider";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Heatmap from "./components/Heatmap";
@@ -28,6 +33,7 @@ import FirmsList from "./components/Firms";
 import FirmDetail from "./components/FirmDetail";
 import PortfolioPage from "./components/PortfolioPage";
 import PortfolioButton from "./components/PortfolioButton";
+import AchievementButton from "./components/AchievementButton";
 import TutorialModal from "./components/TutorialModal";
 import RandomStockPicker from "./components/RandomStockPicker";
 import HomeTabs from "./components/HomeTabs";
@@ -35,7 +41,9 @@ import TickerSearch from "./components/TickerSearch";
 import TickProgressBar from "./components/TickProgressbar";
 import { getOrCreateUserId } from "./userId";
 import TickUpdateOverlay from "./components/TickUpdateOverlay";
-
+import AchievementPage from "./components/AchievementPage";
+import MarketMoodOverlay from "./components/MarketMoodOverlay";
+import DividendWatcher from "./components/DividendWatcher";
 await getOrCreateUserId();
 
 const queryClient = new QueryClient();
@@ -64,7 +72,7 @@ const HeatmapContainer = () => {
 
 function App() {
   const [showModal, setShowModal] = useState(false);
-
+  const { tick } = useTick();
   useEffect(() => {
     const seen = localStorage.getItem("hasSeenTutorial");
     if (!seen) {
@@ -81,97 +89,116 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TickProvider>
         <GlobalDataProvider>
-          <GlobalRefreshManager />
+          <GameProgressProvider>
+            <GlobalRefreshManager />
+            <AchievementManager />
+            <TickUpdateOverlay />
+            <Router>
+              <div className="container">
+                <MarketMoodOverlay />
+                <DividendWatcher userId={getOrCreateUserId()} tick={tick} />
+                <Topbar />
+                <TickProgressBar />
+                <Sidebar />
 
-          <TickUpdateOverlay /> 
-          <Router>
-            <div className="container">
-              <Topbar />
-              <TickProgressBar />
-              <Sidebar />
+                <Routes>
+                  <Route
+                    path="/"
+                    element={
+                      <>
+                        <TutorialModal
+                          isOpen={showModal}
+                          onClose={handleClose}
+                        />
+                        <FeaturedStocks />
+                        <HomeTabs />
+                        <div className="fab-container">
 
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <>
-                      <TutorialModal isOpen={showModal} onClose={handleClose} />
-                      <FeaturedStocks />
-                      <HomeTabs />
-                      <div className="random-picker-center">
-                        <RandomStockPicker />
-                        <TickerSearch />
-                      </div>
-                      <HeatmapContainer />
-                      <PortfolioButton />
-                      <MoodGraph />
-                      <MarketIndexGraph />
-                      <div style={{ marginTop: "5rem" }}>
-                        <TransactionDashboard userId={getOrCreateUserId()} />
-                      </div>
-                    </>
-                  }
-                />
-                <Route path="/stock/:ticker" element={<StockDetail />} />
-                <Route path="/bank" element={<Bank />} />
-                <Route
-                  path="/transactions"
-                  element={
-                    <TransactionDashboard userId={getOrCreateUserId()} />
-                  }
-                />
-                <Route
-                  path="/top-movers"
-                  element={
-                    <TopStocksPage
-                      endpoint="movers"
-                      title="🚀 Top Movers"
-                      formatValue={(s) => `${s.change.toFixed(2)}%`}
-                    />
-                  }
-                />
-                <Route
-                  path="/top-volatility"
-                  element={
-                    <TopVolatility
-                      endpoint="volatility"
-                      title="🎢 Most Volatile"
-                      formatValue={(s) => `${(s.volatility * 100).toFixed(2)}%`}
-                    />
-                  }
-                />
-                <Route
-                  path="/top-dividends"
-                  element={
-                    <TopDividends
-                      endpoint="dividends"
-                      title="💸 Top Dividend Yield"
-                      formatValue={(s) =>
-                        `${(s.dividendYield * 100).toFixed(2)}%`
-                      }
-                    />
-                  }
-                />
-                <Route
-                  path="/top-marketcap"
-                  element={
-                    <TopMarketCapStocks
-                      endpoint="marketcap"
-                      title="🏦 Top Market Cap"
-                      formatValue={(s) =>
-                        `$${(s.marketCap / 1e9).toFixed(2)} B`
-                      }
-                    />
-                  }
-                />
-                <Route path="/firms" element={<FirmsList />} />
-                <Route path="/firms/:name" element={<FirmDetail />} />
-                <Route path="/portfolio" element={<PortfolioPage />} />
-                <Route path="/tutorial" element={<TutorialModal />} />
-                <Route path="/leaderboard" element={<Leaderboard />} />
-              </Routes>
-            </div>
-          </Router>
+                            <AchievementButton />
+                            <PortfolioButton />
+                        </div>
+                        <div className="random-picker-center">
+                          <RandomStockPicker />
+                          <TickerSearch />
+                        </div>
+                        <HeatmapContainer />
+                  
+
+
+                        <MoodGraph />
+                        <MarketIndexGraph />
+                        <div style={{ marginTop: "5rem" }}>
+                          <TransactionDashboard
+                            userId={getOrCreateUserId()}
+                          />
+                        </div>
+                      </>
+                    }
+                  />
+                  <Route path="/stock/:ticker" element={<StockDetail />} />
+                  <Route path="/bank" element={<Bank />} />
+                  <Route
+                    path="/transactions"
+                    element={
+                      <TransactionDashboard userId={getOrCreateUserId()} />
+                    }
+                  />
+                  <Route
+                    path="/top-movers"
+                    element={
+                      <TopStocksPage
+                        endpoint="movers"
+                        title="🚀 Top Movers"
+                        formatValue={(s) => `${s.change.toFixed(2)}%`}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/top-volatility"
+                    element={
+                      <TopVolatility
+                        endpoint="volatility"
+                        title="🎢 Most Volatile"
+                        formatValue={(s) =>
+                          `${(s.volatility * 100).toFixed(2)}%`
+                        }
+                      />
+                    }
+                  />
+                  <Route
+                    path="/top-dividends"
+                    element={
+                      <TopDividends
+                        endpoint="dividends"
+                        title="💸 Top Dividend Yield"
+                        formatValue={(s) =>
+                          `${(s.dividendYield * 100).toFixed(2)}%`
+                        }
+                      />
+                    }
+                  />
+                  <Route
+                    path="/top-marketcap"
+                    element={
+                      <TopMarketCapStocks
+                        endpoint="marketcap"
+                        title="🏦 Top Market Cap"
+                        formatValue={(s) =>
+                          `$${(s.marketCap / 1e9).toFixed(2)} B`
+                        }
+                      />
+                    }
+                  />
+                  <Route path="/firms" element={<FirmsList />} />
+                  <Route path="/firms/:name" element={<FirmDetail />} />
+                  <Route path="/portfolio" element={<PortfolioPage />} />
+                  <Route path="/tutorial" element={<TutorialModal />} />
+                  <Route path="/leaderboard" element={<Leaderboard />} />
+                  <Route path="/achievements" element={<AchievementPage />} />
+                </Routes>
+              </div>
+            </Router>
+          </GameProgressProvider>
         </GlobalDataProvider>
       </TickProvider>
     </QueryClientProvider>

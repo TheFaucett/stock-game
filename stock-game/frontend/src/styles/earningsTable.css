@@ -1,0 +1,28 @@
+.earnings-table-container {
+  margin-top: 1rem;
+}
+
+.earnings-table {
+  margin-top: 0.75rem;
+  border-collapse: collapse;
+  width: 100%;
+  background-color: #111; /* dark background */
+  color: #ddd; /* light text */
+  border: 1px solid #333;
+}
+
+.earnings-table th,
+.earnings-table td {
+  border: 1px solid #333;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.earnings-table th {
+  background-color: #222;
+  font-weight: bold;
+}
+
+.earnings-table tr:hover td {
+  background-color: #1b1b1b;
+}
