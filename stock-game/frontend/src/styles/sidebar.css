@@ -77,3 +77,20 @@
 .sidebar::-webkit-scrollbar-thumb:hover {
     background: #777;
 }
+/* Ensure charts don’t overlap following sections */
+.sidebar .chart-block {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  margin: 8px 0 18px;
+  overflow: hidden;
+}
+.sidebar .interval-buttons .interval-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.1;
+}
+.sidebar .chart-block canvas {
+  position: relative !important;
+  display: block;
+}

@@ -1,6 +1,6 @@
 // utils/tick.js
 let currentTick = 0;
-const TICK_LENGTH = 9; // seconds
+const TICK_LENGTH = 0.5; // seconds
 
 function incrementTick() {
   currentTick++;

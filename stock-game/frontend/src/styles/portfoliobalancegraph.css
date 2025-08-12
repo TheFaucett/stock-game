@@ -1,56 +1,77 @@
-/* src/styles/portfoliobalancegraph.css */
 
-/* --- Range selector buttons (unchanged) --- */
+/* --- Range selector --- */
 .portfolio-graph .range-buttons {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
 .portfolio-graph .range-button {
-  padding: 6px 14px;
-  font-size: 0.9rem;
+  padding: 6px 12px;
+  font-size: 0.88rem;
   border-radius: 6px;
   border: 1px solid #2d3a72;
   background-color: #2f3b85;
   color: #e0e7ff;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out, transform 0.15s ease;
+  transition: background-color 0.15s ease-in-out, transform 0.12s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .portfolio-graph .range-button:hover {
   background-color: #3f51b5;
   transform: translateY(-1px);
 }
+.portfolio-graph .range-button:focus-visible {
+  outline: 2px solid #90a4ff;
+  outline-offset: 2px;
+}
 
 .portfolio-graph .range-button.active {
   background-color: #5c6bc0;
-  color: #ffffff;
-  border: 1px solid #7986cb;
+  color: #fff;
+  border-color: #7986cb;
   box-shadow: 0 0 6px rgba(92, 107, 192, 0.4);
 }
 
-/* === NEW: Graph size variants === */
-.portfolio-graph.small {
-  height: 120px;
-  min-height: 110px;
+/* --- Graph wrapper (controls height + clamps overflow) --- */
+.portfolio-graph {
   width: 100%;
-  /* You can add margin or tweak as needed for Sidebar fit */
-}
-.portfolio-graph.large {
-  height: 250px;
-  min-height: 200px;
-  width: 100%;
-  /* Roomier for Portfolio page */
 }
 
-/* Optionally: Tweak Chart.js canvas to fully fill parent */
+.portfolio-graph .pbg-canvas {
+  position: relative;
+  width: 100%;
+  overflow: hidden;         /* prevents axis/tooltip bleed */
+  border-radius: 10px;
+  margin: 6px 0 14px;       /* breathing room under chart */
+}
+
+/* Height presets (apply via <div class="portfolio-graph small|medium|large">) */
+.portfolio-graph.small  .pbg-canvas { height: 160px; }
+.portfolio-graph.medium .pbg-canvas { height: 200px; }
+.portfolio-graph.large  .pbg-canvas { height: 240px; }
+
+/* Make the canvas fill its wrapper exactly */
 .portfolio-graph canvas {
+  display: block;           /* removes inline baseline gap */
   width: 100% !important;
   height: 100% !important;
-  /* Remove box-shadow or border if unwanted */
   background: transparent;
-  border-radius: 12px;
+  border-radius: inherit;
+}
+
+/* Optional: compact buttons on very narrow sidebars */
+@media (max-width: 280px) {
+  .portfolio-graph .range-button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .portfolio-graph .range-button { transition: none; }
 }
