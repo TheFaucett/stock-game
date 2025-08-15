@@ -1,63 +1,61 @@
-const Stock = require('../models/Stock');
+const { addSet } = require('./patchKit');
 
+// --- small helpers ---
 function randNormal() {
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
-
-function clamp(x, min, max) {
-  return Math.max(min, Math.min(max, x));
+function clamp(x, lo, hi) {
+  return Math.min(hi, Math.max(lo, x));
 }
 
+// --- persistent macro state (module scoped) ---
 let macroMomentum = 0;
 
-const applyGaussian = async () => {
-  try {
-    const stocks = await Stock.find();
-    const baseDrift = 0.0002;
-    const macroStrength = 0.007;
-    const marketVolatility = 0.01;
-    const maxPctChange = 0.25;
+// --- tuning knobs (safe defaults) ---
+const VOL_MIN = 0.015;          // keep in step with your main model
+const VOL_MAX = 0.25;
+const MACRO_STEP_SIGMA = 0.02;  // size of the macro random-walk step
+const MACRO_STRENGTH   = 0.15;  // how strongly macro affects vol (±15%)
+const NOISE_VOL_KICK   = 0.002; // tiny additive vol “breathing”
 
-    macroMomentum += randNormal() * 0.02;
-    macroMomentum = clamp(macroMomentum, -3, 3);
+/**
+ * gaussianPatches(stocks)
+ * @param {Array<LeanStock>} stocks - lean docs you already fetched this tick
+ * @returns {Map<ObjectId, UpdateDoc>}
+ *
+ * Note: We adjust ONLY `volatility`. We do NOT touch `price` here to avoid
+ * conflicts with your core price engine & history push.
+ */
+async function gaussianPatches(stocks = []) {
+  const patches = new Map();
+  if (!Array.isArray(stocks) || stocks.length === 0) return patches;
 
-    const macroDrift = Math.tanh(macroMomentum) * macroStrength;
-    const effectiveDrift = baseDrift + macroDrift;
+  // 1) evolve macro momentum (bounded random walk)
+  macroMomentum = clamp(macroMomentum + randNormal() * MACRO_STEP_SIGMA, -3, 3);
 
-    const bulkOps = [];
+  // 2) translate momentum -> macro multiplier via tanh for smooth bounds
+  const macroFactor = 1 + Math.tanh(macroMomentum) * MACRO_STRENGTH; // ~[0.85, 1.15]
 
-    for (let stock of stocks) {
-      const { _id, price, volatility = 0.015 } = stock;
-      const epsilon = randNormal();
-      const marketNoise = randNormal();
+  // 3) per-stock volatility tweak
+  for (const s of stocks) {
+    const id = s._id;
+    if (!id) continue;
 
-      const rawChange = effectiveDrift + volatility * epsilon + marketVolatility * marketNoise;
-      const boundedChange = clamp(rawChange, -maxPctChange, maxPctChange);
-      const updatedPrice = Math.max(price * (1 + boundedChange), 0.01);
+    const v0 = (typeof s.volatility === 'number') ? s.volatility : 0.018;
+    const epsilon = Math.abs(randNormal()); // idiosyncratic non-negative kick
 
-      bulkOps.push({
-        updateOne: {
-          filter: { _id },
-          update: {
-            $set: {
-              price: +updatedPrice.toFixed(4),
-              change: +(boundedChange * 100).toFixed(2)
-            }
-          }
-        }
-      });
+    let v1 = v0 * macroFactor + NOISE_VOL_KICK * epsilon;
+    v1 = clamp(+v1.toFixed(4), VOL_MIN, VOL_MAX);
+
+    if (v1 !== v0) {
+      addSet(patches, id, { volatility: v1 });
     }
-
-    if (bulkOps.length) {
-      await Stock.bulkWrite(bulkOps);
-      console.log(`✅ Gaussian noise applied to ${bulkOps.length} stocks.`);
-    }
-  } catch (error) {
-    console.error("❌ Error applying Gaussian noise:", error);
   }
-};
 
-module.exports = { applyGaussian };
+  return patches;
+}
+
+module.exports = { gaussianPatches };

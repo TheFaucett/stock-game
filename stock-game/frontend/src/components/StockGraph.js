@@ -1,241 +1,134 @@
 // src/components/StockGraph.jsx
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import API_BASE_URL from "../apiConfig";
-import CandleChart from "./CandleChart";
 
-/* ---------------- localStorage helpers ---------------- */
-function getLS(key, fallback) {
-  try {
-    const v = localStorage.getItem(key);
-    return v ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-function setLS(key, val) {
-  try {
-    localStorage.setItem(key, val);
-  } catch {}
-}
+const DEBUG = false;
+const log = (...a) => { if (DEBUG) console.log("[StockGraph]", ...a); };
+const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 
-/* ---------------- fetcher ---------------- */
-async function fetchStockData(ticker) {
-  const res = await fetch(`${API_BASE_URL}/api/stocks/${ticker}`);
-  if (!res.ok) throw new Error("Stock data fetch failed");
-  return res.json();
+/** Fetch tail-only history */
+async function fetchTail(ticker, { tail, maxPoints }) {
+  const url = `${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/history?tail=${tail}&maxPoints=${maxPoints}`;
+  log("GET", url);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`History fetch failed (${res.status})`);
+  const json = await res.json(); // { ticker, points, meta:{tail, returned, overallTotal} }
+  log("resp.meta", json?.meta, "points.len", Array.isArray(json?.points) ? json.points.length : 0);
+  return json;
 }
 
 /**
- * StockGraph
  * Props:
  *  - ticker (required)
- *  - history?: number[]  (optional raw price array; if omitted we fetch)
- *  - height?: number     (default 150)
- *  - showTypeToggle?: boolean (default true)  show Line/Candles buttons
- *  - compact?: boolean   (default false)      hides axes & grids, tighter padding
+ *  - height?: number (default 260)
+ *  - compact?: boolean (default false) hides axes
  */
-export default function StockGraph({
-  ticker,
-  history: historyProp,
-  height = 150,
-  showTypeToggle = true,
-  compact = false,
-}) {
-  // Persist UI state per ticker
-  const [range, setRange] = useState(() => getLS(`range:${ticker}`, "1M"));
-  const [chartTypeState, setChartTypeState] = useState(() =>
-    getLS(`chartType:${ticker}`, "line")
-  );
-  // If we’re not showing the type toggle (e.g., sidebar), force line
-  const chartType = showTypeToggle ? chartTypeState : "line";
+export default function StockGraph({ ticker, height = 260, compact = false }) {
+  // Range → ticks (1 tick ≈ 1 day)
+  const [range, setRange] = useState("1M");
+  // force chart remount on range change to avoid stale axes/smoothing artifacts
+  const [mountKey, setMountKey] = useState(0);
+  useEffect(() => { setRange("1M"); setMountKey(k => k + 1); }, [ticker]);
 
+  // measure width -> sensible maxPoints
+  const wrapRef = useRef(null);
+  const [pxWidth, setPxWidth] = useState(400);
   useEffect(() => {
-    setRange(getLS(`range:${ticker}`, "1M"));
-    setChartTypeState(getLS(`chartType:${ticker}`, "line"));
-  }, [ticker]);
-  useEffect(() => {
-    setLS(`range:${ticker}`, range);
-  }, [range, ticker]);
-  useEffect(() => {
-    if (showTypeToggle) setLS(`chartType:${ticker}`, chartType);
-  }, [chartType, ticker, showTypeToggle]);
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setPxWidth(Math.max(200, Math.floor(entry.contentRect.width)));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-  // Fetch when history prop not provided
+  // ✅ New tails (literal ticks)
+  // MAX uses a huge sentinel; backend clamps to available length
+  const tailByRange = { "5D": 5, "1M": 30, "YTD": 365, "MAX": 1_000_000_000 };
+  const tail = tailByRange[range] ?? 30;
+
+  // ~2px/point; keep it sane. Also clamp to tail to avoid asking for more than we request.
+  const baseMax = clamp(Math.floor(pxWidth / 2), 30, 800);
+  const safeMaxPoints = Math.min(baseMax, tail);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["stock", ticker],
-    queryFn: () => fetchStockData(ticker),
-    enabled: !!ticker && !historyProp,
-    staleTime: 15000,
-    refetchInterval: 30000,
-    cacheTime: 60000,
+    queryKey: ["stock-tail", ticker, tail, safeMaxPoints, mountKey],
+    queryFn: () => fetchTail(ticker, { tail, maxPoints: safeMaxPoints }),
+    enabled: !!ticker,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 
-  // prefer prop, fallback to API’s history
-  const sourceHistory = historyProp ?? (Array.isArray(data?.history) ? data.history : []);
+  const points = useMemo(() => Array.isArray(data?.points) ? data.points : [], [data]);
 
-  // Keep last good history so the chart doesn’t disappear between polls
-  const updateType = useRef("poll");
-  const prevHistory = useRef([]);
+  const labels = useMemo(() => {
+    const t = data?.meta?.tail ?? points.length;
+    const offset = Math.max(0, t - points.length);
+    return points.map((_, i) => `t-${offset + i + 1}`);
+  }, [points, data]);
 
-  const memo = useMemo(() => {
-    const history = sourceHistory?.length ? sourceHistory : prevHistory.current;
-    if (!history || history.length < 2) {
-      return { chartData: null, options: null, historySlice: [] };
-    }
-    prevHistory.current = history;
+  const net = points.length > 1 ? points.at(-1) - points[0] : 0;
+  const color = net < 0 ? "#e53935" : net > 0 ? "#43a047" : "#9aa0a6";
 
-    // Map UI ranges to point counts
-    const windows = { "5D": 5, "1M": 30, "YTD": 365, "MAX": Infinity };
+  const yMin = points.length ? Math.min(...points) : 0;
+  const yMax = points.length ? Math.max(...points) : 1;
+  const yPad = Math.max((yMax - yMin) * 0.08, (yMax || 1) * 0.02);
 
-    // For compact (sidebar), don’t cram too many points in a 250px column
-    const effectiveRange = compact
-      ? Math.min(windows[range] ?? 30, 120)
-      : windows[range] ?? 30;
+  const chartData = {
+    labels,
+    datasets: [{
+      label: `${ticker} Price`,
+      data: points,
+      borderColor: color,
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: compact ? 0.25 : 0.3,
+      cubicInterpolationMode: "monotone",
+      fill: false,
+    }],
+  };
 
-    const sliceLen = Math.min(effectiveRange, history.length);
-    const slice = history.slice(-sliceLen);
-    const startIx = history.length - slice.length;
-
-    const labels = slice.map((_, i) => `Tick ${startIx + i + 1}`);
-    const net = slice[slice.length - 1] - slice[0];
-    const color = net < 0 ? "#e53935" : net > 0 ? "#43a047" : "#9aa0a6";
-
-    const animation = updateType.current === "user" ? { duration: 400 } : false;
-
-    // Compute padded y-range (prevents cramped look)
-    const yMin = Math.min(...slice);
-    const yMax = Math.max(...slice);
-    const yPad = Math.max((yMax - yMin) * 0.08, (yMax || 1) * 0.02);
-    const yDomain = [yMin - yPad, yMax + yPad];
-
-    const chartData = {
-      labels,
-      datasets: [
-        {
-          label: `${ticker} Price`,
-          data: slice,
-          borderColor: color,
-          backgroundColor: "transparent", // no area fill in compact
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          // Use monotone to avoid Bezier overshoot at the edges
-          tension: compact ? 0.25 : 0.3,
-          cubicInterpolationMode: "monotone",
-          fill: false,
-          clip: 8, // clip to avoid first control point drawing outside
-          spanGaps: false,
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    scales: compact
+      ? {
+          x: { display: false, grid: { display: false }, ticks: { display: false } },
+          y: { display: false, grid: { display: false }, ticks: { display: false },
+               min: yMin - yPad, max: yMax + yPad },
+        }
+      : {
+          x: { ticks: { maxTicksLimit: 6 } },
+          y: { min: yMin - yPad, max: yMax + yPad, ticks: { callback: v => `$${(+v).toFixed(2)}` } },
         },
-      ],
-    };
-
-    const options = {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: "index", intersect: false },
-      animation,
-      plugins: {
-        tooltip: {
-          backgroundColor: "#101214",
-          titleColor: "#fff",
-          bodyColor: "#fff",
-          borderColor: color,
-          borderWidth: 1,
-          padding: 8,
-          callbacks: {
-            label: (ctx) => `Price: $${Number(ctx.raw ?? 0).toFixed(2)}`,
-          },
-        },
-        legend: { display: false },
-      },
-      layout: compact
-        ? { padding: { top: 2, right: 4, bottom: 2, left: 4 } }
-        : undefined,
-      scales: compact
-        ? {
-            x: { display: false, grid: { display: false }, ticks: { display: false } },
-            y: {
-              display: false,
-              grid: { display: false },
-              ticks: { display: false },
-              min: yDomain[0],
-              max: yDomain[1],
-            },
-          }
-        : {
-            x: { ticks: { maxTicksLimit: 6 } },
-            y: {
-              ticks: { callback: (v) => `$${(+v).toFixed(2)}` },
-              min: yDomain[0],
-              max: yDomain[1],
-            },
-          },
-      elements: { line: { borderJoinStyle: "round" } },
-    };
-
-    return { color, historySlice: slice, chartData, options };
-  }, [sourceHistory, range, ticker, compact]);
-
-  if (isLoading && !historyProp) return <p>Loading chart…</p>;
-  if (error) return <p>Chart error.</p>;
-  if (!memo.chartData && chartType === "line") return null;
-
-  const handleRange = (id) => {
-    updateType.current = "user";
-    setRange(id);
+    plugins: { legend: { display: false } },
   };
 
   return (
-    <div style={{ width: "100%" }}>
+    <div ref={wrapRef} style={{ width: "100%" }}>
       {/* Controls */}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          marginBottom: 6,
-          flexWrap: "wrap",
-        }}
-      >
-        <div className="interval-buttons" style={{ display: "flex", gap: 6 }}>
-          {["5D", "1M", "YTD", "MAX"].map((id) => (
-            <button
-              key={id}
-              onClick={() => handleRange(id)}
-              className={`interval-button ${id === range ? "active" : ""}`}
-            >
-              {id}
-            </button>
-          ))}
-        </div>
-
-        {showTypeToggle && (
-          <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-            <button
-              onClick={() => setChartTypeState("line")}
-              className={`interval-button ${chartType === "line" ? "active" : ""}`}
-            >
-              Line
-            </button>
-            <button
-              onClick={() => setChartTypeState("candles")}
-              className={`interval-button ${chartType === "candles" ? "active" : ""}`}
-            >
-              Candles
-            </button>
-          </div>
-        )}
+      <div style={{ display: "flex", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+        {["5D", "1M", "YTD", "MAX"].map((id) => (
+          <button
+            key={id}
+            onClick={(e) => { e.stopPropagation(); setRange(id); setMountKey(k => k + 1); }}
+            className={`interval-button ${id === range ? "active" : ""}`}
+          >
+            {id}
+          </button>
+        ))}
       </div>
 
       {/* Chart */}
-      <div style={{ height, width: "100%" }}>
-        {chartType === "line" ? (
-          <Line data={memo.chartData} options={memo.options} />
-        ) : (
-          <CandleChart history={memo.historySlice} range={range} height={height} />
-        )}
+      <div key={mountKey} style={{ height }}>
+        {isLoading && <p style={{ opacity: 0.6 }}>Loading chart…</p>}
+        {error && <p style={{ color: "tomato" }}>Chart error.</p>}
+        {!isLoading && !error && points.length >= 2 && <Line data={chartData} options={options} />}
+        {!isLoading && !error && points.length < 2 && <p style={{ opacity: 0.6 }}>No data.</p>}
       </div>
     </div>
   );

@@ -12,72 +12,63 @@ import API_BASE_URL from '../apiConfig';
 export default function StockDetail() {
   const { ticker } = useParams();
   const userId = getOrCreateUserId();
+  const { tick } = useTick();
+
   const [stock, setStock] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [watchlistPending, setWatchlistPending] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [showOptionTutorial, setShowOptionTutorial] = useState(false);
   const [isMegaCap, setIsMegaCap] = useState(false);
 
-  const { tick } = useTick();
-
-  // Fetch all stock/watchlist/history data
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    const ac = new AbortController();
     try {
-      // Stock details
-      const res = await fetch(`${API_BASE_URL}/api/stocks`);
-      const list = await res.json();
-      setStock(list.find(s => s.ticker === ticker) || null);
+      // fetch only this ticker (smaller payload)
+      const sRes = await fetch(`${API_BASE_URL}/api/stocks/${ticker}`, { signal: ac.signal });
+      if (!sRes.ok) throw new Error('stock fetch failed');
+      const sObj = await sRes.json();
+      setStock(sObj);
 
-      // History
-      const res2 = await fetch(`${API_BASE_URL}/api/stocks/${ticker}/history`);
-      const obj2 = await res2.json();
-      setHistory(Array.isArray(obj2.history) ? obj2.history : []);
-
-      // Watchlist
-      const res3 = await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist`);
-      const obj3 = await res3.json();
-      setWatchlist(Array.isArray(obj3.watchlist) ? obj3.watchlist : []);
-    } catch (err) {
-      setStock(null);
+      // watchlist
+      const wRes = await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist`, { signal: ac.signal });
+      const wObj = await wRes.json();
+      setWatchlist(Array.isArray(wObj.watchlist) ? wObj.watchlist : []);
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('StockDetail fetch error:', e);
+        setStock(null);
+      }
     } finally {
       setLoading(false);
     }
+    return () => ac.abort();
   }, [ticker, userId]);
 
-  // Only refetch on tick if modal is closed
+  // refresh when tick changes (unless modal is open)
   useEffect(() => {
-    if (!showModal) {
-      fetchAll();
-    }
+    if (!showModal) fetchAll();
   }, [fetchAll, tick, showModal]);
 
   // Mega cap check
   useEffect(() => {
-    async function fetchMegaCaps() {
+    let ac = new AbortController();
+    (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/stocks/mega-caps`);
+        const res = await fetch(`${API_BASE_URL}/api/stocks/mega-caps`, { signal: ac.signal });
         const megaData = await res.json();
-
-        if (!megaData || !Array.isArray(megaData.megaCaps) || typeof megaData.selectionTick !== "number") {
-          console.warn("Mega caps API returned unexpected format:", megaData);
-          return;
-        }
-
+        if (!megaData || !Array.isArray(megaData.megaCaps) || typeof megaData.selectionTick !== "number") return;
         const revealTimePassed = tick - megaData.selectionTick >= 200;
         setIsMegaCap(megaData.megaCaps.includes(ticker) && revealTimePassed);
       } catch (err) {
-        console.error("Failed to fetch mega caps:", err);
+        if (err.name !== 'AbortError') console.warn('Mega caps fetch failed:', err);
       }
-    }
-
-    fetchMegaCaps();
+    })();
+    return () => ac.abort();
   }, [ticker, tick]);
 
-  // Trade modal open logic with tutorial
   function handleTradeClick() {
     const hasSeen = localStorage.getItem("hasSeenOptionTutorial");
     if (!hasSeen) {
@@ -87,7 +78,6 @@ export default function StockDetail() {
     setShowModal(true);
   }
 
-  // Watchlist add/remove
   async function handleAddWatch() {
     setWatchlistPending(true);
     await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist/${ticker}/add`, {
@@ -101,14 +91,12 @@ export default function StockDetail() {
 
   async function handleRemoveWatch() {
     setWatchlistPending(true);
-    await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist/${ticker}/delete`, {
-      method: "DELETE"
-    });
+    await fetch(`${API_BASE_URL}/api/portfolio/${userId}/watchlist/${ticker}/delete`, { method: "DELETE" });
     await fetchAll();
     setWatchlistPending(false);
   }
 
-  const onWatchlist = watchlist.includes(ticker.toUpperCase());
+  const onWatchlist = watchlist.includes((ticker || '').toUpperCase());
 
   const performTransaction = async (type, shares, strike, expiryTick) => {
     const payload = { userId, type, ticker, shares };
@@ -119,14 +107,11 @@ export default function StockDetail() {
       payload.contracts = shares;
       payload.multiplier = 100;
     }
-    const res = await fetch(
-      `${API_BASE_URL}/api/portfolio/${userId}/transactions`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }
-    );
+    const res = await fetch(`${API_BASE_URL}/api/portfolio/${userId}/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
     const data = await res.json();
     if (!res.ok) {
       alert(`Failed: ${data.error}`);
@@ -141,7 +126,7 @@ export default function StockDetail() {
   }
   if (!stock) {
     return (
-      <div>
+      <div style={{ padding: 20 }}>
         <h2>Stock Not Found</h2>
         <p>{ticker} does not exist.</p>
         <Link to="/">← Back</Link>
@@ -152,34 +137,24 @@ export default function StockDetail() {
   return (
     <div style={{ padding: 20 }}>
       <OptionTutorial isOpen={showOptionTutorial} onClose={() => setShowOptionTutorial(false)} />
+
       <h1>{isMegaCap && <span>✨</span>}{stock.ticker}</h1>
-      <p>Price: ${stock.price.toFixed(2)}</p>
-      <p>Change: {stock.change}%</p>
+      <p>Price: ${Number(stock.price).toFixed(2)}</p>
+      <p>Change: {Number(stock.change).toFixed(2)}%</p>
       <p>EPS: {stock.eps}</p>
-      <p>Market Cap: ${(stock.price * stock.outstandingShares / 1e9).toFixed(2)}B</p>
+      <p>Market Cap: ${(Number(stock.price) * Number(stock.outstandingShares) / 1e9).toFixed(2)}B</p>
 
       <div className="stock-actions" style={{ marginBottom: 24 }}>
-        <button className="stock-btn trade" onClick={handleTradeClick}>
-          Trade
-        </button>
-        {loading || watchlistPending ? (
+        <button className="stock-btn trade" onClick={handleTradeClick}>Trade</button>
+
+        {watchlistPending ? (
           <button className="stock-btn" disabled>Loading…</button>
         ) : onWatchlist ? (
-          <button
-            className="stock-btn"
-            style={{ background: "#7c3aed" }}
-            onClick={handleRemoveWatch}
-            disabled={watchlistPending}
-          >
+          <button className="stock-btn" style={{ background: "#7c3aed" }} onClick={handleRemoveWatch}>
             ★ Remove from Watchlist
           </button>
         ) : (
-          <button
-            className="stock-btn"
-            style={{ background: "#60a5fa" }}
-            onClick={handleAddWatch}
-            disabled={watchlistPending}
-          >
+          <button className="stock-btn" style={{ background: "#60a5fa" }} onClick={handleAddWatch}>
             ☆ Add to Watchlist
           </button>
         )}
@@ -192,15 +167,13 @@ export default function StockDetail() {
         onConfirm={performTransaction}
       />
 
-      {history.length > 0 && (
-        <>
-          <h3>Price History</h3>
-          <StockGraph ticker={ticker} history={history} />
-          <div style={{ height: "35px" }} />
-          <EarningsTable report={stock.lastEarningsReport} />
-        </>
-      )}
+      {/* ⬇️ Always render the graph; it fetches its own tail data */}
+      <h3>Price History</h3>
+      <StockGraph ticker={ticker} height={280} />
 
+      <div style={{ height: 35 }} />
+
+      <EarningsTable report={stock.lastEarningsReport} />
 
       <Link to="/" className="back-button">← Back</Link>
     </div>

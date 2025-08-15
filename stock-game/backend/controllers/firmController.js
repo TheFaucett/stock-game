@@ -98,7 +98,6 @@ function updateMemory(firm, stock, action, price, econ, outcome) {
   updateRiskTolerance(firm, outcome);
   firm.memory[ticker] = mem;
   firm.emotions = e;
-
   firm.markModified("memory");
   firm.markModified("emotions");
 }
