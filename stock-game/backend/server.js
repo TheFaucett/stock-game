@@ -4,7 +4,9 @@ console.log("🔧 Environment variables loaded,", process.env.MONGO_URI);
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
+const compression = require('compression');
+const routeTimer = require('./middleware/routeTimer');
+const payloadBudget = require('./middleware/payloadBudget')
 const stockRoutes = require('./routes/stockRoutes');
 const globalNewsRoutes = require('./routes/globalNewsRoutes');
 const sectorNewsRoutes = require('./routes/sectorNewsRoutes');
@@ -22,6 +24,9 @@ const { updateMarket } = require('./controllers/marketController');
 const { incrementTick, getTickLength } = require('./utils/tickTracker');
 
 const app = express();
+
+
+
 app.use(express.json());
 
 // ✅ CORS configuration
@@ -50,6 +55,8 @@ app.options('*', cors());
 // -----------------------------
 // 📌 API ROUTES
 // -----------------------------
+
+app.use('/api', routeTimer, payloadBudget)
 app.use('/api/market-data', marketData);
 app.use('/api/users', userRoutes);
 app.use('/api/stocks', stockRoutes);
@@ -84,8 +91,28 @@ mongoose.connect(process.env.MONGO_URI, {
         await updateMarket();
     }, tradeWindow);
 
+    let inFlight = false;
+    setInterval(async () => {
+    if (inFlight) { console.warn('⏭️ Skip tick: prev still running'); return; }
+    inFlight = true;
+    const t0 = process.hrtime.bigint();
+    try { await updateMarket(); }
+    finally {
+        const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+        inFlight = false;
+        console.log(`⏱️ tick took ${ms.toFixed(1)}ms`);
+    }
+    }, tradeWindow);
+
+
 })
 .catch(err => {
     console.error('❌ MongoDB Connection Error:', err);
     process.exit(1);
+});
+// -----------------------------
+// 📌 Error Handling Middleware
+// -----------------------------
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK' });
 });

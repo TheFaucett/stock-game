@@ -4,7 +4,7 @@ const { getCurrentTick } = require("../utils/tickTracker.js");
 const { getEconomicFactors } = require("../utils/economicEnvironment.js");
 
 const randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const DEBUG = true
+const DEBUG = false // set to true for detailed logs
 function getNetWorth(firm, stockMap) {
   const equity = Object.entries(firm.ownedShares || {}).reduce((sum, [ticker, shares]) => {
     const price = stockMap[ticker]?.price ?? 0;
@@ -98,7 +98,6 @@ function updateMemory(firm, stock, action, price, econ, outcome) {
   updateRiskTolerance(firm, outcome);
   firm.memory[ticker] = mem;
   firm.emotions = e;
-
   firm.markModified("memory");
   firm.markModified("emotions");
 }

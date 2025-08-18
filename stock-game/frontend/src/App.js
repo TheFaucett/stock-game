@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import "./styles/global.css";
+import "./styles/intervals.css";
+// Providers that are ONLY in index.js (do not wrap again here)
+// import { TickProvider } from "./TickProvider";
+// import { QueryClientProvider } from "@tanstack/react-query";
 
-// Tick + Global Data
-import { TickProvider } from "./TickProvider";
+import { useTick } from "./TickProvider";
 import { GlobalDataProvider } from "./GlobalDataContext";
 import GlobalRefreshManager from "./GlobalRefreshManager";
-
-// Achievement system
 import { GameProgressProvider } from "./utils/gameProgressProvider";
 import AchievementManager from "./utils/AchievementManager";
 
-// Components
-import { useTick } from "./TickProvider";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Heatmap from "./components/Heatmap";
@@ -39,14 +37,11 @@ import RandomStockPicker from "./components/RandomStockPicker";
 import HomeTabs from "./components/HomeTabs";
 import TickerSearch from "./components/TickerSearch";
 import TickProgressBar from "./components/TickProgressbar";
-import { getOrCreateUserId } from "./userId";
 import TickUpdateOverlay from "./components/TickUpdateOverlay";
 import AchievementPage from "./components/AchievementPage";
 import MarketMoodOverlay from "./components/MarketMoodOverlay";
 import DividendWatcher from "./components/DividendWatcher";
-await getOrCreateUserId();
-
-const queryClient = new QueryClient();
+import { getOrCreateUserId } from "./userId";
 
 const HeatmapContainer = () => {
   const [selectedSector, setSelectedSector] = useState(null);
@@ -55,10 +50,7 @@ const HeatmapContainer = () => {
     <div>
       {selectedSector ? (
         <>
-          <button
-            className="back-button"
-            onClick={() => setSelectedSector(null)}
-          >
+          <button className="back-button" onClick={() => setSelectedSector(null)}>
             ⬅ Back to Sectors
           </button>
           <Heatmap sector={selectedSector} />
@@ -73,11 +65,10 @@ const HeatmapContainer = () => {
 function App() {
   const [showModal, setShowModal] = useState(false);
   const { tick } = useTick();
+
   useEffect(() => {
     const seen = localStorage.getItem("hasSeenTutorial");
-    if (!seen) {
-      setShowModal(true);
-    }
+    if (!seen) setShowModal(true);
   }, []);
 
   const handleClose = () => {
@@ -85,123 +76,114 @@ function App() {
     localStorage.setItem("hasSeenTutorial", "true");
   };
 
+  const userId = getOrCreateUserId(); // safe to call (idempotent), no top-level await
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TickProvider>
-        <GlobalDataProvider>
-          <GameProgressProvider>
-            <GlobalRefreshManager />
-            <AchievementManager />
-            <TickUpdateOverlay />
-            <Router>
-              <div className="container">
-                <MarketMoodOverlay />
-                <DividendWatcher userId={getOrCreateUserId()} tick={tick} />
-                <Topbar />
-                <TickProgressBar />
-                <Sidebar />
+    // ⚠️ Do NOT wrap QueryClientProvider or TickProvider here;
+    // they’re already applied in src/index.js
+    <GlobalDataProvider>
+      <GameProgressProvider>
+        <GlobalRefreshManager />
+        <AchievementManager />
+        <TickUpdateOverlay />
+        <Router>
+          <div className="container">
+            <MarketMoodOverlay />
+            <DividendWatcher tick={tick} />
+            <Topbar />
+            <TickProgressBar />
+            <Sidebar />
 
-                <Routes>
-                  <Route
-                    path="/"
-                    element={
-                      <>
-                        <TutorialModal
-                          isOpen={showModal}
-                          onClose={handleClose}
-                        />
-                        <FeaturedStocks />
-                        <HomeTabs />
-                        <div className="fab-container">
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <>
+                    <TutorialModal isOpen={showModal} onClose={handleClose} />
+                    <FeaturedStocks />
+                    <HomeTabs />
 
-                            <AchievementButton />
-                            <PortfolioButton />
-                        </div>
-                        <div className="random-picker-center">
-                          <RandomStockPicker />
-                          <TickerSearch />
-                        </div>
-                        <HeatmapContainer />
-                  
+                    <div className="fab-container">
+                      <AchievementButton />
+                      <PortfolioButton />
+                    </div>
 
+                    <div className="random-picker-center">
+                      <RandomStockPicker />
+                      <TickerSearch />
+                    </div>
 
-                        <MoodGraph />
-                        <MarketIndexGraph />
-                        <div style={{ marginTop: "5rem" }}>
-                          <TransactionDashboard
-                            userId={getOrCreateUserId()}
-                          />
-                        </div>
-                      </>
-                    }
+                    <HeatmapContainer />
+
+                    {/* ✅ Use tail-powered, downsampled charts */}
+                    <div style={{ marginTop: 24 }}>
+                      <MoodGraph height={220} compact />
+                    </div>
+                    <div style={{ marginTop: 24 }}>
+                      <MarketIndexGraph height={240} />
+                    </div>
+
+                    <div style={{ marginTop: "5rem" }}>
+                      <TransactionDashboard userId={userId} />
+                    </div>
+                  </>
+                }
+              />
+
+              <Route path="/stock/:ticker" element={<StockDetail />} />
+              <Route path="/bank" element={<Bank />} />
+              <Route path="/transactions" element={<TransactionDashboard userId={userId} />} />
+              <Route
+                path="/top-movers"
+                element={
+                  <TopStocksPage
+                    endpoint="movers"
+                    title="🚀 Top Movers"
+                    formatValue={(s) => `${s.change.toFixed(2)}%`}
                   />
-                  <Route path="/stock/:ticker" element={<StockDetail />} />
-                  <Route path="/bank" element={<Bank />} />
-                  <Route
-                    path="/transactions"
-                    element={
-                      <TransactionDashboard userId={getOrCreateUserId()} />
-                    }
+                }
+              />
+              <Route
+                path="/top-volatility"
+                element={
+                  <TopVolatility
+                    endpoint="volatility"
+                    title="🎢 Most Volatile"
+                    formatValue={(s) => `${(s.volatility * 100).toFixed(2)}%`}
                   />
-                  <Route
-                    path="/top-movers"
-                    element={
-                      <TopStocksPage
-                        endpoint="movers"
-                        title="🚀 Top Movers"
-                        formatValue={(s) => `${s.change.toFixed(2)}%`}
-                      />
-                    }
+                }
+              />
+              <Route
+                path="/top-dividends"
+                element={
+                  <TopDividends
+                    endpoint="dividends"
+                    title="💸 Top Dividend Yield"
+                    formatValue={(s) => `${(s.dividendYield * 100).toFixed(2)}%`}
                   />
-                  <Route
-                    path="/top-volatility"
-                    element={
-                      <TopVolatility
-                        endpoint="volatility"
-                        title="🎢 Most Volatile"
-                        formatValue={(s) =>
-                          `${(s.volatility * 100).toFixed(2)}%`
-                        }
-                      />
-                    }
+                }
+              />
+              <Route
+                path="/top-marketcap"
+                element={
+                  <TopMarketCapStocks
+                    endpoint="marketcap"
+                    title="🏦 Top Market Cap"
+                    formatValue={(s) => `$${(s.marketCap / 1e9).toFixed(2)} B`}
                   />
-                  <Route
-                    path="/top-dividends"
-                    element={
-                      <TopDividends
-                        endpoint="dividends"
-                        title="💸 Top Dividend Yield"
-                        formatValue={(s) =>
-                          `${(s.dividendYield * 100).toFixed(2)}%`
-                        }
-                      />
-                    }
-                  />
-                  <Route
-                    path="/top-marketcap"
-                    element={
-                      <TopMarketCapStocks
-                        endpoint="marketcap"
-                        title="🏦 Top Market Cap"
-                        formatValue={(s) =>
-                          `$${(s.marketCap / 1e9).toFixed(2)} B`
-                        }
-                      />
-                    }
-                  />
-                  <Route path="/firms" element={<FirmsList />} />
-                  <Route path="/firms/:name" element={<FirmDetail />} />
-                  <Route path="/portfolio" element={<PortfolioPage />} />
-                  <Route path="/tutorial" element={<TutorialModal />} />
-                  <Route path="/leaderboard" element={<Leaderboard />} />
-                  <Route path="/achievements" element={<AchievementPage />} />
-                </Routes>
-              </div>
-            </Router>
-          </GameProgressProvider>
-        </GlobalDataProvider>
-      </TickProvider>
-    </QueryClientProvider>
+                }
+              />
+              <Route path="/firms" element={<FirmsList />} />
+              <Route path="/firms/:name" element={<FirmDetail />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/tutorial" element={<TutorialModal />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/achievements" element={<AchievementPage />} />
+            </Routes>
+          </div>
+        </Router>
+      </GameProgressProvider>
+    </GlobalDataProvider>
   );
 }
 
