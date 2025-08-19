@@ -1,0 +1,123 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.notfound-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  box-sizing: border-box;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.notfound-box {
+  text-align: center;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  color: #f8fafc;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+
+/* 404 headline */
+.notfound-title {
+  font-size: 7rem;
+  margin-bottom: 1rem;
+  font-family: monospace;
+}
+
+/* Glitch effect */
+.glitch {
+  display: inline-block;
+  animation: glitch 1.3s infinite;
+  color: #38bdf8;
+}
+
+@keyframes glitch {
+  0%   { transform: none; opacity: 1; }
+  20%  { transform: translate(-1px, 1px) skewX(5deg); opacity: 0.8; }
+  40%  { transform: translate(2px, -1px) skewX(-5deg); opacity: 0.4; }
+  60%  { transform: translate(-2px, 1px) skewY(-3deg); opacity: 0.9; }
+  80%  { transform: translate(1px, 2px) skewX(4deg); opacity: 0.5; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* Message flicker */
+.notfound-message {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  color: #f8fafc;
+  animation: flickerText 3s infinite;
+}
+
+@keyframes flickerText {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+/* Home button */
+.notfound-home-btn {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #3b82f6;
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.notfound-home-btn:hover {
+  background-color: #2563eb;
+}
+
+/* Falling ticker fragments */
+.ticker-fragment {
+  position: fixed;
+  top: -10%;
+  font-size: 2rem;
+  animation: fall 6s linear infinite;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ticker-fragment:nth-of-type(1) { left: 10%; animation-delay: 0s; }
+.ticker-fragment:nth-of-type(2) { left: 40%; animation-delay: 2s; }
+.ticker-fragment:nth-of-type(3) { left: 70%; animation-delay: 4s; }
+
+@keyframes fall {
+  0%   { transform: translateY(0); opacity: 0.7; }
+  90%  { transform: translateY(90vh); opacity: 0.3; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* Falling apart animation (slowed down) */
+@keyframes fallApart {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  30%  { transform: translateY(5px) rotate(1deg); }
+  60%  { transform: translateY(20px) rotate(-2deg); }
+  100% { transform: translateY(180vh) rotate(10deg); opacity: 0; }
+}
+
+.falling-part {
+  display: inline-block;
+  animation: fallApart 4.5s ease-in forwards, flickerText 3s infinite;
+}
+
+.delay-0 { animation-delay: 0s; }
+.delay-1 { animation-delay: 0.3s; }
+.delay-2 { animation-delay: 0.6s; }

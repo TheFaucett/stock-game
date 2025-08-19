@@ -1,9 +1,11 @@
-@import "./intervals.css";
+
 body {
     margin: 0;
     background-color: #121212; /* Dark background */
     color: #f0f0f0; /* Light text for contrast */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100%;
+    padding: 0;
 }
 
 .container {

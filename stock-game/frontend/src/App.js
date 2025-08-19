@@ -41,6 +41,7 @@ import TickUpdateOverlay from "./components/TickUpdateOverlay";
 import AchievementPage from "./components/AchievementPage";
 import MarketMoodOverlay from "./components/MarketMoodOverlay";
 import DividendWatcher from "./components/DividendWatcher";
+import NotFound from "./components/NotFoundPage";
 import { getOrCreateUserId } from "./userId";
 
 const HeatmapContainer = () => {
@@ -179,6 +180,7 @@ function App() {
               <Route path="/tutorial" element={<TutorialModal />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/achievements" element={<AchievementPage />} />
+              <Route path="*" element={<NotFound />}/>
             </Routes>
           </div>
         </Router>

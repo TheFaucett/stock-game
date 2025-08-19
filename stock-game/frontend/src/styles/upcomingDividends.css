@@ -1,0 +1,40 @@
+/* styles/upcomingDividends.css */
+
+.dividends-panel {
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid #38bdf8;
+  max-width: 600px;
+}
+
+.dividends-panel h2 {
+  font-size: 1.3rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.dividends-subtext {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+}
+
+.dividends-panel ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.dividends-panel li {
+  padding: 0.35rem 0;
+  font-size: 1.05rem;
+}
+
+.subinfo {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-left: 0.3rem;
+}

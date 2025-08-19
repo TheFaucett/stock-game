@@ -3,6 +3,7 @@ import HoldingsTable from "./HoldingsTable";
 import PortfolioBalanceGraph from "./PortfolioBalanceGraph";
 import TransactionDashboard from "./TransactionDashboard";
 import Watchlist from "./Watchlist";
+import UpcomingDividendsPanel from "./UpcomingDividendsPanel";
 import { getOrCreateUserId } from "../userId";
 import "../styles/portfolio.css";
 import API_BASE_URL from "../apiConfig";
@@ -41,7 +42,7 @@ export default function PortfolioPage() {
           <strong>${portfolio.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong>
         </div>
       </div>
-
+      <UpcomingDividendsPanel ownedShares={portfolio.ownedShares} />
       <HoldingsTable portfolio={portfolio} />
       <div style={{ marginTop: 0 }} />
       <Watchlist />

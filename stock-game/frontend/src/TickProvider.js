@@ -1,22 +1,21 @@
 // TickProvider.js
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import API_BASE_URL from "./apiConfig";
 
 const TickContext = createContext();
 
 export function TickProvider({ children }) {
   const [tick, setTick] = useState(null);
+  const lastTickRef = useRef(null); // ✅ useRef keeps value across renders
 
   useEffect(() => {
-    let lastTick = null;
-
     async function fetchTick() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/tick`);
         const data = await res.json();
-        if (typeof data.tick === "number" && data.tick !== lastTick) {
+        if (typeof data.tick === "number" && data.tick !== lastTickRef.current) {
           setTick(data.tick);
-          lastTick = data.tick;
+          lastTickRef.current = data.tick; // ✅ persist last seen tick
         }
       } catch (err) {
         console.error("Tick fetch error:", err);
@@ -24,7 +23,7 @@ export function TickProvider({ children }) {
     }
 
     fetchTick();
-    const interval = setInterval(fetchTick, 2000); // check every 2s
+    const interval = setInterval(fetchTick, 2000);
     return () => clearInterval(interval);
   }, []);
 
