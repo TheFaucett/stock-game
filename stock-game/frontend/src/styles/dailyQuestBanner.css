@@ -1,0 +1,86 @@
+.quest-banner {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+}
+
+.quest-banner-title {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.quest-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.quest-card {
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  flex: 1 1 30%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 180px;
+  max-width: 300px;
+}
+
+.quest-card.completed {
+  border-color: #22c55e;
+  background: #1f3a2f;
+}
+
+.quest-status {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.quest-desc {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.quest-reward {
+  flex: 1 1 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  max-width: 300px;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  border: 2px dashed #64748b;
+}
+
+.reward-claimed {
+  color: #facc15;
+  font-weight: bold;
+}
+
+.no-reward {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.claim-btn {
+  background: #22c55e;
+  border: none;
+  color: #0f172a;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.claim-btn:hover {
+  background: #16a34a;
+}

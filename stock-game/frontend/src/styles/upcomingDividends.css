@@ -1,14 +1,16 @@
 /* styles/upcomingDividends.css */
 
 .dividends-panel {
-  background: #1e293b;
+  background: #1e293b; /* card fill */
   color: #f8fafc;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   border-radius: 10px;
   margin: 1.5rem 0;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   border-left: 4px solid #38bdf8;
   max-width: 600px;
+  width: 100%;               /* ✅ full width of parent */
+  box-sizing: border-box;    /* ✅ include padding in width */
 }
 
 .dividends-panel h2 {
@@ -24,7 +26,7 @@
 
 .dividends-panel ul {
   list-style: none;
-  padding-left: 0;
+  padding: 0;
   margin: 0;
 }
 
