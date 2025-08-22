@@ -5,14 +5,14 @@ const Firm = require("../models/Firm");
 const Portfolio = require("../models/Portfolio");
 
 const MONGO_URI = process.env.MONGO_URI;
-
 const DEFAULT_PRICE = 100.00;
+const DEFAULT_EARNINGS_TICK = 10;
 
 let didConnect = false;
 
 async function resetStockPrices() {
   try {
-    // Only connect if we're not already connected
+    // Only connect if not already connected
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(MONGO_URI);
       didConnect = true;
@@ -31,6 +31,9 @@ async function resetStockPrices() {
             change: 0,
             volatility: 0.01,
             basePrice: DEFAULT_PRICE,
+            nextEarningsTick: DEFAULT_EARNINGS_TICK,
+            lastEarningsReport: null,
+            ...(stock.tick !== undefined ? { tick: 0 } : {})
           }
         }
       }
@@ -38,62 +41,67 @@ async function resetStockPrices() {
 
     if (stockBulkOps.length > 0) {
       const result = await Stock.bulkWrite(stockBulkOps);
-      console.log(`✅ Updated ${result.modifiedCount} stocks to $${DEFAULT_PRICE} (history reset)`);
+      console.log(`✅ Reset ${result.modifiedCount} stocks (price, earnings, tick, history)`);
     }
 
-
-    const firmBulkOps = (await Firm.find()).map(firm => ({
-    updateOne: {
+    // --- FIRMS ---
+    const firms = await Firm.find();
+    const firmBulkOps = firms.map(firm => ({
+      updateOne: {
         filter: { _id: firm._id },
         update: {
-        $set: {
+          $set: {
             ownedShares: {},
             transactions: [],
             balance: 10_000_000,
             lastTradeCycle: 0,
             emotions: {
-            confidence: 0.5,
-            frustration: 0.2,
-            greed: 0.5,
-            regret: 0.2
+              confidence: 0.5,
+              frustration: 0.2,
+              greed: 0.5,
+              regret: 0.2
             },
             memory: {},
             cooldownUntil: null,
             riskTolerance: 0.15 + Math.random() * 0.2,
-            startingBalance: 10_000_000
+            startingBalance: 10_000_000,
+            ...(firm.tick !== undefined ? { tick: 0 } : {})
+          }
         }
-        }
-    }
+      }
     }));
 
     if (firmBulkOps.length > 0) {
-    const result = await Firm.bulkWrite(firmBulkOps);
-    console.log(`✅ Reset ${result.modifiedCount} firms.`);
+      const result = await Firm.bulkWrite(firmBulkOps);
+      console.log(`✅ Reset ${result.modifiedCount} firms (including tick)`);
     }
 
-
     // --- PORTFOLIOS ---
-    const portfolioBulkOps = (await Portfolio.find()).map(p => ({
+    const portfolios = await Portfolio.find();
+    const portfolioBulkOps = portfolios.map(p => ({
       updateOne: {
         filter: { _id: p._id },
         update: {
           $set: {
             transactions: [],
             borrowedShares: {},
+            ...(p.tick !== undefined ? { tick: 0 } : {})
           }
         }
       }
     }));
+
     if (portfolioBulkOps.length > 0) {
       const result = await Portfolio.bulkWrite(portfolioBulkOps);
-      console.log(`✅ Reset ${result.modifiedCount} portfolios.`);
+      console.log(`✅ Reset ${result.modifiedCount} portfolios (including tick)`);
     }
 
   } catch (err) {
     console.error("❌ Error resetting:", err);
   } finally {
     if (didConnect) {
-      await mongoose.connection.close(); // only if we opened it
+      await mongoose.connection.close();
+      console.log("🔌 Disconnected from MongoDB.");
     }
   }
 }
@@ -101,7 +109,7 @@ async function resetStockPrices() {
 // Exportable if needed elsewhere
 module.exports = resetStockPrices;
 
-// Auto-run only if this file is run directly (not imported)
+// Auto-run only if called directly
 if (require.main === module) {
   resetStockPrices();
 }

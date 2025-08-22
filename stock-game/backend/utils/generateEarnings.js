@@ -1,107 +1,106 @@
-// utils/generateEarnings.js
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const mongoose = require("mongoose");
+const Stock = require("../models/Stock");
+const Firm = require("../models/Firm");
+const Portfolio = require("../models/Portfolio");
 
+const MONGO_URI = process.env.MONGO_URI;
+const DEFAULT_PRICE = 100.00;
 
-function generateEarningsReport(stock, currentTick) {
-  const history = stock.history || [];
-  const windowSize = 20;
-  const recent = history.slice(-windowSize);
+let didConnect = false;
 
-  if (recent.length < 2) {
-    // Not enough history, fallback to default
-    return generateRandomEarnings(stock, currentTick);
+async function resetStockPrices() {
+  try {
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(MONGO_URI);
+      didConnect = true;
+      console.log("✅ Connected to MongoDB");
+    }
+
+    // --- STOCKS ---
+    const stocks = await Stock.find();
+    const stockBulkOps = stocks.map(stock => ({
+      updateOne: {
+        filter: { _id: stock._id },
+        update: {
+          $set: {
+            price: DEFAULT_PRICE,
+            history: Array(30).fill(DEFAULT_PRICE),
+            change: 0,
+            volatility: 0.01,
+            basePrice: DEFAULT_PRICE,
+            tick: 0, // optional: if you're tracking ticks on the stock itself
+            lastEarningsReport: null,
+            nextEarningsTick: null
+          }
+        }
+      }
+    }));
+
+    if (stockBulkOps.length > 0) {
+      const result = await Stock.bulkWrite(stockBulkOps);
+      console.log(`✅ Reset ${result.modifiedCount} stocks to $${DEFAULT_PRICE} (price/history/earnings)`);
+    }
+
+    // --- FIRMS ---
+    const firmBulkOps = (await Firm.find()).map(firm => ({
+      updateOne: {
+        filter: { _id: firm._id },
+        update: {
+          $set: {
+            ownedShares: {},
+            transactions: [],
+            balance: 10_000_000,
+            lastTradeCycle: 0,
+            emotions: {
+              confidence: 0.5,
+              frustration: 0.2,
+              greed: 0.5,
+              regret: 0.2
+            },
+            memory: {},
+            cooldownUntil: null,
+            riskTolerance: 0.15 + Math.random() * 0.2,
+            startingBalance: 10_000_000
+          }
+        }
+      }
+    }));
+
+    if (firmBulkOps.length > 0) {
+      const result = await Firm.bulkWrite(firmBulkOps);
+      console.log(`✅ Reset ${result.modifiedCount} firms.`);
+    }
+
+    // --- PORTFOLIOS ---
+    const portfolioBulkOps = (await Portfolio.find()).map(p => ({
+      updateOne: {
+        filter: { _id: p._id },
+        update: {
+          $set: {
+            transactions: [],
+            borrowedShares: {},
+          }
+        }
+      }
+    }));
+
+    if (portfolioBulkOps.length > 0) {
+      const result = await Portfolio.bulkWrite(portfolioBulkOps);
+      console.log(`✅ Reset ${result.modifiedCount} portfolios.`);
+    }
+
+  } catch (err) {
+    console.error("❌ Error resetting:", err);
+  } finally {
+    if (didConnect) {
+      await mongoose.connection.close();
+    }
   }
-
-  const startPrice = recent[0];
-  const endPrice = recent[recent.length - 1];
-  const netChange = ((endPrice - startPrice) / startPrice) * 100;
-
-  // 📊 Volatility = average % change between points
-  let volatility = 0;
-  for (let i = 1; i < recent.length; i++) {
-    volatility += Math.abs((recent[i] - recent[i - 1]) / recent[i - 1]) * 100;
-  }
-  volatility = volatility / (recent.length - 1);
-
-  // 🎯 Determine earnings surprise based on trend
-  let surprise;
-  if (netChange > 5) {
-    surprise = +(2 + Math.random() * 4).toFixed(2); // Strong beat
-  } else if (netChange < -5) {
-    surprise = +(-4 + Math.random() * 2).toFixed(2); // Strong miss
-  } else {
-    surprise = +(-1 + Math.random() * 2).toFixed(2); // Close to expected
-  }
-
-  // 💹 Volatility-weighted capped reaction
-  const volatilityFactor = Math.min(Math.max(volatility / 3, 0.5), 1.5); // smooth scaling
-  const reactionPct = surprise * volatilityFactor;
-  const maxImpact = 0.08; // 8% max price swing from earnings
-  const cappedPct = Math.max(Math.min(reactionPct / 100, maxImpact), -maxImpact);
-  const reaction = +(stock.price * cappedPct).toFixed(2);
-
-  // 📈 Financials
-  const baseRevenue = +(stock.price * 10 + (Math.random() * 50)).toFixed(1);
-  const netIncome = +(baseRevenue * ((5 + surprise) / 100)).toFixed(1);
-  const eps = +(netIncome / (10 + Math.random() * 10)).toFixed(2);
-
-  // 🕒 Next earnings date
-  const nextTick = currentTick + 50 + Math.floor(Math.random() * 50);
-
-  // 💵 We do NOT overwrite the whole price — let updateMarket blend this in
-  const newPrice = Math.max(0.01, +(stock.price + reaction).toFixed(2));
-
-  return {
-    report: {
-      revenue: baseRevenue,
-      netIncome,
-      eps,
-      surprise,
-      marketReaction: reaction, // absolute $ move
-      marketReactionPct: cappedPct, // useful if blending later
-      tickReported: currentTick,
-      netChange: netChange.toFixed(2),
-      volatility: volatility.toFixed(2),
-      nextEarningsTick: nextTick
-    },
-    newPrice,
-    nextEarningsTick: nextTick,
-    momentum: cappedPct // can be applied additively over a few ticks in updateMarket
-  };
 }
 
-function generateRandomEarnings(stock, currentTick) {
-  const revenue = +(100 + Math.random() * 500).toFixed(1);
-  const netIncome = +(revenue * (0.1 + Math.random() * 0.2)).toFixed(1);
-  const eps = +(netIncome / (10 + Math.random() * 10)).toFixed(2);
-  const surprise = +(Math.random() * 10 - 5).toFixed(2);
+module.exports = resetStockPrices;
 
-  // cap surprise effect here too
-  const volatilityFactor = 1;
-  const reactionPct = surprise * volatilityFactor;
-  const maxImpact = 0.08;
-  const cappedPct = Math.max(Math.min(reactionPct / 100, maxImpact), -maxImpact);
-  const reaction = +(stock.price * cappedPct).toFixed(2);
-
-  const newPrice = Math.max(0.01, +(stock.price + reaction).toFixed(2));
-  const nextTick = currentTick + 50 + Math.floor(Math.random() * 50);
-
-  return {
-    report: {
-      revenue,
-      netIncome,
-      eps,
-      surprise,
-      marketReaction: reaction,
-      marketReactionPct: cappedPct,
-      nextEarningsTick: nextTick,
-      tickReported: currentTick
-    },
-    newPrice,
-    nextEarningsTick,
-    momentum: cappedPct
-  };
+if (require.main === module) {
+  resetStockPrices();
 }
-
-
-
-module.exports = generateEarningsReport;
