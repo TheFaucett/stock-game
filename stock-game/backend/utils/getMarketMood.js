@@ -9,7 +9,7 @@ let emaAbs  = 1e-6;       // avg absolute return (decimal)
 let regime = 0;           // in [-REGIME.MAX, REGIME.MAX]
 
 // 🔧 knobs
-const CFG = {
+const CFG = {  //config
   // baseline / de-drift
   EMA_BETA: 0.20,         // higher = adapts faster to regime changes
   DEAD_ZONE_MULT: 0.20,   // % of vol ignored as noise for breadth
@@ -30,7 +30,7 @@ const CFG = {
 
 function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
 function randn() {
-  // Box–Muller
+  // Box–Muller Transform
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();

@@ -20,7 +20,7 @@ describe("processFirms", () => {
   it("returns an array of trade objects with ticker and shares", async () => {
     const trades = await processFirms();
 
-    expect(trades).toEqual({});
+    expect(trades).toEqual([]);
     if (trades.length > 0) {
       const trade = trades[0];
       expect(trade).toHaveProperty("ticker");

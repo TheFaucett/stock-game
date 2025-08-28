@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const compression = require('compression');
 const routeTimer = require('./middleware/routeTimer');
-const payloadBudget = require('./middleware/payloadBudget')
+const payloadBudget = require('./middleware/payloadBudget');
 const stockRoutes = require('./routes/stockRoutes');
 const globalNewsRoutes = require('./routes/globalNewsRoutes');
 const sectorNewsRoutes = require('./routes/sectorNewsRoutes');
@@ -21,23 +21,21 @@ const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const tickRoutes = require('./routes/tickRoutes');
 
 const { updateMarket } = require('./controllers/marketController');
-const { incrementTick, getTickLength } = require('./utils/tickTracker');
+const { incrementTick, getTickLength, getCurrentTick } = require('./utils/tickTracker');
+const resetStockPrices = require('./utils/resetStocks');
 
 const app = express();
-
-
 
 app.use(express.json());
 
 // ✅ CORS configuration
 const allowedOrigins = [
-    'https://stock-game-demo.vercel.app', // production frontend
-    'http://localhost:3000'               // local dev frontend
+    'https://stock-game-demo.vercel.app',
+    'http://localhost:3000'
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
@@ -49,14 +47,12 @@ app.use(cors({
     credentials: true,
 }));
 
-// ✅ Explicitly handle OPTIONS preflight for all routes
 app.options('*', cors());
 
 // -----------------------------
 // 📌 API ROUTES
 // -----------------------------
-
-app.use('/api', routeTimer, payloadBudget)
+app.use('/api', routeTimer, payloadBudget);
 app.use('/api/market-data', marketData);
 app.use('/api/users', userRoutes);
 app.use('/api/stocks', stockRoutes);
@@ -71,47 +67,69 @@ app.use('/api/tick', tickRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
 // -----------------------------
-// 📌 Database Connection and Tick Start
+// 📌 Server + Ticks + Reset Logic
 // -----------------------------
 const PORT = process.env.PORT || 5000;
-const tradeWindow = getTickLength() * 1000; // ms
+const tradeWindow = getTickLength() * 1000;
 
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-.then(() => {
+.then(async () => {
     console.log('✅ MongoDB Connected');
 
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
-    setInterval(async () => {
-        const tick = incrementTick();
-        console.log(`⏳ Tick ${tick}: Running market update...`);
-        await updateMarket();
-    }, tradeWindow);
+    // ✅ Reset stock prices on boot
+    try {
+        console.log("🔄 Performing initial stock reset...");
+        await resetStockPrices();
+        console.log("✅ Stock reset complete.");
+    } catch (err) {
+        console.error("❌ Error during initial reset:", err);
+    }
 
     let inFlight = false;
-    setInterval(async () => {
-    if (inFlight) { console.warn('⏭️ Skip tick: prev still running'); return; }
-    inFlight = true;
-    const t0 = process.hrtime.bigint();
-    try { await updateMarket(); }
-    finally {
-        const ms = Number(process.hrtime.bigint() - t0) / 1e6;
-        inFlight = false;
-        console.log(`⏱️ tick took ${ms.toFixed(1)}ms`);
-    }
-    }, tradeWindow);
 
+    setInterval(async () => {
+        if (inFlight) {
+            console.warn('⏭️ Skipping tick: previous still in progress');
+            return;
+        }
+        inFlight = true;
+
+        const tick = incrementTick();
+        console.log(`⏳ Tick ${tick}: Running market update...`);
+        const t0 = process.hrtime.bigint();
+
+        try {
+            await updateMarket();
+
+            // ✅ Reset every 1000 ticks
+            if (tick % 1000 === 0) {
+                console.log("🧹 Performing scheduled stock reset...");
+                await resetStockPrices();
+                console.log("✅ Scheduled reset complete.");
+            }
+
+        } catch (err) {
+            console.error("❌ Tick error:", err);
+        } finally {
+            const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+            inFlight = false;
+            console.log(`⏱️ Tick ${tick} completed in ${ms.toFixed(1)}ms`);
+        }
+    }, tradeWindow);
 
 })
 .catch(err => {
     console.error('❌ MongoDB Connection Error:', err);
     process.exit(1);
 });
+
 // -----------------------------
-// 📌 Error Handling Middleware
+// 📌 Health Check
 // -----------------------------
 app.get('/health', (req, res) => {
     res.json({ status: 'OK' });

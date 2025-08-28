@@ -13,7 +13,6 @@ const { gaussianPatches } = require("../utils/applyGaussian.js");
 const { newsPatches } = require("./newsImpactController.js");
 const { addSet, addPush, mergePatchMaps, toBulk } = require("../utils/patchKit");
 
-// === Helpers ===
 function logMemoryUsage(context = "") {
   const mem = process.memoryUsage();
   const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MB";
@@ -41,7 +40,7 @@ const TICKS_PER_YEAR = 365;
 const SIGNAL_TAIL = 10;
 const ANNUAL_DRIFT_BASE = 0.12;
 const MARKET_BIAS_ANNUAL = 0.03;
-const VOL_MIN = 0.015, VOL_MAX = 0.25, LAMBDA = 0.90, TARGET_DAILY_VOL = 0.020, MEANREV = 0.05, VOL_NOISE = 0.0015;
+const VOL_MIN = 0.015, VOL_MAX = 0.125, LAMBDA = 0.90, TARGET_DAILY_VOL = 0.020, MEANREV = 0.05, VOL_NOISE = 0.0015;
 
 let driftMultiplier = 1.0;
 const TARGET_CAGR = 0.12;
@@ -56,17 +55,15 @@ function getPerTickDrift() {
 }
 const MARKET_BIAS_PER_TICK = perTickFromAnnual(MARKET_BIAS_ANNUAL);
 
-// EWMA volatility estimator
 function updateVolatility(prevVol = 0.02, pctMoveAbs = 0.01) {
   const capped = Math.min(Math.abs(pctMoveAbs), 0.20);
   const ewma = Math.sqrt(LAMBDA * prevVol ** 2 + (1 - LAMBDA) * capped ** 2);
   const meanReverted = ewma + MEANREV * (TARGET_DAILY_VOL - ewma);
-  const noise = Math.max(0, randNormal()) * VOL_NOISE;
+  const noise = randNormal() * VOL_NOISE;
   const result = meanReverted + noise;
   return Number.isFinite(result) ? clamp(result, VOL_MIN, VOL_MAX) : 0.02;
 }
 
-// Mean reversion anchor
 function getAnchor(stock) {
   let tail = Array.isArray(stock.history) ? stock.history.slice(-10) : [];
   if (tail.length < 2) {
@@ -78,7 +75,6 @@ function getAnchor(stock) {
   return 0.4 * tailMean + 0.6 * base;
 }
 
-// Drift calibration
 let baseCap = null, baseTick = null;
 function calibrate(tick, marketCap) {
   if (baseCap == null || baseTick == null) {
@@ -99,9 +95,12 @@ function calibrate(tick, marketCap) {
   driftMultiplier = clamp(driftMultiplier * (1 + gain), MIN_MULT, MAX_MULT);
   baseCap = marketCap;
   baseTick = tick;
+  console.log(`🎯 Drift multiplier updated: ${driftMultiplier.toFixed(4)} (realized=${(realized * 100).toFixed(2)}%)`);
 }
 
-// === MAIN MARKET FUNCTION ===
+// === DEBUGGING ===
+const DEBUG_TICKERS = ['ASTC', 'SPEX', 'XENK', 'TUVO', 'ZENQ'];
+
 async function updateMarket() {
   try {
     const tick = incrementTick();
@@ -114,7 +113,7 @@ async function updateMarket() {
     let divPaid = 0;
     if (tick % 90 === 0) {
       const d = await payDividends().catch(() => null);
-      if (d && typeof d.totalPaid === "number") divPaid = d.totalPaid;
+      if (d?.totalPaid) divPaid = d.totalPaid;
     }
 
     const stocks = await Stock.find({}, {
@@ -128,7 +127,7 @@ async function updateMarket() {
       return;
     }
 
-    console.log(`🧪 Updating ${stocks.length} stocks for tick ${tick}`);
+    console.log(`🧪 Updating ${stocks.length} stocks on tick ${tick}`);
 
     if ((tick % 1000 === 0 || tick === 1) || !getMegaCaps().megaCaps.length) {
       console.log("🔁 Resetting stock prices + selecting megacaps...");
@@ -136,7 +135,6 @@ async function updateMarket() {
       await selectMegaCaps(stocks, tick);
     }
 
-    const perTickDrift = getPerTickDrift();
     const core = new Map();
     let updatedMarketCap = 0;
     const metrics = [];
@@ -150,9 +148,9 @@ async function updateMarket() {
       const anchor = getAnchor(s);
       const reversion = (anchor - prev) * 0.015;
       const volShockPct = randNormal() * vol;
-      let finalPrice = prev + reversion + prev * volShockPct;
+      const rawPrice = prev + reversion + prev * volShockPct;
 
-      finalPrice *= (1 + MARKET_BIAS_PER_TICK);
+      let finalPrice = rawPrice * (1 + MARKET_BIAS_PER_TICK);
       finalPrice = Math.max(finalPrice, 0.01);
 
       if (!Number.isFinite(finalPrice)) {
@@ -161,8 +159,26 @@ async function updateMarket() {
       }
 
       const pctMove = prev ? (finalPrice - prev) / prev : 0;
+      const absMove = Math.abs(pctMove * 100);
       const newVol = +updateVolatility(vol, Math.abs(pctMove)).toFixed(4);
-      const nextBase = +((base * (1 + perTickDrift)).toFixed(4));
+
+      // 🎯 New Base Calculation
+      const baseBlend = 0.10;
+      const nextBase = +(base * (1 - baseBlend) + finalPrice * baseBlend).toFixed(4);
+
+      if (absMove > 10) {
+        console.warn(`📈 ${s.ticker} moved ${absMove.toFixed(2)}% → ${prev.toFixed(2)} → ${finalPrice.toFixed(2)}`);
+      }
+
+      if (DEBUG_TICKERS.includes(s.ticker)) {
+        console.log(`--- 🧠 DEBUG: ${s.ticker} on Tick ${tick} ---`);
+        console.log(`prev=${prev.toFixed(4)}, base=${base.toFixed(4)}, anchor=${anchor.toFixed(2)}`);
+        console.log(`vol=${vol.toFixed(4)}, volShockPct=${volShockPct.toFixed(4)} (${(volShockPct / vol).toFixed(2)}σ)`);
+        console.log(`reversionEffect=${reversion.toFixed(4)}`);
+        console.log(`raw finalPrice=${rawPrice.toFixed(4)}`);
+        console.log(`finalPrice (after bias & floor)=${finalPrice.toFixed(4)}`);
+        console.log(`pctMove=${(pctMove * 100).toFixed(2)}%, newVol=${newVol.toFixed(4)}, nextBase=${nextBase}`);
+      }
 
       if (Number.isFinite(s.nextEarningsTick) && tick >= s.nextEarningsTick) {
         const { report, newPrice, nextEarningsTick } = generateEarningsReport(s, tick);
