@@ -20,6 +20,7 @@ import StockDetail from "./components/StockDetail";
 import FeaturedStocks from "./components/FeaturedStocks";
 import MoodGraph from "./components/MoodGraph";
 import MarketIndexGraph from "./components/MarketIndexGraph";
+import VolatilityGraph from "./components/VolatilityGraph";
 import TopStocksPage from "./components/TopStocks";
 import TopVolatility from "./components/TopVolatility";
 import TopMarketCapStocks from "./components/TopMarketCap";
@@ -122,6 +123,7 @@ function App() {
                     </div>
                     <div style={{ marginTop: 24 }}>
                       <MarketIndexGraph height={240} />
+                      <VolatilityGraph /> 
                     </div>
 
                     <div style={{ marginTop: "5rem" }}>

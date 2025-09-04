@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import "../styles/firms.css";
 import API_BASE_URL from "../apiConfig";
-
 export default function FirmsList() {
   const { data, isLoading } = useQuery({
     queryKey: ["firms"],

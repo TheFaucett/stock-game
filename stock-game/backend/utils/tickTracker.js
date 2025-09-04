@@ -5,7 +5,7 @@ const TICK_LENGTH = 30; // seconds
 function incrementTick() {
   currentTick++;
   return currentTick;
-}
+}https://vercel.com/home
 
 function getCurrentTick() {
   return currentTick;

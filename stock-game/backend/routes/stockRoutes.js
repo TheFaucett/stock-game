@@ -24,7 +24,7 @@ const parseList = (s) =>
 router.get('/', async (req, res) => {
   try {
     // Defaults that keep payload tiny
-    const defaultFields = ['ticker','price','change','sector','peRatio','dividendYield','outstandingShares'];
+    const defaultFields = ['ticker','price','change','sector','peRatio','dividendYield','outstandingShares', 'volatility'];
     const fields = parseList(req.query.fields).length ? parseList(req.query.fields) : defaultFields;
 
     // Prevent accidental history dump via fields param
