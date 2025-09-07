@@ -5,11 +5,26 @@ console.log("MONGO_URI:", process.env.MONGO_URI);  // Debugging line
 
 
 const mongoose = require('mongoose');
-const connectDB = require('../config/db');
+
 const Stock = require('../models/Stock');
 const GlobalNews = require('../models/GlobalNews');
 const SectorNews = require('../models/SectorNews');
 const StockNews = require('../models/StockNews');
+
+
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGO_URI || 'mongodb://mongo:27017/stock-game', {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log('✅ MongoDB Connected Successfully');
+    } catch (error) {
+        console.error('❌ MongoDB Connection Failed:', error.message);
+        process.exit(1);
+    }
+};
+
 
 // 🌍 Global News Data
 const globalNews = [

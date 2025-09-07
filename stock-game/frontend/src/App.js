@@ -44,6 +44,7 @@ import MarketMoodOverlay from "./components/MarketMoodOverlay";
 import DividendWatcher from "./components/DividendWatcher";
 import NotFound from "./components/NotFoundPage";
 import { getOrCreateUserId } from "./userId";
+import API_BASE_URL from "./apiConfig";
 
 const HeatmapContainer = () => {
   const [selectedSector, setSelectedSector] = useState(null);
@@ -65,6 +66,7 @@ const HeatmapContainer = () => {
 };
 
 function App() {
+  
   const [showModal, setShowModal] = useState(false);
   const { tick } = useTick();
 
@@ -77,6 +79,7 @@ function App() {
     setShowModal(false);
     localStorage.setItem("hasSeenTutorial", "true");
   };
+  console.log("FLAG🔍 API base URL:", API_BASE_URL);
 
   const userId = getOrCreateUserId(); // safe to call (idempotent), no top-level await
 
