@@ -20,4 +20,4 @@ ENV PORT=5000
 EXPOSE 5000
 
 # Start the app
-CMD ["node", "server.js"]
+CMD ["node", "--max_old_space_size=4096","server.js"]
