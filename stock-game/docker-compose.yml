@@ -16,6 +16,10 @@ services:
       - mongo
     environment:
       - MONGO_URI=mongodb://mongo:27017/stock-game
+    deploy:
+      resources:
+        limits:
+          memory: 4g
 
   frontend:
     build: ./frontend
