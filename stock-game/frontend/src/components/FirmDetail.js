@@ -3,8 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import FirmBalanceGraph from "./FirmBalanceGraph"
-import "../styles/firmDetail.css";  // Import your new css
-import API_BASE_URL from "../apiConfig"; // Import your API base URL
+import "../styles/firmDetail.css";  
+import API_BASE_URL from "../apiConfig"; 
 export default function FirmDetail() {
   const { name } = useParams();
   const enabled = !!name;  // Only run query if name is defined!

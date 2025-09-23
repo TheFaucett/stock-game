@@ -4,7 +4,7 @@ FROM node:22.19
 # Create app directory
 WORKDIR /app
 
-# Copy dependency files
+# Copy package files
 COPY package*.json ./
 
 # Install dependencies
@@ -13,11 +13,12 @@ RUN npm install --production
 # Copy the rest of the app
 COPY . .
 
-# Set environment variables (if needed here)
+# Set the port environment variable (optional override)
 ENV PORT=5000
 
-# Expose the port your backend runs on
+# Expose backend port
 EXPOSE 5000
 
-# Start the app
-CMD ["node", "--max_old_space_size=4096","server.js"]
+
+# Run the server with memory limit
+CMD ["node", "--max_old_space_size=4096", "server.js"]

@@ -41,6 +41,7 @@ import TickProgressBar from "./components/TickProgressbar";
 import TickUpdateOverlay from "./components/TickUpdateOverlay";
 import AchievementPage from "./components/AchievementPage";
 import MarketMoodOverlay from "./components/MarketMoodOverlay";
+import Settings from "./components/Settings";
 import DividendWatcher from "./components/DividendWatcher";
 import NotFound from "./components/NotFoundPage";
 import { getOrCreateUserId } from "./userId";
@@ -185,6 +186,7 @@ function App() {
               <Route path="/tutorial" element={<TutorialModal />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/achievements" element={<AchievementPage />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />}/>
             </Routes>
           </div>

@@ -5,6 +5,8 @@ const { getMarketMoodController } = require("../controllers/marketController");
 const { getMarketIndexHistory } = require("../utils/marketIndex.js");
 const { getMoodHistory } = require("../utils/getMarketMood.js");
 const { lttb } = require("../utils/lttb.js");
+const { loadMarketProfile } = require("../utils/marketState.js");
+console.log("✅ marketData routes loaded");
 
 const clamp = (n, lo, hi) => {
   const x = Number(n);
@@ -94,5 +96,21 @@ router.get("/mood", (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+router.post("/load-profile", (req, res) => {
+  const { profileName } = req.body;
+  try {
+    const profile = require(`../profiles/${profileName}`);
+    loadMarketProfile(profile);
+    res.json({ success: true, loaded: profile.name });
+  }
+    catch (err) {
+        console.error("❌ Failed to load profile:", err);
+        res.status(500).json({ error: "Could not load profile" });
+    }
+
+});
+
+
 
 module.exports = router;

@@ -1,3 +1,4 @@
+// backend/controllers/marketController.js
 const Stock = require("../models/Stock");
 const { recordMarketMood, getMoodHistory } = require("../utils/getMarketMood.js");
 const { recordMarketIndexHistory } = require("../utils/marketIndex.js");
@@ -7,61 +8,50 @@ const { sweepOptionExpiries } = require("../utils/sweepOptions.js");
 const { sweepLoanPayments } = require("../utils/sweepLoans.js");
 const { payDividends } = require("../utils/payDividends.js");
 const resetStockPrices = require("../utils/resetStocks.js");
-const { selectMegaCaps, getMegaCaps } = require("../utils/megaCaps.js");
-const generateEarningsReport = require("../utils/generateEarnings.js");
 const { gaussianPatches } = require("../utils/applyGaussian.js");
 const { newsPatches } = require("./newsImpactController.js");
 const { addSet, addPush, mergePatchMaps, toBulk } = require("../utils/patchKit");
+const { getMarketProfile } = require("../utils/marketState");
+const generateEarningsReport = require("../utils/generateEarnings.js");
 
-// === Helpers ===
+// 🧪 Dev-only: inject volatility scenario
+const scenarioActive = true;
+const scenario = require("../profiles/communist");
+
 function clamp(x, lo, hi) {
   return Math.min(hi, Math.max(lo, x));
 }
+
 function randNormal() {
   let u = 0, v = 0;
   while (!u) u = Math.random();
   while (!v) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
+
 function safeNumber(val, fallback = 0) {
   return Number.isFinite(val) ? val : fallback;
 }
+
 function logMemoryUsage(context = "") {
   const mem = process.memoryUsage();
   const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MB";
   console.log(`[MEMORY${context ? " | " + context : ""}] RSS: ${mb(mem.rss)} | Heap Used: ${mb(mem.heapUsed)} | Heap Total: ${mb(mem.heapTotal)}`);
 }
 
-// === Constants ===
-const VOL_MIN = 0.005;
-const VOL_MAX = 0.030;
-const VOL_NOISE = 0.0005;
-const VOL_DECAY = 0.001;
-const MAX_MOVE_PER_TICK = 0.04;
-const STRONG_REVERSION = 0.015;
-const BASE_BLEND = 0.1;
-const BASE_DRIFT_ANNUAL = 0.04;
-const HISTORY_LIMIT = 1200;
-const SIGNAL_TAIL = 10;
-const TICKS_PER_YEAR = 365;
+const DEBUG_TICKERS = ['SPEX', 'ASTC'];
 
-function perTickFromAnnual(a) {
-  return Math.pow(1 + a, 1 / TICKS_PER_YEAR) - 1;
-}
-const BASE_DRIFT_PER_TICK = perTickFromAnnual(BASE_DRIFT_ANNUAL);
-
-// === Volatility logic ===
-function updateVolatility(prevVol, pctMoveAbs) {
+function updateVolatility(prevVol, pctMoveAbs, profile) {
   const capped = Math.min(pctMoveAbs, 0.20);
   const ewma = Math.sqrt(0.9 * prevVol ** 2 + 0.1 * capped ** 2);
-  const reversionTarget = 0.015;
+  const reversionTarget = profile.volatilityBase;
   let adjusted = ewma * 0.7 + reversionTarget * 0.3;
 
-  if (pctMoveAbs < 0.005) adjusted -= VOL_DECAY;
-  if (pctMoveAbs > 0.05) adjusted += VOL_DECAY * 2;
+  if (pctMoveAbs < 0.005) adjusted -= profile.volatilityDecay;
+  if (pctMoveAbs > 0.05) adjusted += profile.volatilityDecay * 2;
 
-  adjusted += clamp(randNormal() * VOL_NOISE, -0.001, 0.001);
-  return clamp(adjusted, VOL_MIN, VOL_MAX);
+  adjusted += clamp(randNormal() * profile.volatilityNoise, -0.001, 0.001);
+  return clamp(adjusted, profile.volatilityClamp[0], profile.volatilityClamp[1]);
 }
 
 function getAnchor(stock) {
@@ -72,13 +62,21 @@ function getAnchor(stock) {
   return 0.5 * base + 0.5 * tailMean;
 }
 
-// === Debugging ===
-const DEBUG_TICKERS = ['SPEX', 'ASTC'];
-
 async function updateMarket() {
   try {
+    const profile = getMarketProfile();
     const tick = incrementTick();
     logMemoryUsage(`Tick ${tick}`);
+
+    // 🧪 Apply scenario market modifiers (for dev mode)
+    if (scenarioActive && scenario.marketModifiers) {
+      if (scenario.marketModifiers.volatilityMultiplier) {
+        profile.volatilityBase *= scenario.marketModifiers.volatilityMultiplier;
+      }
+      if (scenario.marketModifiers.sectorBias) {
+        profile.sectorBias = scenario.marketModifiers.sectorBias;
+      }
+    }
 
     if (tick % 2 === 0) await autoCoverShorts();
     await sweepOptionExpiries(tick);
@@ -88,7 +86,7 @@ async function updateMarket() {
     const stocks = await Stock.find({}, {
       _id: 1, ticker: 1, sector: 1, price: 1, basePrice: 1,
       volatility: 1, outstandingShares: 1, change: 1, nextEarningsTick: 1,
-      history: { $slice: -SIGNAL_TAIL }
+      history: { $slice: -profile.signalTail }
     }).lean();
 
     if (!stocks.length) return console.warn("⚠️ No stocks found.");
@@ -97,27 +95,34 @@ async function updateMarket() {
     let updatedMarketCap = 0;
     const metrics = [];
 
+    const driftPerTick = Math.pow(1 + profile.driftAnnual, 1 / profile.ticksPerYear) - 1;
+
     for (const s of stocks) {
       const prev = safeNumber(s.price, 100);
-      const vol = safeNumber(s.volatility, 0.015);
+      const vol = safeNumber(s.volatility, profile.volatilityBase);
       const base = safeNumber(s.basePrice, prev);
       const shares = safeNumber(s.outstandingShares, 1);
       const anchor = getAnchor(s);
 
-      const reversion = (anchor - prev) * STRONG_REVERSION;
+      // Inject scenario sector bias
+      let sectorBias = 0;
+      if (scenarioActive && profile.sectorBias?.[s.sector]) {
+        sectorBias = profile.sectorBias[s.sector];
+      }
+
+      const reversion = (anchor - prev) * profile.meanRevertAlpha;
       const shock = randNormal() * vol * 0.5;
       let rawPrice = prev + reversion + prev * shock;
+      rawPrice *= (1 + sectorBias); // Apply sector bias
       rawPrice = Math.max(0.01, rawPrice);
 
       let pctMove = (rawPrice - prev) / prev;
-      pctMove = clamp(pctMove, -MAX_MOVE_PER_TICK, MAX_MOVE_PER_TICK);
+      pctMove = clamp(pctMove, -profile.maxMovePerTick, profile.maxMovePerTick);
       const finalPrice = +(prev * (1 + pctMove)).toFixed(4);
 
-      const nextVol = +updateVolatility(vol, Math.abs(pctMove)).toFixed(4);
-
-      // Drift base price upward over time
-      const driftedBase = base * (1 + BASE_DRIFT_PER_TICK);
-      const nextBase = +(driftedBase * (1 - BASE_BLEND) + finalPrice * BASE_BLEND).toFixed(4);
+      const nextVol = +updateVolatility(vol, Math.abs(pctMove), profile).toFixed(4);
+      const driftedBase = base * (1 + driftPerTick);
+      const nextBase = +(driftedBase * (1 - profile.baseBlend) + finalPrice * profile.baseBlend).toFixed(4);
 
       if (DEBUG_TICKERS.includes(s.ticker)) {
         console.log(`--- DEBUG: ${s.ticker} Tick ${tick} ---`);
@@ -137,7 +142,7 @@ async function updateMarket() {
         basePrice: nextBase,
       });
 
-      addPush(core, s._id, 'history', finalPrice, HISTORY_LIMIT);
+      addPush(core, s._id, 'history', finalPrice, profile.historyLimit);
       updatedMarketCap += finalPrice * shares;
 
       metrics.push({
@@ -149,7 +154,11 @@ async function updateMarket() {
       });
     }
 
-    const [news, gauss] = await Promise.all([newsPatches(stocks), gaussianPatches(stocks)]);
+    const [news, gauss] = await Promise.all([
+      newsPatches(stocks),
+      gaussianPatches(stocks)
+    ]);
+
     const merged = mergePatchMaps(core, news, gauss);
     const bulkOps = toBulk(merged);
 
