@@ -5,7 +5,7 @@ const { getMarketMoodController } = require("../controllers/marketController");
 const { getMarketIndexHistory } = require("../utils/marketIndex.js");
 const { getMoodHistory } = require("../utils/getMarketMood.js");
 const { lttb } = require("../utils/lttb.js");
-const { loadMarketProfile } = require("../utils/marketState.js");
+const { loadMarketProfile, getMarketProfile } = require("../utils/marketState.js");
 console.log("✅ marketData routes loaded");
 
 const clamp = (n, lo, hi) => {
@@ -111,6 +111,18 @@ router.post("/load-profile", (req, res) => {
 
 });
 
+router.get("/profile", (req, res) => {
+  try {
+    const profile = getMarketProfile();
+    res.json({
+      name: profile?.name || "default",
+      profile, // send full object if needed
+    });
+  } catch (err) {
+    console.error("🔥 Error fetching current profile:", err);
+    res.status(500).json({ error: "Could not fetch current profile" });
+  }
+});
 
 
 module.exports = router;

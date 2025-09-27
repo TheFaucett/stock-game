@@ -1,0 +1,13 @@
+.market-badge-container {
+  position: absolute;
+  top: 20px;         /* space from top */
+  left: 80px;        /* space from left */
+  z-index: 5000;     /* ensure it's above everything else */
+  pointer-events: none; /* non-blocking for clicks */
+}
+
+.market-badge-emoji {
+  font-size: 256px;     /* Large and readable */
+  opacity: 0.08;       /* Soft watermark look */
+  user-select: none;
+}

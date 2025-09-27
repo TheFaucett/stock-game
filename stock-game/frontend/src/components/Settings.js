@@ -1,10 +1,20 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import API_BASE_URL from "../apiConfig";
 import "../styles/settings.css";
 
 const profiles = ["default", "communist", "crisis", "bubble", "wildwest"];
 
+const profileEmojiMap = {
+  default: "💼",
+  communist: "🧱",
+  crisis: "📉",
+  bubble: "🫧",
+  wildwest: "🤠",
+};
+
 export default function Settings() {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,6 +32,10 @@ export default function Settings() {
       if (!res.ok) throw new Error(json?.error || "Failed to apply profile");
 
       setStatus({ success: true, message: `✅ Loaded: ${json.loaded}` });
+
+      // 🔄 Refetch market profile in all components
+      queryClient.invalidateQueries(["market-profile"]);
+
     } catch (err) {
       setStatus({ success: false, message: `❌ ${err.message}` });
     } finally {
@@ -32,7 +46,7 @@ export default function Settings() {
   return (
     <div className="settings-page">
       <h1>🛠️ Market Settings</h1>
-      <p>Click a button to switch the active market profile:</p>
+      <p>Select a profile to switch the market environment:</p>
 
       <div className="profile-buttons">
         {profiles.map((profile) => (
@@ -42,15 +56,13 @@ export default function Settings() {
             disabled={loading}
             className="profile-button"
           >
-            {profile}
+            {profileEmojiMap[profile]} {profile}
           </button>
         ))}
       </div>
 
       {status && (
-        <div
-          className={`status-message ${status.success ? "success" : "error"}`}
-        >
+        <div className={`status-message ${status.success ? "success" : "error"}`}>
           {status.message}
         </div>
       )}
