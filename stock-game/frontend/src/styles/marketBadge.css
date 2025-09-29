@@ -2,12 +2,23 @@
   position: absolute;
   top: 20px;         /* space from top */
   left: 80px;        /* space from left */
-  z-index: 5000;     /* ensure it's above everything else */
+  z-index: 1;     /* ensure it's below everything else */
   pointer-events: none; /* non-blocking for clicks */
 }
 
-.market-badge-emoji {
-  font-size: 256px;     /* Large and readable */
-  opacity: 0.08;       /* Soft watermark look */
-  user-select: none;
+.market-badge-button {
+  font-size: 256px;
+  opacity: 0.2;
+  cursor: pointer;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  pointer-events: auto; /* make the button clickable */
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.market-badge-button:hover {
+  transform: scale(1.2);
+  opacity: 0.4;
 }

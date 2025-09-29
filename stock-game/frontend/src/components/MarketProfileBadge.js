@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { useMarketProfile } from "../hooks/useMarketProfile";
 import "../styles/marketBadge.css";
 
@@ -14,16 +15,26 @@ const profileEmojiMap = {
 
 export default function MarketBadge() {
   const { data, isLoading, error } = useMarketProfile();
+  const navigate = useNavigate();
 
   if (isLoading || error || !data) return null;
 
   const emoji = profileEmojiMap[data.name] || "❌";
 
-  // Use a portal to render above everything else
+  const handleClick = () => {
+    navigate("/settings");
+  };
+
   return ReactDOM.createPortal(
     <div className="market-badge-container">
-      <div className="market-badge-emoji">{emoji}</div>
+      <button
+        className="market-badge-button"
+        onClick={handleClick}
+        title="Switch market mode"
+      >
+        {emoji}
+      </button>
     </div>,
-    document.body // or use a div like #market-badge-root
+    document.body
   );
 }

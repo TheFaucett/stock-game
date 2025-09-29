@@ -1,4 +1,5 @@
 // backend/controllers/marketController.js
+
 const Stock = require("../models/Stock");
 const { recordMarketMood, getMoodHistory } = require("../utils/getMarketMood.js");
 const { recordMarketIndexHistory } = require("../utils/marketIndex.js");
@@ -16,7 +17,11 @@ const generateEarningsReport = require("../utils/generateEarnings.js");
 
 // 🧪 Dev-only: inject volatility scenario
 const scenarioActive = true;
-const scenario = require("../profiles/communist");
+const scenario = getMarketProfile();
+
+// 🔁 Reset interval tracker (no modulo)
+let lastResetTick = 0;
+const RESET_INTERVAL = 1000;
 
 function clamp(x, lo, hi) {
   return Math.min(hi, Math.max(lo, x));
@@ -68,7 +73,15 @@ async function updateMarket() {
     const tick = incrementTick();
     logMemoryUsage(`Tick ${tick}`);
 
-    // 🧪 Apply scenario market modifiers (for dev mode)
+    // 🔁 RESET CHECK WITHOUT MODULO
+    if (tick % RESET_INTERVAL === 0 && tick !== lastResetTick) {
+        console.log(`🧹 Tick ${tick}: Performing scheduled stock reset...`);
+        await resetStockPrices();
+        lastResetTick = tick;
+        console.log("✅ Scheduled reset complete.");
+    }
+
+    // 🧪 Apply scenario modifiers (optional)
     if (scenarioActive && scenario.marketModifiers) {
       if (scenario.marketModifiers.volatilityMultiplier) {
         profile.volatilityBase *= scenario.marketModifiers.volatilityMultiplier;
@@ -104,7 +117,6 @@ async function updateMarket() {
       const shares = safeNumber(s.outstandingShares, 1);
       const anchor = getAnchor(s);
 
-      // Inject scenario sector bias
       let sectorBias = 0;
       if (scenarioActive && profile.sectorBias?.[s.sector]) {
         sectorBias = profile.sectorBias[s.sector];
@@ -113,7 +125,7 @@ async function updateMarket() {
       const reversion = (anchor - prev) * profile.meanRevertAlpha;
       const shock = randNormal() * vol * 0.5;
       let rawPrice = prev + reversion + prev * shock;
-      rawPrice *= (1 + sectorBias); // Apply sector bias
+      rawPrice *= (1 + sectorBias);
       rawPrice = Math.max(0.01, rawPrice);
 
       let pctMove = (rawPrice - prev) / prev;

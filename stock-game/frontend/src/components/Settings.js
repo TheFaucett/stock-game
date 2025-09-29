@@ -11,6 +11,7 @@ const profileEmojiMap = {
   crisis: "📉",
   bubble: "🫧",
   wildwest: "🤠",
+  ai: "🤖"
 };
 
 export default function Settings() {
