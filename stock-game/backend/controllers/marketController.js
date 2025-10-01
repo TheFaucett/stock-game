@@ -73,14 +73,14 @@ async function updateMarket() {
     const tick = incrementTick();
     logMemoryUsage(`Tick ${tick}`);
 
-    // 🔁 RESET CHECK WITHOUT MODULO
+/*    // 🔁 RESET CHECK WITHOUT MODULO
     if (tick % RESET_INTERVAL === 0 && tick !== lastResetTick) {
         console.log(`🧹 Tick ${tick}: Performing scheduled stock reset...`);
         await resetStockPrices();
         lastResetTick = tick;
         console.log("✅ Scheduled reset complete.");
     }
-
+*/
     // 🧪 Apply scenario modifiers (optional)
     if (scenarioActive && scenario.marketModifiers) {
       if (scenario.marketModifiers.volatilityMultiplier) {
