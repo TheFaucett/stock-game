@@ -71,17 +71,27 @@ async function updateMarket() {
   try {
     const profile = getMarketProfile();
     const tick = incrementTick();
-    logMemoryUsage(`Tick ${tick}`);
 
-/*    // 🔁 RESET CHECK WITHOUT MODULO
-    if (tick % RESET_INTERVAL === 0 && tick !== lastResetTick) {
+    if (!Number.isFinite(tick) || tick <= 0) {
+      console.warn("⚠️ Invalid tick value:", tick);
+      return;
+    }
+
+    logMemoryUsage(`Tick ${tick}`);
+/*
+    // 🔁 RESET CHECK WITHOUT MODULO
+    try {
+      if (tick - lastResetTick >= RESET_INTERVAL) {
         console.log(`🧹 Tick ${tick}: Performing scheduled stock reset...`);
         await resetStockPrices();
         lastResetTick = tick;
         console.log("✅ Scheduled reset complete.");
+      }
+    } catch (resetErr) {
+      console.error("❌ Reset failure:", resetErr);
     }
 */
-    // 🧪 Apply scenario modifiers (optional)
+    // 🧪 Dev-only scenario modifiers
     if (scenarioActive && scenario.marketModifiers) {
       if (scenario.marketModifiers.volatilityMultiplier) {
         profile.volatilityBase *= scenario.marketModifiers.volatilityMultiplier;
@@ -91,11 +101,13 @@ async function updateMarket() {
       }
     }
 
+    // ⏩ Pre-market system sweeps
     if (tick % 2 === 0) await autoCoverShorts();
     await sweepOptionExpiries(tick);
     await sweepLoanPayments(tick);
     if (tick % 90 === 0) await payDividends();
 
+    // 🔍 Load stocks
     const stocks = await Stock.find({}, {
       _id: 1, ticker: 1, sector: 1, price: 1, basePrice: 1,
       volatility: 1, outstandingShares: 1, change: 1, nextEarningsTick: 1,
@@ -143,7 +155,7 @@ async function updateMarket() {
       }
 
       if (Number.isFinite(s.nextEarningsTick) && tick >= s.nextEarningsTick) {
-        const { report, newPrice, nextEarningsTick } = generateEarningsReport(s, tick);
+        const { report, nextEarningsTick } = generateEarningsReport(s, tick);
         addSet(core, s._id, { lastEarningsReport: report, nextEarningsTick });
       }
 
@@ -166,6 +178,7 @@ async function updateMarket() {
       });
     }
 
+    // 🧠 Patch with news + Gaussian
     const [news, gauss] = await Promise.all([
       newsPatches(stocks),
       gaussianPatches(stocks)

@@ -80,7 +80,7 @@ mongoose.connect(process.env.MONGO_URI, {
     console.log('✅ MongoDB Connected');
 
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
+/*
     // ✅ Reset stock prices on boot
     try {
         console.log("🔄 Performing initial stock reset...");
@@ -89,7 +89,7 @@ mongoose.connect(process.env.MONGO_URI, {
     } catch (err) {
         console.error("❌ Error during initial reset:", err);
     }
-
+*/
     let inFlight = false;
 
     setInterval(async () => {
