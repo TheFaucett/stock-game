@@ -21,4 +21,4 @@ EXPOSE 5000
 
 
 # Run the server with memory limit
-CMD ["node", "--max_old_space_size=4096", "server.js"]
+CMD ["node", "--max_old_space_size=512", "server.js"]

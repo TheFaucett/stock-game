@@ -15,14 +15,13 @@ const { addSet, addPush, mergePatchMaps, toBulk } = require("../utils/patchKit")
 const { getMarketProfile } = require("../utils/marketState");
 const generateEarningsReport = require("../utils/generateEarnings.js");
 
-// 🧪 Dev-only: inject volatility scenario
-const scenarioActive = true;
-const scenario = getMarketProfile();
-
-// 🔁 Reset interval tracker (no modulo)
+// 🔁 Reset tracker
 let lastResetTick = 0;
 const RESET_INTERVAL = 1000;
+const DEBUG_TICKERS = ['SPEX', 'ASTC'];
+const SAMPLE_LIMIT = 50; // 🔢 Adjust to tune load on free-tier
 
+// 🔧 Utility functions
 function clamp(x, lo, hi) {
   return Math.min(hi, Math.max(lo, x));
 }
@@ -38,13 +37,25 @@ function safeNumber(val, fallback = 0) {
   return Number.isFinite(val) ? val : fallback;
 }
 
+function sampleStocks(stocks, count = SAMPLE_LIMIT) {
+  if (stocks.length <= count) return stocks;
+  const sampled = [];
+  const used = new Set();
+  while (sampled.length < count) {
+    const i = Math.floor(Math.random() * stocks.length);
+    if (!used.has(i)) {
+      sampled.push(stocks[i]);
+      used.add(i);
+    }
+  }
+  return sampled;
+}
+
 function logMemoryUsage(context = "") {
   const mem = process.memoryUsage();
   const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2) + " MB";
   console.log(`[MEMORY${context ? " | " + context : ""}] RSS: ${mb(mem.rss)} | Heap Used: ${mb(mem.heapUsed)} | Heap Total: ${mb(mem.heapTotal)}`);
 }
-
-const DEBUG_TICKERS = ['SPEX', 'ASTC'];
 
 function updateVolatility(prevVol, pctMoveAbs, profile) {
   const capped = Math.min(pctMoveAbs, 0.20);
@@ -67,32 +78,21 @@ function getAnchor(stock) {
   return 0.5 * base + 0.5 * tailMean;
 }
 
+// 🔁 Main market loop
 async function updateMarket() {
   try {
     const profile = getMarketProfile();
     const tick = incrementTick();
-
     if (!Number.isFinite(tick) || tick <= 0) {
       console.warn("⚠️ Invalid tick value:", tick);
       return;
     }
 
     logMemoryUsage(`Tick ${tick}`);
-/*
-    // 🔁 RESET CHECK WITHOUT MODULO
-    try {
-      if (tick - lastResetTick >= RESET_INTERVAL) {
-        console.log(`🧹 Tick ${tick}: Performing scheduled stock reset...`);
-        await resetStockPrices();
-        lastResetTick = tick;
-        console.log("✅ Scheduled reset complete.");
-      }
-    } catch (resetErr) {
-      console.error("❌ Reset failure:", resetErr);
-    }
-*/
-    // 🧪 Dev-only scenario modifiers
-    if (scenarioActive && scenario.marketModifiers) {
+
+    // Dev scenario modifiers
+    const scenario = getMarketProfile(); // dynamic for now
+    if (scenario.marketModifiers) {
       if (scenario.marketModifiers.volatilityMultiplier) {
         profile.volatilityBase *= scenario.marketModifiers.volatilityMultiplier;
       }
@@ -101,24 +101,25 @@ async function updateMarket() {
       }
     }
 
-    // ⏩ Pre-market system sweeps
+    // System-level updates
     if (tick % 2 === 0) await autoCoverShorts();
     await sweepOptionExpiries(tick);
     await sweepLoanPayments(tick);
     if (tick % 90 === 0) await payDividends();
 
-    // 🔍 Load stocks
-    const stocks = await Stock.find({}, {
+    // 🧠 Load and sample stocks
+    const allStocks = await Stock.find({}, {
       _id: 1, ticker: 1, sector: 1, price: 1, basePrice: 1,
       volatility: 1, outstandingShares: 1, change: 1, nextEarningsTick: 1,
       history: { $slice: -profile.signalTail }
     }).lean();
 
-    if (!stocks.length) return console.warn("⚠️ No stocks found.");
+    if (!allStocks.length) return console.warn("⚠️ No stocks found.");
 
+    const stocks = sampleStocks(allStocks);
     const core = new Map();
-    let updatedMarketCap = 0;
     const metrics = [];
+    let updatedMarketCap = 0;
 
     const driftPerTick = Math.pow(1 + profile.driftAnnual, 1 / profile.ticksPerYear) - 1;
 
@@ -129,13 +130,10 @@ async function updateMarket() {
       const shares = safeNumber(s.outstandingShares, 1);
       const anchor = getAnchor(s);
 
-      let sectorBias = 0;
-      if (scenarioActive && profile.sectorBias?.[s.sector]) {
-        sectorBias = profile.sectorBias[s.sector];
-      }
-
+      let sectorBias = profile.sectorBias?.[s.sector] || 0;
       const reversion = (anchor - prev) * profile.meanRevertAlpha;
       const shock = randNormal() * vol * 0.5;
+
       let rawPrice = prev + reversion + prev * shock;
       rawPrice *= (1 + sectorBias);
       rawPrice = Math.max(0.01, rawPrice);
@@ -178,11 +176,22 @@ async function updateMarket() {
       });
     }
 
-    // 🧠 Patch with news + Gaussian
-    const [news, gauss] = await Promise.all([
+    // 🧠 External patches: news + noise
+    const [{ patches: news, log: newsLog }, gauss] = await Promise.all([
       newsPatches(stocks),
-      gaussianPatches(stocks)
+      gaussianPatches(stocks),
     ]);
+
+    // 📰 Log meaningful news impacts
+    if (newsLog.length) {
+      const impactful = newsLog.filter(e => e.delta !== 0 || e.volBump !== 0);
+      if (impactful.length) {
+        console.log("📰 News Impact Log:");
+        impactful.forEach(entry => {
+          console.log(`🔸 ${entry.ticker}: Δ=${entry.delta}, +vol=${entry.volBump}`);
+        });
+      }
+    }
 
     const merged = mergePatchMaps(core, news, gauss);
     const bulkOps = toBulk(merged);
