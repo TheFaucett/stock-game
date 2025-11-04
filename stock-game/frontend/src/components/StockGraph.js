@@ -1,4 +1,3 @@
-// src/components/StockGraph.jsx
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
@@ -8,31 +7,21 @@ const DEBUG = false;
 const log = (...a) => { if (DEBUG) console.log("[StockGraph]", ...a); };
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 
-/** Fetch tail-only history */
 async function fetchTail(ticker, { tail, maxPoints }) {
   const url = `${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/history?tail=${tail}&maxPoints=${maxPoints}`;
   log("GET", url);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`History fetch failed (${res.status})`);
-  const json = await res.json(); // { ticker, points, meta:{tail, returned, overallTotal} }
+  const json = await res.json();
   log("resp.meta", json?.meta, "points.len", Array.isArray(json?.points) ? json.points.length : 0);
   return json;
 }
 
-/**
- * Props:
- *  - ticker (required)
- *  - height?: number (default 260)
- *  - compact?: boolean (default false) hides axes
- */
-export default function StockGraph({ ticker, height = 260, compact = false }) {
-  // Range → ticks (1 tick ≈ 1 day)
+export default function StockGraph({ ticker, height = 280, compact = false }) {
   const [range, setRange] = useState("1M");
-  // force chart remount on range change to avoid stale axes/smoothing artifacts
   const [mountKey, setMountKey] = useState(0);
   useEffect(() => { setRange("1M"); setMountKey(k => k + 1); }, [ticker]);
 
-  // measure width -> sensible maxPoints
   const wrapRef = useRef(null);
   const [pxWidth, setPxWidth] = useState(400);
   useEffect(() => {
@@ -45,12 +34,8 @@ export default function StockGraph({ ticker, height = 260, compact = false }) {
     return () => ro.disconnect();
   }, []);
 
-  // ✅ New tails (literal ticks)
-  // MAX uses a huge sentinel; backend clamps to available length
   const tailByRange = { "5D": 5, "1M": 30, "YTD": 365, "MAX": 1_000_000_000 };
   const tail = tailByRange[range] ?? 30;
-
-  // ~2px/point; keep it sane. Also clamp to tail to avoid asking for more than we request.
   const baseMax = clamp(Math.floor(pxWidth / 2), 30, 800);
   const safeMaxPoints = Math.min(baseMax, tail);
 
@@ -95,21 +80,30 @@ export default function StockGraph({ ticker, height = 260, compact = false }) {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
+    layout: {
+      padding: { bottom: 20 }  // ✅ adds internal space to prevent cutoff
+    },
     scales: compact
       ? {
           x: { display: false, grid: { display: false }, ticks: { display: false } },
-          y: { display: false, grid: { display: false }, ticks: { display: false },
-               min: yMin - yPad, max: yMax + yPad },
+          y: {
+            display: false, grid: { display: false }, ticks: { display: false },
+            min: yMin - yPad, max: yMax + yPad
+          },
         }
       : {
           x: { ticks: { maxTicksLimit: 6 } },
-          y: { min: yMin - yPad, max: yMax + yPad, ticks: { callback: v => `$${(+v).toFixed(2)}` } },
+          y: {
+            min: yMin - yPad,
+            max: yMax + yPad,
+            ticks: { callback: v => `$${(+v).toFixed(2)}` }
+          },
         },
     plugins: { legend: { display: false } },
   };
 
   return (
-    <div ref={wrapRef} style={{ width: "100%" }}>
+    <div ref={wrapRef} style={{ width: "100%", paddingBottom: 24 }}>
       {/* Controls */}
       <div style={{ display: "flex", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
         {["5D", "1M", "YTD", "MAX"].map((id) => (

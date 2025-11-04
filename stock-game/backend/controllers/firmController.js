@@ -194,7 +194,16 @@ const processFirms = async (marketMood) => {
   const firms = await Firm.find();
   const econ = getEconomicFactors();
   const tick = getCurrentTick();
-  const stocks = await Stock.find();
+  const allStocks = await Stock.find({}, {
+    _id: 1, ticker: 1, sector: 1, price: 1, basePrice: 1,
+    volatility: 1, outstandingShares: 1, change: 1, nextEarningsTick: 1,
+    history: { $slice: -profile.signalTail }
+  }).lean();
+
+  if (!allStocks.length) return console.warn("⚠️ No stocks found.");
+
+  const stocks = sampleStocks(allStocks, 50); // ← update only 50 randomly picked stocks
+
   const stockMap = Object.fromEntries(stocks.map(s => [s.ticker, s]));
 
   for (const firm of firms) {

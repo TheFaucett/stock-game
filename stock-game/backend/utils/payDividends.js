@@ -1,7 +1,7 @@
 // utils/payDividends.js
 const Stock = require("../models/Stock");
 const Portfolio = require("../models/Portfolio");
-
+const { getOrGenerateSampleTickers } = require("../utils/sampleStocks"); 
 // Pay every ~quarter when called from market loop (tick % 90 === 0)
 const PAYOUT_DAYS = 90; // number of "trading days" covered per payout
 const DAYS_PER_YEAR = 365;
@@ -51,9 +51,14 @@ async function payDividends(currentTick = null) {
     }
 
     // 3) Load those stocks in one query
-    const stocks = await Stock.find({ ticker: { $in: Array.from(tickers) } }, {
-      ticker: 1, price: 1, dividendYield: 1
-    }).lean();
+    const stocks = await Stock.find(
+      { ticker: { $in: [...sampleTickers] } },
+      {
+        _id: 1, ticker: 1, sector: 1, price: 1, basePrice: 1,
+        volatility: 1, outstandingShares: 1, change: 1, nextEarningsTick: 1,
+        history: { $slice: -10 } // adjust or make dynamic if you want
+      }
+    ).lean();
 
     const stockMap = new Map(stocks.map(s => [s.ticker, s]));
 

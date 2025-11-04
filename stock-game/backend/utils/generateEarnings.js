@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Stock = require("../models/Stock");
 const Firm = require("../models/Firm");
 const Portfolio = require("../models/Portfolio");
-
+const { getOrGenerateSampleTickers } = require("../utils/sampleStocks");
 const MONGO_URI = process.env.MONGO_URI;
 const DEFAULT_PRICE = 100.00;
 
@@ -18,7 +18,18 @@ async function resetStockPrices() {
     }
 
     // --- STOCKS ---
-    const stocks = await Stock.find();
+
+    const stocks = await Stock.find(
+      { ticker: { $in: [...sampleTickers] } },
+      {
+        _id: 1, ticker: 1, sector: 1, price: 1, basePrice: 1,
+        volatility: 1, outstandingShares: 1, change: 1, nextEarningsTick: 1,
+        history: { $slice: -10 } // adjust or make dynamic if you want
+      }
+    ).lean();
+
+
+
     const stockBulkOps = stocks.map(stock => ({
       updateOne: {
         filter: { _id: stock._id },
