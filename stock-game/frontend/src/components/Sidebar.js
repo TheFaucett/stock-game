@@ -117,17 +117,31 @@ export default function Sidebar() {
   }, [mostValuable?.ticker]);
 
   return (
-    <div className={`sidebar-container ${isOpen ? "open" : "closed"}`}>
-      <button className="toggle-btn" onClick={() => setIsOpen((o) => !o)}>
-        {isOpen ? "◀" : "▶"}
-      </button>
+  <div className={`sidebar-container ${isOpen ? "open" : "closed"}`}>
+    <button className="toggle-btn" onClick={() => setIsOpen((o) => !o)}>
+      {isOpen ? "◀" : "▶"}
+    </button>
 
-      <aside className="sidebar">
-        <h2>Your Portfolio</h2>
-        {isLoading && <p>Loading portfolio...</p>}
-        {error && <p>Error fetching portfolio.</p>}
+    <aside className="sidebar">
+      <h2>Your Portfolio</h2>
+      {isLoading && <p>Loading portfolio...</p>}
+      {error && <p>Error fetching portfolio.</p>}
 
-        {portfolio && (
+      {/* 👇 Handle empty portfolio scenario */}
+      {portfolio && positions.length === 0 ? (
+        <div style={{ marginTop: "1rem", color: "#ccc", fontStyle: "italic" }}>
+          <p>You don’t own any stocks yet.</p>
+          <p>
+            Visit the{" "}
+            <a href="/market" style={{ color: "#93c5fd" }}>
+              Market
+            </a>{" "}
+            to get started.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ✅ Core Portfolio Summary */}
           <div className="card">
             <p>
               <strong>Balance:</strong> {fmtUsd(portfolio.balance)}
@@ -135,96 +149,98 @@ export default function Sidebar() {
             <p>
               <strong>Stocks Owned:</strong>
             </p>
-            {positions.length === 0 ? (
-              <p>No stocks owned yet.</p>
-            ) : (
-              <ul>
-                {positions.map((p) => (
-                  <li key={p.ticker}>
-                    {p.ticker}: {p.shares} shares
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ul>
+              {positions.map((p) => (
+                <li key={p.ticker}>
+                  {p.ticker}: {p.shares} shares
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
 
-        <h3>Portfolio History</h3>
-        <PortfolioBalanceGraph size="small" />
+          {/* 📉 Portfolio Graph */}
+          <h3>Portfolio History</h3>
+          <PortfolioBalanceGraph size="small" />
 
-        <h3>Most Valuable Stock</h3>
-        {mostValuable ? (
-          <div className="card">
-            <p>
-              {mostValuable.ticker}: {mostValuable.shares} shares · MV{" "}
-              {mostValuable.marketValue == null
-                ? "—"
-                : fmtUsd(mostValuable.marketValue)}
-            </p>
-
-            {/* Wrapper prevents overlay */}
-            <div className="chart-block">
-              <StockGraph
-                ticker={mostValuable.ticker}
-                height={180}
-                showTypeToggle={false}
-                compact
-              />
+          {/* 💰 Most Valuable */}
+          <h3>Most Valuable Stock</h3>
+          {mostValuable && (
+            <div className="card">
+              <p>
+                {mostValuable.ticker}: {mostValuable.shares} shares · MV{" "}
+                {mostValuable.marketValue == null
+                  ? "—"
+                  : fmtUsd(mostValuable.marketValue)}
+              </p>
+              <div className="chart-block">
+                <StockGraph
+                  ticker={mostValuable.ticker}
+                  height={180}
+                  showTypeToggle={false}
+                  compact
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <p>No stocks owned yet.</p>
-        )}
+          )}
 
-        <h3>Best Performer</h3>
-        {bestPerformer ? (
+          {/* 🚀 Best Performer */}
+          <h3>Best Performer</h3>
+          {bestPerformer && (
+            <div className="card">
+              <p>
+                <strong>{bestPerformer.ticker}</strong>
+              </p>
+              <p
+                style={{
+                  color: bestPerformer.pctChange >= 0 ? "limegreen" : "crimson",
+                }}
+              >
+                {bestPerformer.pctChange.toFixed(2)}%
+                {bestPerformer.avgCost != null &&
+                  bestPerformer.currentPrice != null && (
+                    <>
+                      {" "}
+                      (avg {fmtUsd(bestPerformer.avgCost)} →{" "}
+                      {fmtUsd(bestPerformer.currentPrice)})
+                    </>
+                  )}
+              </p>
+            </div>
+          )}
+
+          {/* 📉 Worst Performer */}
+          <h3>Biggest Loser</h3>
+          {worstPerformer && (
+            <div className="card">
+              <p>
+                <strong>{worstPerformer.ticker}</strong>
+              </p>
+              <p
+                style={{
+                  color: worstPerformer.pctChange >= 0 ? "limegreen" : "crimson",
+                }}
+              >
+                {worstPerformer.pctChange.toFixed(2)}%
+                {worstPerformer.avgCost != null &&
+                  worstPerformer.currentPrice != null && (
+                    <>
+                      {" "}
+                      (avg {fmtUsd(worstPerformer.avgCost)} →{" "}
+                      {fmtUsd(worstPerformer.currentPrice)})
+                    </>
+                  )}
+              </p>
+            </div>
+          )}
+
+          {/* 🕓 Recent Positions Placeholder */}
+          <h3>Recent Positions</h3>
           <div className="card">
-            <p>
-              <strong>{bestPerformer.ticker}</strong>
-            </p>
-            <p style={{ color: bestPerformer.pctChange >= 0 ? "lime" : "red" }}>
-              {bestPerformer.pctChange.toFixed(2)}%
-              {bestPerformer.avgCost != null &&
-                bestPerformer.currentPrice != null && (
-                  <>
-                    {" "}
-                    (avg {fmtUsd(bestPerformer.avgCost)} →{" "}
-                    {fmtUsd(bestPerformer.currentPrice)})
-                  </>
-                )}
-            </p>
+            <p style={{ color: "#999" }}>Coming soon.</p>
           </div>
-        ) : (
-          <p>No qualifying positions yet.</p>
-        )}
-
-        <h3>Biggest Loser</h3>
-        {worstPerformer ? (
-          <div className="card">
-            <p>
-              <strong>{worstPerformer.ticker}</strong>
-            </p>
-            <p style={{ color: worstPerformer.pctChange >= 0 ? "lime" : "red" }}>
-              {worstPerformer.pctChange.toFixed(2)}%
-              {worstPerformer.avgCost != null &&
-                worstPerformer.currentPrice != null && (
-                  <>
-                    {" "}
-                    (avg {fmtUsd(worstPerformer.avgCost)} →{" "}
-                    {fmtUsd(worstPerformer.currentPrice)})
-                  </>
-                )}
-            </p>
-          </div>
-        ) : (
-          <p>No qualifying positions yet.</p>
-        )}
-
-        <h3>Recent Positions</h3>
-        <div className="card">
-          {/* ... your existing recentPositions list ... */}
-        </div>
-      </aside>
-    </div>
+        </>
+      )}
+    </aside>
+  </div>
   );
 }

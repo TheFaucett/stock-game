@@ -86,13 +86,34 @@ export default function HoldingsTable({ portfolio = fetchPortfolio() }) {
       >
         <thead>
           <tr>
-            <th>Ticker</th>
-            <th>Name</th>
-            <th>Shares</th>
-            <th>Avg Cost</th>
-            <th>Price</th>
-            <th>Value</th>
-            <th>P/L</th>
+            <th>
+              Ticker
+              <span title="The stock's symbol (click to view details)"> ℹ️</span>
+            </th>
+            <th>
+              Name
+              <span title="Full name of the company"> ℹ️</span>
+            </th>
+            <th>
+              Shares
+              <span title="Number of shares you currently hold"> ℹ️</span>
+            </th>
+            <th>
+              Avg Cost
+              <span title="Your average cost per share based on all buy transactions"> ℹ️</span>
+            </th>
+            <th>
+              Price
+              <span title="Current simulated market price for this stock"> ℹ️</span>
+            </th>
+            <th>
+              Value
+              <span title="Total current value of your position (Price × Shares)"> ℹ️</span>
+            </th>
+            <th>
+              P/L
+              <span title="Profit or Loss since purchase (Price − Avg Cost) × Shares"> ℹ️</span>
+            </th>
           </tr>
         </thead>
         <tbody>
