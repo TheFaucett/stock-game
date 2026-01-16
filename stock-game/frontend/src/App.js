@@ -16,7 +16,7 @@ import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import TickProgressBar from "./components/TickProgressbar";
 import TickUpdateOverlay from "./components/TickUpdateOverlay";
-
+import LoadingScreen from "./components/LoadingScreen";
 // 🔻 Pages + Panels
 import SectorHeatmap from "./components/SectorHeatmap";
 import Heatmap from "./components/Heatmap";
@@ -71,6 +71,7 @@ const HeatmapContainer = () => {
 };
 
 function AppRoutes() {
+  const [bootReady, setBootReady] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const { tick } = useTick();
   const location = useLocation();

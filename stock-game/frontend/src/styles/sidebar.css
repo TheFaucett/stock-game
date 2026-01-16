@@ -77,6 +77,7 @@
 .sidebar::-webkit-scrollbar-thumb:hover {
     background: #777;
 }
+
 /* Ensure charts don’t overlap following sections */
 .sidebar .chart-block {
   position: relative;
@@ -93,4 +94,32 @@
 .sidebar .chart-block canvas {
   position: relative !important;
   display: block;
+}
+
+
+/* ✅ NEW: Emphasized portfolio balance display */
+.portfolio-balance-highlight {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #4ade80; /* bright green */
+  background: #1a2e1a;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 8px 0 16px;
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.2);
+  animation: pulseBalance 2.8s ease-in-out infinite;
+}
+
+/* ✅ Pulse effect */
+@keyframes pulseBalance {
+  0% {
+    box-shadow: 0 0 4px rgba(74, 222, 128, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 4px rgba(74, 222, 128, 0.2);
+  }
 }

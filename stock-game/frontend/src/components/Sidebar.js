@@ -136,9 +136,10 @@ export default function Sidebar() {
         ) : portfolio ? (
           <>
             <div className="card">
-              <p>
-                <strong>Balance:</strong> {fmtUsd(portfolio.balance)}
-              </p>
+                <div className="portfolio-balance-highlight">
+                {fmtUsd(portfolio.balance)}
+                </div>
+
               <p>
                 <strong>Stocks Owned:</strong>
               </p>
